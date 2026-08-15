@@ -1,0 +1,82 @@
+import { describe, expect, it } from "vitest";
+import { presets } from "@/data/catalog";
+import {
+  addBuild,
+  createBuildFromPreset,
+  emptyCharacterBox,
+  isSequence,
+  parseCharacterBox,
+  removeBuild,
+  resetBuild,
+  updateBuild,
+} from "./character-box";
+
+const createBuild = (index = 0) =>
+  createBuildFromPreset(presets[index], {
+    id: `build-${index}`,
+    now: "2026-08-15T00:00:00.000Z",
+  });
+
+describe("Character Box", () => {
+  it("crée une copie indépendante depuis un preset", () => {
+    const preset = presets[0];
+    const build = createBuild();
+    build.skillLevels.basicAttack = 8;
+    build.weapon.level = 90;
+    build.finalStats.attack = 2400;
+    build.finalStats.elementalDamageBonus.aero = 30;
+    expect(preset.skillLevels.basicAttack).toBe(1);
+    expect(preset.weapon.level).toBe(1);
+    expect(preset.finalStats.attack).toBe(0);
+    expect(preset.finalStats.elementalDamageBonus.aero).toBe(0);
+  });
+
+  it("empêche deux builds du même Resonator", () => {
+    const build = createBuild();
+    const box = addBuild(emptyCharacterBox(), build);
+    expect(() => addBuild(box, { ...build, id: "another" })).toThrow(
+      /déjà présent/,
+    );
+  });
+
+  it("met à jour et supprime un build sans toucher aux autres", () => {
+    const first = createBuild(0);
+    const second = createBuild(1);
+    const box = addBuild(addBuild(emptyCharacterBox(), first), second);
+    const updated = { ...first, characterLevel: 90 };
+    const afterUpdate = updateBuild(box, updated);
+    expect(afterUpdate.builds).toEqual([updated, second]);
+    expect(removeBuild(afterUpdate, first.id).builds).toEqual([second]);
+  });
+
+  it("réinitialise avec une nouvelle copie tout en conservant la création", () => {
+    const edited = {
+      ...createBuild(),
+      characterLevel: 90,
+      finalStats: { ...createBuild().finalStats, attack: 2500 },
+    };
+    const reset = resetBuild(edited, presets[0], "2026-08-16T00:00:00.000Z");
+    expect(reset.characterLevel).toBe(1);
+    expect(reset.finalStats.attack).toBe(0);
+    expect(reset.createdAt).toBe(edited.createdAt);
+    expect(reset.updatedAt).toBe("2026-08-16T00:00:00.000Z");
+    reset.finalStats.attack = 1;
+    expect(presets[0].finalStats.attack).toBe(0);
+  });
+
+  it("valide uniquement les Sequences S0 à S6", () => {
+    for (let value = 0; value <= 6; value += 1)
+      expect(isSequence(value)).toBe(true);
+    for (const value of [-1, 7, 1.5, "1", Number.NaN])
+      expect(isSequence(value)).toBe(false);
+  });
+
+  it("sérialise et restaure une Box valide", () => {
+    const box = addBuild(emptyCharacterBox(), createBuild());
+    expect(parseCharacterBox(JSON.stringify(box))).toEqual(box);
+    expect(parseCharacterBox("invalid")).toEqual(emptyCharacterBox());
+    expect(
+      parseCharacterBox(JSON.stringify({ schemaVersion: 99, builds: [] })),
+    ).toEqual(emptyCharacterBox());
+  });
+});

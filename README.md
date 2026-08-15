@@ -1,6 +1,8 @@
 # Wuthering Waves DPS Calculator
 
-Base technique d'une future application web dédiée à **Wuthering Waves**. Le Team Builder, les fiches de personnages et le calculateur de DPS ne font pas encore partie de cette étape.
+Première version du **Character Box / Build Planner** pour Wuthering Waves. Elle permet d'ajouter des fixtures de Resonators, de personnaliser leurs builds et de les conserver localement. Les données de démonstration sont explicitement fictives tant que des sources fiables n'ont pas été intégrées.
+
+Le Team Builder et le calculateur de DPS ne font pas partie de cette étape. Les décisions métier importantes, notamment la règle anti-double-comptage des statistiques finales, sont documentées dans [`docs/architecture.md`](docs/architecture.md).
 
 ## Prérequis
 
@@ -15,6 +17,7 @@ npm run dev        # démarre le serveur de développement
 npm run build      # crée le build de production
 npm run start      # sert le build de production
 npm run lint       # exécute ESLint
+npm run typecheck  # vérifie les types TypeScript sans générer de fichiers
 npm test           # exécute les tests Vitest une fois
 npm run test:watch # exécute Vitest en mode interactif
 ```
