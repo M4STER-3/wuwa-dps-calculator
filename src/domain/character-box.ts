@@ -86,6 +86,7 @@ export function isValidBuild(build: unknown): build is UserBuild {
     typeof value.id !== "string" ||
     typeof value.resonatorId !== "string" ||
     typeof value.sourcePresetId !== "string" ||
+    typeof value.characterLevel !== "number" ||
     !Number.isInteger(value.characterLevel) ||
     value.characterLevel < 1 ||
     value.characterLevel > 90 ||
