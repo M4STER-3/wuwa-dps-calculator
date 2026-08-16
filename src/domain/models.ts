@@ -87,6 +87,8 @@ export interface CombatResource {
   cap: number;
   naturalRegeneration?: DataValue<number>;
   notes: readonly string[];
+  /** Game-rule meaning; runtime logic must not infer this from the resource id. */
+  semantic?: "concerto-energy" | "resonance-energy" | "character-resource" | "system-resource";
 }
 
 export interface CombatAction {
