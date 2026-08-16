@@ -38,3 +38,9 @@ Une rotation déclarative reste la source de vérité éditoriale. Le Temporal E
 Voir [`docs/temporal-engine.md`](./temporal-engine.md) pour les profils fallback V0.1, la calibration et les limites du système.
 
 Voir [`docs/damage-engine.md`](./damage-engine.md) pour la formule d'une action individuelle, les groupes multiplicatifs et les limites du Damage Engine V0.1.
+
+### Combat Simulation V0.1
+
+La couche `src/domain/combat-simulation.ts` relie désormais la projection du Temporal Engine aux `CombatAction` puis au Damage Engine. Elle ne reconstruit ni stats, ni timeline, ni formule : elle produit des résultats par occurrence, agrège uniquement les dégâts supportés et divise par la durée complète de rotation. Les exclusions restent structurées et rendent le résultat explicitement partiel.
+
+Voir [`docs/combat-simulation.md`](./combat-simulation.md) pour les statuts, le contrat de `supportedDamage` / `supportedDps`, la référence Aemeath S0 et les mécaniques non émises.
