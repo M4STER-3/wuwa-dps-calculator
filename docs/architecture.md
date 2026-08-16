@@ -13,7 +13,11 @@
 
 **Il est interdit de recalculer ces statistiques depuis l'arme, le Main Echo ou le Sonata, ou de leur ajouter automatiquement une deuxième fois les mêmes valeurs.**
 
+### Temporal Engine
+
 Les effets temporaires ou conditionnels ne font pas partie de `finalStats`. Le Temporal Engine ne lit ni ne modifie ces statistiques : il positionne uniquement des actions et des fenêtres dans le temps. Un futur moteur de combat pourra consommer ces informations sans recalculer les statistiques permanentes.
+
+### Damage Engine V0.1
 
 Le Damage Engine suit la même frontière : pour un scaling ATK, HP ou DEF, il lit directement la valeur correspondante dans `UserBuild.finalStats`. Il ne reconstruit jamais le panneau depuis le personnage, l'arme, les Echoes, le Sonata ou les Minor Fortes. Les modificateurs temporaires lui sont fournis explicitement par un contexte séparé et ne sont pas activés automatiquement depuis l'équipement ou la timeline.
 
