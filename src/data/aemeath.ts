@@ -125,7 +125,7 @@ export const aemeath: Resonator = {
   combat: {
     level10Only: true,
     forms: ["Aemeath", "Mech"],
-    modes: ["Tune Rupture", "Fusion Burst"],
+    modes: ["tune-rupture", "fusion-burst"],
     resources: [
       { id: "synchronization-rate", name: "Synchronization Rate", cap: 200, notes: ["Intro +40; Overdrive +30; Heavy Charged II sous Instant Response + Unbound restaure 200.", "Gains individuels des Basics, Mid-air, Dodge Counters et Sync Strikes: inconnus."] },
       { id: "resonance-rate", name: "Resonance Rate", cap: 4, notes: ["Seraphic Duet +1; Overdrive +1; Starlume Acceleration ajoute +1 à Overdrive."] },
@@ -193,7 +193,7 @@ export const sigillum: MainEcho = {
 };
 
 const minimumFinalStats = {
-  hp: 15000, attack: 2000, defense: 1100, critRate: 65, critDamage: 210, energyRegen: 115, healingBonus: 0,
+  hp: 15000, attack: 2000, defense: 1100, critRate: 65, critDamage: 210, energyRegen: 115, healingBonus: 0, tuneBreakBoost: 10,
   elementalDamageBonus: { aero: 0, glacio: 0, electro: 0, fusion: 40, havoc: 0, spectro: 0 },
   damageTypeBonus: { basicAttack: 0, heavyAttack: 0, resonanceSkill: 0, resonanceLiberation: 0, introSkill: 0, echoSkill: 0 },
 };

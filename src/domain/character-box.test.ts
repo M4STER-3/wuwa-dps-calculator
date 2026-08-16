@@ -91,4 +91,40 @@ describe("Character Box", () => {
       parseCharacterBox(JSON.stringify({ schemaVersion: 99, builds: [] })),
     ).toEqual(emptyCharacterBox());
   });
+
+  it("refuse les niveaux d'aptitude hors de la plage 1 à 10", () => {
+    for (const level of [0, 11, 1.5]) {
+      const build = createBuild();
+      build.skillLevels.forteCircuit = level;
+      expect(() => addBuild(emptyCharacterBox(), build)).toThrow(/invalides/);
+      expect(() =>
+        updateBuild({ schemaVersion: 1, builds: [createBuild()] }, build),
+      ).toThrow(/invalides/);
+      expect(
+        parseCharacterBox(
+          JSON.stringify({ schemaVersion: 1, builds: [build] }),
+        ),
+      ).toEqual(emptyCharacterBox());
+    }
+  });
+
+  it("migre Tune Break Boost sans perdre les anciennes Boxes", () => {
+    const legacyAemeath = createBuild();
+    const legacyFixture = createBuild(fixturePreset, 1);
+    delete (legacyAemeath.finalStats as Partial<typeof legacyAemeath.finalStats>)
+      .tuneBreakBoost;
+    delete (legacyFixture.finalStats as Partial<typeof legacyFixture.finalStats>)
+      .tuneBreakBoost;
+
+    const restored = parseCharacterBox(
+      JSON.stringify({
+        schemaVersion: 1,
+        builds: [legacyAemeath, legacyFixture],
+      }),
+    );
+
+    expect(restored.builds).toHaveLength(2);
+    expect(restored.builds[0].finalStats.tuneBreakBoost).toBe(10);
+    expect(restored.builds[1].finalStats.tuneBreakBoost).toBe(0);
+  });
 });

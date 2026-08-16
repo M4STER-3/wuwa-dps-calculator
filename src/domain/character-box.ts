@@ -24,7 +24,7 @@ export function createBuildFromPreset(
   preset: RecommendedBuildPreset,
   options: { id: string; now: string },
 ): UserBuild {
-  return {
+  const build: UserBuild = {
     id: options.id,
     resonatorId: preset.resonatorId,
     sourcePresetId: preset.id,
@@ -42,9 +42,12 @@ export function createBuildFromPreset(
     createdAt: options.now,
     updatedAt: options.now,
   };
+  assertValidBuild(build);
+  return build;
 }
 
 export function addBuild(box: CharacterBox, build: UserBuild): CharacterBox {
+  assertValidBuild(build);
   if (
     box.builds.some((candidate) => candidate.resonatorId === build.resonatorId)
   ) {
@@ -54,6 +57,7 @@ export function addBuild(box: CharacterBox, build: UserBuild): CharacterBox {
 }
 
 export function updateBuild(box: CharacterBox, build: UserBuild): CharacterBox {
+  assertValidBuild(build);
   return {
     ...box,
     builds: box.builds.map((candidate) =>
@@ -124,6 +128,7 @@ export function isValidBuild(build: unknown): build is UserBuild {
     stats.critDamage,
     stats.energyRegen,
     stats.healingBonus,
+    stats.tuneBreakBoost,
   ];
   if (!baseStats.every(isNonNegativeNumber)) return false;
   if (
@@ -143,6 +148,12 @@ export function isValidBuild(build: unknown): build is UserBuild {
   );
 }
 
+export function assertValidBuild(build: unknown): asserts build is UserBuild {
+  if (!isValidBuild(build)) {
+    throw new Error("Le build contient des valeurs invalides.");
+  }
+}
+
 export function parseCharacterBox(serialized: string | null): CharacterBox {
   if (!serialized) return emptyCharacterBox();
   try {
@@ -151,17 +162,34 @@ export function parseCharacterBox(serialized: string | null): CharacterBox {
     const box = candidate as Partial<CharacterBox>;
     if (
       box.schemaVersion !== 1 ||
-      !Array.isArray(box.builds) ||
-      !box.builds.every(isValidBuild)
+      !Array.isArray(box.builds)
     )
       return emptyCharacterBox();
+    const normalizedBuilds = box.builds.map(normalizeLegacyBuild);
+    if (!normalizedBuilds.every(isValidBuild)) return emptyCharacterBox();
     if (
-      new Set(box.builds.map((build) => build.resonatorId)).size !==
-      box.builds.length
+      new Set(normalizedBuilds.map((build) => build.resonatorId)).size !==
+      normalizedBuilds.length
     )
       return emptyCharacterBox();
-    return box as CharacterBox;
+    return { schemaVersion: 1, builds: normalizedBuilds };
   } catch {
     return emptyCharacterBox();
   }
+}
+
+function normalizeLegacyBuild(build: unknown): unknown {
+  if (!build || typeof build !== "object") return build;
+  const candidate = build as Partial<UserBuild>;
+  if (!candidate.finalStats || typeof candidate.finalStats !== "object") {
+    return build;
+  }
+  if (candidate.finalStats.tuneBreakBoost !== undefined) return build;
+  return {
+    ...candidate,
+    finalStats: {
+      ...candidate.finalStats,
+      tuneBreakBoost: candidate.resonatorId === "aemeath" ? 10 : 0,
+    },
+  };
 }

@@ -27,6 +27,7 @@ describe("cohérence du catalogue", () => {
     expect(aemeath.name).toBe("Aemeath");
     expect(aemeath.element).toBe("fusion");
     expect(aemeath.weaponType).toBe("sword");
+    expect(aemeath.combat?.modes).toEqual(["tune-rupture", "fusion-burst"]);
     expect(aemeath.resonanceChain.map((chain) => chain.sequence)).toEqual([1, 2, 3, 4, 5, 6]);
 
     const fixtureEntries = [resonators, weapons, sonatas, mainEchoes, presets]
@@ -52,10 +53,33 @@ describe("cohérence du catalogue", () => {
       weapon: { weaponId: "everbright-polestar", level: 90, rank: 1 },
       sonataId: "trailblazing-star",
       mainEchoId: "sigillum",
+      finalStats: { tuneBreakBoost: 10 },
     });
     expect(aemeathPreset.source.kind).toBe("community-recommendation");
     expect(aemeathPreset.recommendedTargets?.attack).toEqual({ minimum: 2000, maximum: 2400 });
     expect(aemeathPreset.finalStats.attack).toBe(2000);
+  });
+
+  it("n'expose qu'un équipement réel vérifié pour Aemeath", () => {
+    expect(
+      weapons
+        .filter(
+          (entry) =>
+            entry.type === aemeath.weaponType &&
+            entry.source.kind !== "technical-fixture",
+        )
+        .map((entry) => entry.name),
+    ).toEqual(["Everbright Polestar"]);
+    expect(
+      sonatas
+        .filter((entry) => entry.source.kind !== "technical-fixture")
+        .map((entry) => entry.id),
+    ).toEqual(["trailblazing-star"]);
+    expect(
+      mainEchoes
+        .filter((entry) => entry.source.kind !== "technical-fixture")
+        .map((entry) => entry.name),
+    ).toEqual(["Sigillum"]);
   });
 
   it("documente le kit Lv10 et les inconnues temporelles sans timeline DPS", () => {

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   mainEchoes,
@@ -55,6 +56,8 @@ const damageLabels: Record<keyof FinalStats["damageTypeBonus"], string> = {
   echoSkill: "Echo Skill DMG",
 };
 const serverBox = emptyCharacterBox();
+const isRealData = (entry: { source: { kind: string } }) =>
+  entry.source.kind !== "technical-fixture";
 
 export function CharacterBoxApp() {
   const box = useSyncExternalStore(
@@ -81,6 +84,7 @@ export function CharacterBoxApp() {
   const visibleResonators = useMemo(
     () =>
       resonators.filter((resonator) => {
+        if (!isRealData(resonator)) return false;
         const matchesQuery = resonator.name
           .toLocaleLowerCase("fr")
           .includes(query.toLocaleLowerCase("fr").trim());
@@ -200,12 +204,7 @@ export function CharacterBoxApp() {
                   className="group overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] text-left transition hover:-translate-y-0.5 hover:border-[var(--accent-strong)]"
                 >
                   <div className="flex gap-4 p-5">
-                    <div
-                      className="grid h-20 w-20 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#283343] to-[#121720] text-2xl font-semibold text-[var(--accent)]"
-                      aria-hidden="true"
-                    >
-                      {resonator.name.slice(0, 2).toUpperCase()}
-                    </div>
+                    <ResonatorPortrait resonator={resonator} size="card" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <h2 className="truncate font-semibold">
@@ -337,7 +336,7 @@ function Picker({
   return (
     <ModalShell
       title="Ajouter un Resonator"
-      subtitle="Catalogue local · les données réelles restent distinguées des fixtures techniques."
+      subtitle="Catalogue local · seuls les Resonators réels sont proposés."
       onClose={onClose}
     >
       <div className="grid gap-3 border-b border-[var(--line)] p-5 sm:grid-cols-[1fr_13rem]">
@@ -379,9 +378,7 @@ function Picker({
               key={resonator.id}
               className="flex items-center gap-4 rounded-xl border border-[var(--line)] bg-black/10 p-4"
             >
-              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-xl bg-[#222a37] font-semibold text-[var(--accent)]">
-                {resonator.name.slice(0, 2).toUpperCase()}
-              </div>
+              <ResonatorPortrait resonator={resonator} size="picker" />
               <div className="min-w-0 flex-1">
                 <h3 className="truncate font-semibold">{resonator.name}</h3>
                 <p className="mt-1 text-xs text-[var(--muted)]">
@@ -425,8 +422,10 @@ function BuildEditor({
   const resonator = resonators.find((item) => item.id === build.resonatorId)!;
   const preset = presets.find((item) => item.id === build.sourcePresetId);
   const compatibleWeapons = weapons.filter(
-    (weapon) => weapon.type === resonator.weaponType,
+    (weapon) => weapon.type === resonator.weaponType && isRealData(weapon),
   );
+  const availableSonatas = sonatas.filter(isRealData);
+  const availableMainEchoes = mainEchoes.filter(isRealData);
   const numberField = (
     value: number,
     setValue: (value: number) => void,
@@ -438,9 +437,19 @@ function BuildEditor({
       max={options?.max}
       step="any"
       value={value}
-      onChange={(event) =>
-        setValue(Math.max(options?.min ?? 0, Number(event.target.value) || 0))
-      }
+      onChange={(event) => {
+        const minimum = options?.min ?? 0;
+        const parsed = Number(event.target.value);
+        const bounded = Math.max(
+          minimum,
+          Number.isFinite(parsed) ? parsed : minimum,
+        );
+        setValue(
+          options?.max === undefined
+            ? bounded
+            : Math.min(options.max, bounded),
+        );
+      }}
       className="w-full rounded-lg border border-[var(--line)] bg-black/20 px-3 py-2 text-white"
     />
   );
@@ -525,22 +534,16 @@ function BuildEditor({
           <div className="grid gap-4 sm:grid-cols-3">
             {field(
               "Arme compatible",
-              <select
+              <CatalogChoice
                 value={build.weapon.weaponId}
-                onChange={(event) =>
+                options={compatibleWeapons}
+                onChange={(weaponId) =>
                   onChange({
                     ...build,
-                    weapon: { ...build.weapon, weaponId: event.target.value },
+                    weapon: { ...build.weapon, weaponId },
                   })
                 }
-                className="rounded-lg border border-[var(--line)] bg-[#0e1219] px-3 py-2 text-white"
-              >
-                {compatibleWeapons.map((weapon) => (
-                  <option key={weapon.id} value={weapon.id}>
-                    {weapon.name}
-                  </option>
-                ))}
-              </select>,
+              />,
             )}
             {field(
               "Niveau",
@@ -577,6 +580,7 @@ function BuildEditor({
                 ["Crit DMG (%)", "critDamage"],
                 ["Energy Regen (%)", "energyRegen"],
                 ["Healing Bonus (%)", "healingBonus"],
+                ["Tune Break Boost (%)", "tuneBreakBoost"],
               ] as const
             ).map(([label, key]) =>
               field(
@@ -632,35 +636,19 @@ function BuildEditor({
           <div className="grid gap-4 sm:grid-cols-2">
             {field(
               "Sonata",
-              <select
+              <CatalogChoice
                 value={build.sonataId}
-                onChange={(event) =>
-                  onChange({ ...build, sonataId: event.target.value })
-                }
-                className="rounded-lg border border-[var(--line)] bg-[#0e1219] px-3 py-2 text-white"
-              >
-                {sonatas.map((sonata) => (
-                  <option key={sonata.id} value={sonata.id}>
-                    {sonata.name}
-                  </option>
-                ))}
-              </select>,
+                options={availableSonatas}
+                onChange={(sonataId) => onChange({ ...build, sonataId })}
+              />,
             )}
             {field(
               "Main Echo",
-              <select
+              <CatalogChoice
                 value={build.mainEchoId}
-                onChange={(event) =>
-                  onChange({ ...build, mainEchoId: event.target.value })
-                }
-                className="rounded-lg border border-[var(--line)] bg-[#0e1219] px-3 py-2 text-white"
-              >
-                {mainEchoes.map((echo) => (
-                  <option key={echo.id} value={echo.id}>
-                    {echo.name}
-                  </option>
-                ))}
-              </select>,
+                options={availableMainEchoes}
+                onChange={(mainEchoId) => onChange({ ...build, mainEchoId })}
+              />,
             )}
           </div>
           {preset && (
@@ -697,6 +685,83 @@ function BuildEditor({
         </div>
       </div>
     </ModalShell>
+  );
+}
+
+function CatalogChoice({
+  value,
+  options,
+  onChange,
+}: {
+  value?: string;
+  options: readonly { id: string; name: string }[];
+  onChange: (id: string) => void;
+}) {
+  if (options.length === 0) {
+    return (
+      <span className="rounded-lg border border-dashed border-[var(--line)] px-3 py-2 font-normal text-[var(--muted)]">
+        Aucune option configurée
+      </span>
+    );
+  }
+  if (options.length === 1) {
+    return (
+      <span className="rounded-lg border border-[var(--line)] bg-black/10 px-3 py-2 font-normal text-white">
+        {options[0].name}
+      </span>
+    );
+  }
+  return (
+    <select
+      value={value ?? ""}
+      onChange={(event) => onChange(event.target.value)}
+      className="rounded-lg border border-[var(--line)] bg-[#0e1219] px-3 py-2 text-white"
+    >
+      {options.map((option) => (
+        <option key={option.id} value={option.id}>
+          {option.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function ResonatorPortrait({
+  resonator,
+  size,
+}: {
+  resonator: (typeof resonators)[number];
+  size: "picker" | "card";
+}) {
+  const [failed, setFailed] = useState(false);
+  const dimensions = size === "card" ? "h-20 w-20" : "h-16 w-16";
+  const className = `relative grid ${dimensions} shrink-0 place-items-center overflow-hidden rounded-xl bg-gradient-to-br from-[#283343] to-[#121720]`;
+
+  if (!resonator.portrait || failed) {
+    return (
+      <div
+        className={className}
+        role="img"
+        aria-label={`Portrait de ${resonator.name} indisponible`}
+      >
+        <span className="px-2 text-center text-[10px] font-semibold leading-4 text-[var(--muted)]">
+          Image indisponible
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      <Image
+        src={resonator.portrait.src}
+        alt={resonator.portrait.alt}
+        fill
+        sizes={size === "card" ? "80px" : "64px"}
+        className="object-cover"
+        onError={() => setFailed(true)}
+      />
+    </div>
   );
 }
 

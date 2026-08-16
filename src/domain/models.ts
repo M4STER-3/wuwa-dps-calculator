@@ -38,6 +38,9 @@ export const damageTypes = [
 export type Sequence = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type Rarity = 4 | 5;
 
+export const resonanceModes = ["tune-rupture", "fusion-burst"] as const;
+export type ResonanceMode = (typeof resonanceModes)[number];
+
 export const confidenceLevels = [
   "verified-game-data",
   "multi-source-verified",
@@ -142,7 +145,7 @@ export interface CombatRotation {
 export interface ResonatorCombatData {
   level10Only: true;
   forms: readonly string[];
-  modes: readonly string[];
+  modes: readonly ResonanceMode[];
   resources: readonly CombatResource[];
   actions: readonly CombatAction[];
   effects: readonly CombatEffect[];
@@ -169,7 +172,7 @@ export interface Resonator {
     energyRegen?: number;
   }>;
   minorFortes?: readonly string[];
-  portrait?: { src: string; alt: string; attribution?: string };
+  portrait?: { src: `/${string}`; alt: string; attribution?: string };
   skillNames: Readonly<Record<SkillType, string>>;
   resonanceChain: ReadonlyArray<{
     sequence: Exclude<Sequence, 0>;
@@ -217,6 +220,7 @@ export interface FinalStats {
   critDamage: number;
   energyRegen: number;
   healingBonus: number;
+  tuneBreakBoost: number;
   elementalDamageBonus: Record<Element, number>;
   damageTypeBonus: Record<(typeof damageTypes)[number], number>;
 }
