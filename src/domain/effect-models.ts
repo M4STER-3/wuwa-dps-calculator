@@ -1,5 +1,5 @@
 import type { DamageType } from "./damage-engine";
-import type { Element, SourceMetadata } from "./models";
+import type { Element, SourceMetadata, TalentLevel } from "./models";
 import type { CombatAction } from "./models";
 
 export const effectSourceTypes = [
@@ -72,8 +72,8 @@ export type TriggerOperation =
   | { kind: "start-cooldown"; cooldown: CooldownDefinition }
   | { kind: "emit-event"; eventKind: CombatEventKind; delaySeconds: number }
   | { kind: "emit-action"; action: EmittedActionDefinition };
-export interface TriggerDefinition { id: string; event: CombatEventKind; predicates?: readonly CombatPredicate[]; operations: readonly TriggerOperation[]; cooldown?: CooldownDefinition; maxTriggers?: number; triggerCountScope?: TriggerCountScope; externalContextRequired?: boolean; }
-export interface StatusDefinition { id: string; label: string; maxStacks: number; durationSeconds?: number; periodic?: { intervalSeconds: number; maxTicks: number; emittedAction: EmittedActionDefinition; consumeStacks?: number | "all" }; transformAtMaxTo?: string; }
+export interface TriggerDefinition { id: string; event: CombatEventKind; predicates?: readonly CombatPredicate[]; operations: readonly TriggerOperation[]; cooldown?: CooldownDefinition; /** Exact Sequence-owned cooldown override; missing entries use cooldown. */ cooldownSecondsBySequence?: Readonly<Partial<Record<number, number>>>; maxTriggers?: number; triggerCountScope?: TriggerCountScope; externalContextRequired?: boolean; /** Attributes operations to the data-owned source rather than a foreign triggering actor. */ operationOwner?: "definition-source"; }
+export interface StatusDefinition { id: string; label: string; maxStacks: number; durationSeconds?: number; /** Target-local runtime formula contributions; status ownership is preserved. */ modifiers?: readonly EffectModifier[]; periodic?: { intervalSeconds: number; maxTicks: number; emittedAction: EmittedActionDefinition; consumeStacks?: number | "all" }; transformAtMaxTo?: string; }
 
 export type EffectSelector =
   | { kind: "element"; anyOf: readonly Element[] }
@@ -111,7 +111,7 @@ export interface EffectModifier extends LinearModifierValue {
 }
 
 export interface RuntimeStatModifier { kind: "runtime-stat"; stat: RuntimeStat; mode: RuntimeStatModifierKind; stacking: StackingPolicy; value: ValueExpression; }
-export interface MotionValueModifier { kind: "motion-value"; mode: "additive-percent" | "multiplier"; stacking: StackingPolicy; value: ValueExpression; }
+export interface MotionValueModifier { kind: "motion-value"; mode: "additive-percent" | "relative-additive" | "multiplier"; stacking: StackingPolicy; value: ValueExpression; /** Optional reusable distribution of an additive total across hit groups. Weights must sum to 1. */ groupDistribution?: readonly { groupIndex: number; weight: number }[]; }
 export interface ActionReplacementModifier { kind: "action-replacement"; actionId: string; replacementActionId: string; condition: CombatPredicate; }
 export interface DamageTypeReplacementModifier { kind: "damage-type-replacement"; damageType: DamageType; condition: CombatPredicate; }
 
@@ -142,6 +142,8 @@ export interface EffectDefinition {
     metadata?: SourceMetadata;
   };
   target: EffectTargetScope;
+  /** Stored Game Data whose execution requires a Team Engine. */
+  teamContextRequired?: boolean;
   /** Runtime activation is explicit; missing policy is never interpreted as active. */
   activationPolicy?: "initially-active" | "triggered" | "manual-only";
   rules: readonly EffectRuleDefinition[];
@@ -154,7 +156,7 @@ export interface EffectDefinition {
 
 export interface ActionDefinitionV02 {
   action: CombatAction;
-  multipliersByTalentLevel?: Readonly<Record<number, CombatAction["multipliers"]>>;
+  multipliersByTalentLevel?: Readonly<Partial<Record<TalentLevel, CombatAction["multipliers"]>>>;
   requirements?: readonly CombatPredicate[];
 }
 
