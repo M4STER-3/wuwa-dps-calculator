@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
@@ -10,22 +10,14 @@ const MANIFEST_PATH = path.join(OUTPUT_ROOT, "manifest.json");
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
 const SOURCES = {
-  characters: {
-    endpoint: "/character",
-    collectionKeys: ["roleList"],
-  },
-  weapons: {
-    endpoint: "/weapon",
-    collectionKeys: ["weapons"],
-  },
-  echoes: {
-    endpoint: "/echo",
-    collectionKeys: ["Echo", "echoes"],
-  },
-  monsters: {
-    endpoint: "/monster",
-    collectionKeys: ["monsterList", "monsters"],
-  },
+  characters: { endpoint: "/character", collectionKeys: ["roleList"], detail: true },
+  weapons: { endpoint: "/weapon", collectionKeys: ["weapons"], detail: true },
+  echoes: { endpoint: "/echo", collectionKeys: ["Echo", "echoes"], detail: true },
+  monsters: { endpoint: "/monster", collectionKeys: ["monsterList", "monsters"], detail: true },
+  items: { endpoint: "/item", collectionKeys: ["items", "itemList", "Item"] },
+  namecards: { endpoint: "/namecard", collectionKeys: ["namecards", "namecardList", "Namecard"] },
+  phones: { endpoint: "/phone", collectionKeys: ["phones", "phoneList", "Phone"] },
+  titles: { endpoint: "/title", collectionKeys: ["titles", "titleList", "Title"] },
 };
 
 const args = new Set(process.argv.slice(2));
@@ -64,7 +56,7 @@ function looksLikeImageField(key, value) {
   const lowerKey = key.toLowerCase();
   const lowerValue = value.toLowerCase().split("?")[0];
   return (
-    /(?:icon|image|picture|portrait|head|avatar|sprite|art|logo|texture)/i.test(lowerKey) ||
+    /(?:icon|image|picture|portrait|head|avatar|sprite|art|logo|texture|bg|background)/i.test(lowerKey) ||
     /\.(?:png|jpe?g|webp|gif|avif)$/i.test(lowerValue)
   );
 }
@@ -93,11 +85,17 @@ function getCollection(payload, collectionKeys) {
   for (const key of collectionKeys) {
     if (Array.isArray(payload?.[key])) return payload[key];
   }
-  throw new Error(`Unexpected Encore response; none of [${collectionKeys.join(", ")}] is an array.`);
+
+  const candidates = Object.values(payload ?? {}).filter(
+    (value) => Array.isArray(value) && value.some((item) => item && typeof item === "object"),
+  );
+  if (candidates.length === 1) return candidates[0];
+
+  throw new Error(`Unexpected Encore response; none of [${collectionKeys.join(", ")}] identifies the entity collection.`);
 }
 
 function getEntityId(entity) {
-  return normalizeId(entity?.Id ?? entity?.id ?? entity?.ID);
+  return normalizeId(entity?.Id ?? entity?.id ?? entity?.ID ?? entity?.RoleId ?? entity?.ItemId);
 }
 
 function getEntityName(entity) {
@@ -124,7 +122,8 @@ function detectImage(buffer, contentType) {
   const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   const isGif = buffer.subarray(0, 6).toString("ascii") === "GIF87a" || buffer.subarray(0, 6).toString("ascii") === "GIF89a";
   const isWebp = buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP";
-  const isAvif = buffer.subarray(4, 12).toString("ascii").includes("ftypavif") || buffer.subarray(4, 12).toString("ascii").includes("ftypavis");
+  const brand = buffer.subarray(4, 12).toString("ascii");
+  const isAvif = brand === "ftypavif" || brand === "ftypavis";
 
   if (isPng && (!ct || ct === "image/png" || ct === "application/octet-stream")) return { extension: "png", contentType: "image/png" };
   if (isJpeg && (!ct || ct === "image/jpeg" || ct === "image/jpg" || ct === "application/octet-stream")) return { extension: "jpg", contentType: "image/jpeg" };
@@ -154,6 +153,15 @@ async function downloadImage(url) {
   return { buffer, ...detected };
 }
 
+async function fileExists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function loadExistingManifest() {
   try {
     return JSON.parse(await readFile(MANIFEST_PATH, "utf8"));
@@ -164,6 +172,20 @@ async function loadExistingManifest() {
 
 function manifestAssetKey(fieldPath) {
   return safeSegment(fieldPath.replace(/^root\./, "").replaceAll(".", "-"));
+}
+
+async function collectEntityImages(entity, category, config, sourceId) {
+  const images = collectImageUrls(entity, "list");
+  if (!config.detail) return images;
+
+  const detailUrl = `${API_BASE}${config.endpoint}/${encodeURIComponent(sourceId)}?v=${encodeURIComponent(GAME_VERSION)}`;
+  try {
+    const detail = await fetchJson(detailUrl);
+    collectImageUrls(detail, "detail", images);
+  } catch (error) {
+    console.warn(`[${category}] detail unavailable for ${sourceId}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  return images;
 }
 
 async function main() {
@@ -179,6 +201,7 @@ async function main() {
 
   let discovered = 0;
   let downloaded = 0;
+  let reused = 0;
   let failed = 0;
 
   for (const [category, config] of Object.entries(SOURCES)) {
@@ -196,7 +219,7 @@ async function main() {
       }
 
       const entityKey = `${category}:${sourceId}`;
-      const imageUrls = collectImageUrls(entity);
+      const imageUrls = await collectEntityImages(entity, category, config, sourceId);
       const entry = {
         sourceId,
         entityKey,
@@ -210,8 +233,12 @@ async function main() {
         const previous = previousManifest?.entities?.[category]?.[sourceId]?.assets?.[assetKey];
 
         if (!force && previous?.sourceUrl === imageUrl && previous?.path) {
-          entry.assets[assetKey] = previous;
-          continue;
+          const previousPath = path.resolve("public", previous.path.replace(/^\//, ""));
+          if (await fileExists(previousPath)) {
+            entry.assets[assetKey] = previous;
+            reused++;
+            continue;
+          }
         }
 
         if (dryRun) {
@@ -256,7 +283,7 @@ async function main() {
     await writeFile(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
   }
 
-  console.log(`\nDiscovered: ${discovered}; downloaded: ${downloaded}; failed: ${failed}; dry-run: ${dryRun}`);
+  console.log(`\nDiscovered: ${discovered}; downloaded: ${downloaded}; reused: ${reused}; failed: ${failed}; dry-run: ${dryRun}`);
   if (failed > 0) process.exitCode = 1;
 }
 
