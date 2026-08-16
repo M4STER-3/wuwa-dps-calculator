@@ -6,7 +6,7 @@ export const effectSourceTypes = [
   "resonator", "weapon", "sonata", "echo", "resonance-chain", "system",
 ] as const;
 export type EffectSourceType = (typeof effectSourceTypes)[number];
-export type EffectTargetScope = "self" | "enemy" | "team" | "other-team-members";
+export type EffectTargetScope = "self" | "enemy" | "team" | "other-team-members" | "incoming-resonator" | "active-resonator";
 export type EffectAccounting = "runtime" | "already-in-final-stats" | "informational";
 export type StackingPolicy = "additive" | "highest" | "override";
 
@@ -48,6 +48,8 @@ export interface EffectLifecycle {
   uniqueness?: "replace-existing" | "refresh-existing" | "reject-duplicate" | "same-name";
   exclusiveGroup?: string;
   stacks?: { kind: "shared" | "independent-expirations"; max: number; initial?: number };
+  /** A structured, event-driven early end; never inferred from descriptive text. */
+  endOnSwitchOut?: "affected-recipient" | "owner";
 }
 export type CooldownScope = "global" | "owner" | "source" | "action" | "target" | "action-target" | "source-target" | "element" | "custom";
 export interface CooldownDefinition { seconds: number; scope: CooldownScope; customKey?: string; maxTriggers?: number; }

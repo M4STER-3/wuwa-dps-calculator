@@ -139,12 +139,13 @@ export const aemeath: Resonator = {
   combat: {
     level10Only: true,
     forms: ["Aemeath", "Mech"],
+    defaultForm: "Aemeath",
     modes: ["tune-rupture", "fusion-burst"],
     resources: [
-      { id: "synchronization-rate", name: "Synchronization Rate", cap: 200, notes: ["Intro +40; Overdrive +30; Heavy Charged II sous Instant Response + Unbound restaure 200.", "Gains individuels des Basics, Mid-air, Dodge Counters et Sync Strikes: inconnus."] },
-      { id: "resonance-rate", name: "Resonance Rate", cap: 4, notes: ["Seraphic Duet +1; Overdrive +1; Starlume Acceleration ajoute +1 à Overdrive."] },
-      { id: "starflux", name: "Starflux", cap: 600, naturalRegeneration: { value: null, confidence: "unknown", sourceNote: "Taux non vérifié." }, notes: ["Starflux Thrust est disponible en Mech au-dessus de 200 puis consomme continuellement Starflux; débit inconnu."] },
-      { id: "resonance-energy", name: "Resonance Energy", cap: 125, notes: ["125 retenu comme valeur multi-source. Wuthering.gg affiche aussi 140 dans un en-tête contradictoire; divergence documentée dans la source."] },
+      { id: "synchronization-rate", name: "Synchronization Rate", cap: 200, semantic: "character-resource", notes: ["Intro +40; Overdrive +30; Heavy Charged II sous Instant Response + Unbound restaure 200.", "Gains individuels des Basics, Mid-air, Dodge Counters et Sync Strikes: inconnus."] },
+      { id: "resonance-rate", name: "Resonance Rate", cap: 4, semantic: "character-resource", notes: ["Seraphic Duet +1; Overdrive +1; Starlume Acceleration ajoute +1 à Overdrive."] },
+      { id: "starflux", name: "Starflux", cap: 600, semantic: "character-resource", naturalRegeneration: { value: null, confidence: "unknown", sourceNote: "Taux non vérifié." }, notes: ["Starflux Thrust est disponible en Mech au-dessus de 200 puis consomme continuellement Starflux; débit inconnu."] },
+      { id: "resonance-energy", name: "Resonance Energy", cap: 125, semantic: "resonance-energy", notes: ["125 retenu comme valeur multi-source. Wuthering.gg affiche aussi 140 dans un en-tête contradictoire; divergence documentée dans la source."] },
     ],
     actions: aemeathActions,
     effects: aemeathEffects,
