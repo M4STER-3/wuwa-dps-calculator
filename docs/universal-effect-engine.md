@@ -80,9 +80,9 @@ Les fixtures testent +20 % Fusion DMG (Fusion seulement), +25 % Liberation DMG (
 
 ## Données Aemeath utilisées comme validation générique
 
-- **Everbright Polestar R1** : une définition équipée donne +12 % All DMG. Une seconde définition active, documentée avec condition externe et durée de 8 s, possède une règle Liberation DEF Ignore `0.32` et une règle Fusion RES Ignore `0.10`.
-- **Trailblazing Star 5pc** : lorsque l'instance est fournie active, deux règles donnent +20 % Crit Rate et +20 % Fusion DMG. La condition et les 8 s ne sont que documentaires.
-- **Sigillum** : une règle Damage Type donne +25 % Resonance Liberation DMG ; elle matche Finale et ignore une Basic Attack.
+- **Everbright Polestar R1** : le +12 % All DMG permanent de l'arme est `already-in-final-stats` et ne produit donc aucun modifier runtime. Une seconde définition active, documentée avec condition externe et durée de 8 s, possède une règle runtime Liberation DEF Ignore `0.32` et une règle runtime Fusion RES Ignore `0.10`.
+- **Trailblazing Star** : le 2pc n'est pas encore structuré. Lorsqu'il le sera, son +10 % Fusion DMG permanent devra être `already-in-final-stats`. Pour le 5pc, lorsque l'instance est fournie active, deux règles runtime donnent +20 % Crit Rate et +20 % Fusion DMG; la condition et les 8 s ne sont que documentaires.
+- **Sigillum** : le +25 % Resonance Liberation DMG permanent du Main Echo est `already-in-final-stats`, car il est déjà inclus dans `finalStats.damageTypeBonus`. Il est audité sans contribution runtime; le skill actif de l'Echo reste une mécanique séparée.
 - **Before All Sounds** : la définition provenant du Resonator sélectionne Heavy Attack et donne +200 % Damage Amplification. L'appelant affirme qu'Instant Response est actif ; le resolver ne le vérifie pas.
 
 Ces objets n'ont aucun branchement par id dans le resolver. `CombatEffect` conserve tous ses champs textuels historiques et accepte maintenant une `structuredEffect` optionnelle, ce qui permet une migration progressive du catalogue.

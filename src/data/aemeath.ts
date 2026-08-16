@@ -179,7 +179,7 @@ export const aemeath: Resonator = {
 
 const polestarEffects: readonly CombatEffect[] = [
   effect({ id: "everbright-r1-base", name: "Everbright Polestar R1", sourceId: "everbright-polestar", trigger: "Équipée", target: "self", effect: "+12 % All-Attribute DMG Bonus.", value: 12, valueType: "damage-bonus",
-    structuredEffect: structured("everbright-r1-base", "Everbright Polestar R1", "everbright-polestar", "weapon", "self", [{ id: "all-damage", label: "+12% All-Attribute DMG", accounting: "runtime", modifiers: [{ kind: "all-damage-bonus", value: 12, stacking: "additive" }] }]) }),
+    structuredEffect: structured("everbright-r1-base", "Everbright Polestar R1", "everbright-polestar", "weapon", "self", [{ id: "all-damage", label: "+12% All-Attribute DMG", accounting: "already-in-final-stats", modifiers: [{ kind: "all-damage-bonus", value: 12, stacking: "additive" }] }]) }),
   effect({ id: "everbright-r1-liberation", name: "Everbright Polestar R1 — Polestar", sourceId: "everbright-polestar", trigger: "Le porteur inflige Tune Rupture - Shifting ou Fusion Burst", target: "self", effect: "Resonance Liberation DMG ignore 32 % DEF et 10 % Fusion RES.", durationSeconds: 8, refreshRule: "Nouveau déclenchement selon le passif.",
     structuredEffect: structured("everbright-r1-liberation", "Everbright Polestar R1 — Polestar", "everbright-polestar", "weapon", "self", [
       { id: "liberation-def-ignore", label: "Liberation DEF Ignore", accounting: "runtime", selectors: [{ kind: "damage-type", anyOf: ["resonanceLiberation"] }], modifiers: [{ kind: "defense-ignore", value: 0.32, stacking: "additive" }] },
@@ -212,7 +212,7 @@ export const sigillum: MainEcho = {
   skillDescription: "Summon Echo: 68.40 % puis 205.20 % Fusion DMG; cooldown 20 s. Main Echo d’Aemeath: +25 % Resonance Liberation DMG Bonus.",
   action: action({ id: "sigillum-skill", name: "Sigillum Echo Skill", talent: "echoSkill", damageType: "echoSkill", multipliers: [{ percent: 68.4, hits: 1 }, { percent: 205.2, hits: 1 }], cooldownSeconds: 20 }),
   effects: [effect({ id: "sigillum-main-aemeath", name: "Sigillum Main Echo — Aemeath", sourceId: "sigillum", trigger: "Sigillum équipé en Main Echo par Aemeath", target: "self", effect: "+25 % Resonance Liberation DMG Bonus.", value: 25, valueType: "damage-bonus",
-    structuredEffect: structured("sigillum-main-aemeath", "Sigillum Main Echo — Aemeath", "sigillum", "echo", "self", [{ id: "liberation-damage", label: "+25% Resonance Liberation DMG", accounting: "runtime", selectors: [{ kind: "damage-type", anyOf: ["resonanceLiberation"] }], modifiers: [{ kind: "damage-type-bonus", value: 25, stacking: "additive" }] }]) })],
+    structuredEffect: structured("sigillum-main-aemeath", "Sigillum Main Echo — Aemeath", "sigillum", "echo", "self", [{ id: "liberation-damage", label: "+25% Resonance Liberation DMG", accounting: "already-in-final-stats", selectors: [{ kind: "damage-type", anyOf: ["resonanceLiberation"] }], modifiers: [{ kind: "damage-type-bonus", value: 25, stacking: "additive" }] }]) })],
   source: aemeathGameSource,
 };
 

@@ -96,11 +96,24 @@ describe("Universal Effect & Modifier Engine V0.1 — generic fixtures", () => {
 });
 
 describe("Universal engine — current Aemeath data validation", () => {
-  it("resolves Everbright R1 rules for Finale while retaining an auditable source", () => {
-    const base = everbrightPolestar.effects![0]; const conditional = everbrightPolestar.effects![1];
-    const result = resolveActiveEffects([real(base), real(conditional)], context);
-    expect(result.damageModifiers).toMatchObject({ allDamageBonusPercent: 12, defenseIgnore: 0.32, resistanceIgnore: 0.1 });
-    expect(result.audit).toHaveLength(3);
+  it("audits Everbright's permanent +12% without emitting a runtime contribution", () => {
+    const result = resolveActiveEffects([real(everbrightPolestar.effects![0])], context);
+    expect(result.damageModifiers).toEqual({});
+    expect(result.audit).toEqual([
+      expect.objectContaining({
+        sourceId: "everbright-polestar",
+        ruleId: "all-damage",
+        status: "ignored",
+        reason: "already-in-final-stats",
+        contributions: [],
+      }),
+    ]);
+  });
+
+  it("keeps Everbright's conditional DEF and Fusion RES Ignore at runtime", () => {
+    const result = resolveActiveEffects([real(everbrightPolestar.effects![1])], context);
+    expect(result.damageModifiers).toEqual({ defenseIgnore: 0.32, resistanceIgnore: 0.1 });
+    expect(result.audit).toHaveLength(2);
     expect(result.audit.every((entry) => entry.sourceId === "everbright-polestar" && entry.status === "matched")).toBe(true);
   });
 
@@ -109,10 +122,17 @@ describe("Universal engine — current Aemeath data validation", () => {
     expect(result.damageModifiers).toMatchObject({ critRateBonusPercent: 20, additionalElementalDamageBonusPercent: 20 });
   });
 
-  it("applies Sigillum to Finale but not Basic Attack", () => {
+  it("audits permanent Sigillum without adding its Liberation bonus at runtime", () => {
     const instance = real(sigillum.effects![0]);
-    expect(resolveActiveEffects([instance], context).damageModifiers.additionalDamageTypeBonusPercent).toBe(25);
-    expect(resolveActiveEffects([instance], { ...context, damageType: "basicAttack" }).audit[0]).toMatchObject({ status: "ignored", reason: "damage-type-mismatch" });
+    const result = resolveActiveEffects([instance], context);
+    expect(result.damageModifiers).toEqual({});
+    expect(result.audit[0]).toMatchObject({
+      sourceId: "sigillum",
+      ruleId: "liberation-damage",
+      status: "ignored",
+      reason: "already-in-final-stats",
+      contributions: [],
+    });
   });
 
   it("resolves Before All Sounds only for an already-active Heavy instance", () => {
