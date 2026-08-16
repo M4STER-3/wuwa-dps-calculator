@@ -25,8 +25,8 @@ Example manifest shape:
         "entityKey": "characters:1102",
         "name": "Example",
         "assets": {
-          "roleheadicon": {
-            "path": "/assets/wuwa/characters/1102/roleheadicon.webp",
+          "detail-roleheadicon": {
+            "path": "/assets/wuwa/characters/1102/detail-roleheadicon.webp",
             "sourceUrl": "https://...",
             "contentType": "image/webp",
             "bytes": 12345,
@@ -39,18 +39,24 @@ Example manifest shape:
 }
 ```
 
-Future domain integration should add an explicit source-ID mapping to the relevant game entity (resonator, weapon, echo, etc.) and resolve images through this manifest. Do not use display names as the primary join key.
+Future domain integration should add an explicit source-ID mapping to the relevant game entity (resonator, weapon, echo, item/stat icon, etc.) and resolve images through this manifest. Do not use display names as the primary join key.
+
+The asset key is derived from the API field path. This allows one entity to keep several distinct images (portrait, head icon, skill icon, background, and so on) without overwriting them.
 
 ## Current categories
 
-The first version reads the Encore.moe Release collections for:
+The first version reads the Encore.moe `Release` collections for:
 
 - characters
 - weapons
 - echoes
 - monsters
+- items
+- namecards
+- phones
+- titles
 
-For each entity it recursively discovers image-like fields present in the collection payload, so multiple variants can coexist under distinct asset keys instead of overwriting one another.
+Characters, weapons, echoes, and monsters also query their documented detail endpoint by stable ID so image variants that are absent from the list response can still be discovered. This is especially useful for future character/skill/stat presentation.
 
 ## Safety boundaries
 
