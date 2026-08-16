@@ -1,5 +1,7 @@
 # Damage Engine V0.1
 
+The externally calibrated fixture and the strict separation between damage and rotation confidence are documented in [`external-damage-calibration.md`](./external-damage-calibration.md).
+
 ## Périmètre
 
 Le Damage Engine V0.1 calcule uniquement les dégâts déterministes d'une **action individuelle standard**. Il ne somme pas une rotation, ne lit pas les timestamps, n'active pas automatiquement les buffs et ne calcule ni DPS ni Team DPS.
