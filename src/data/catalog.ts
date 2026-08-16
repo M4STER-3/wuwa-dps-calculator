@@ -13,6 +13,7 @@ import type {
   Weapon,
 } from "@/domain/models";
 import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa";
+import { fallacyOfNoReturn, rejuvenatingGlow, variation, verina, verinaPreset } from "./verina";
 
 const fixtureSource = {
   kind: "technical-fixture" as const,
@@ -32,6 +33,7 @@ const skillNames = {
 export const resonators: readonly Resonator[] = [
   aemeath,
   chisa,
+  verina,
   {
     id: "fixture-fusion-pistols",
     name: "Resonator démo · Fusion",
@@ -47,6 +49,7 @@ export const resonators: readonly Resonator[] = [
 export const weapons: readonly Weapon[] = [
   everbrightPolestar,
   kumokiri,
+  variation,
   {
     id: "fixture-pistols",
     name: "Pistolets de démonstration",
@@ -59,12 +62,14 @@ export const weapons: readonly Weapon[] = [
 export const sonatas: readonly Sonata[] = [
   trailblazingStar,
   threadOfSeveredFate,
+  rejuvenatingGlow,
   { id: "fixture-sonata", name: "Sonata à renseigner", source: fixtureSource },
 ];
 
 export const mainEchoes: readonly MainEcho[] = [
   sigillum,
   threnodianLeviathan,
+  fallacyOfNoReturn,
   {
     id: "fixture-main-echo",
     name: "Main Echo à renseigner",
@@ -130,5 +135,6 @@ const fixturePreset: RecommendedBuildPreset = {
 export const presets: readonly RecommendedBuildPreset[] = [
   aemeathPreset,
   chisaPreset,
+  verinaPreset,
   fixturePreset,
 ];

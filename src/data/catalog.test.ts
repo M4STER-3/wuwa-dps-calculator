@@ -74,12 +74,12 @@ describe("cohérence du catalogue", () => {
       sonatas
         .filter((entry) => entry.source.kind !== "technical-fixture")
         .map((entry) => entry.id),
-    ).toEqual(["trailblazing-star", "thread-of-severed-fate"]);
+    ).toEqual(["trailblazing-star", "thread-of-severed-fate", "rejuvenating-glow"]);
     expect(
       mainEchoes
         .filter((entry) => entry.source.kind !== "technical-fixture")
         .map((entry) => entry.name),
-    ).toEqual(["Sigillum", "Reminiscence: Threnodian - Leviathan"]);
+    ).toEqual(["Sigillum", "Reminiscence: Threnodian - Leviathan", "Fallacy of No Return"]);
   });
 
   it("documente le kit Lv10 et les inconnues temporelles sans timeline DPS", () => {
