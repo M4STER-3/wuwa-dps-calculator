@@ -49,7 +49,11 @@ export interface ActionOutcomeDefinition {
   target: "self" | "nearby-resonators";
 }
 export type ActionResourceStage = "before-action" | "after-action";
-export interface ActionResourceOperation { resourceId: string; operation: "consume" | "gain"; amount: number; stage: ActionResourceStage; }
+export interface ActionResourceOperation {
+  resourceId: string; operation: "consume" | "gain"; amount: number; stage: ActionResourceStage;
+  /** Sparse exact replacement amounts gated by Resonance Sequence; never interpolated. */
+  amountBySequence?: Readonly<Partial<Record<Sequence, number>>>;
+}
 
 export const confidenceLevels = [
   "verified-game-data",
@@ -206,7 +210,7 @@ export interface Weapon {
   name: string;
   type: WeaponType;
   rarity: Rarity;
-  level90Stats?: { baseAttack: number; displayBaseAttack?: number; critRate?: number };
+  level90Stats?: { baseAttack: number; displayBaseAttack?: number; critRate?: number; energyRegen?: number };
   effects?: readonly CombatEffect[];
   passiveDescription?: string;
   source: SourceMetadata;

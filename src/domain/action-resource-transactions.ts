@@ -29,6 +29,7 @@ export function resolveActionResourceTransaction(
   resources: Readonly<Record<string, ResourceView>>,
   operations: readonly ActionResourceOperation[],
   stage: ActionResourceStage,
+  sequence: number = 0,
 ): ActionResourceTransactionResult {
   const working: Record<string, ResourceView> = { ...resources };
   const audit: ActionResourceAuditEntry[] = [];
@@ -37,7 +38,11 @@ export function resolveActionResourceTransaction(
     return rejected(resources, "mixed-action-resource-stage", staged[0]?.resourceId ?? "");
   }
 
-  for (const operation of staged) {
+  for (const declared of staged) {
+    const exactSequence = Object.entries(declared.amountBySequence ?? {})
+      .filter(([required]) => Number(required) <= sequence)
+      .sort(([a], [b]) => Number(b) - Number(a))[0]?.[1];
+    const operation = { ...declared, amount: exactSequence ?? declared.amount };
     const view = working[operation.resourceId];
     if (!view) return rejected(resources, "missing-action-resource", operation.resourceId);
     if (!Number.isFinite(operation.amount) || operation.amount < 0 || !Number.isFinite(view.current) || !Number.isFinite(view.max) || view.max <= 0 || view.current < 0 || view.current > view.max) {
