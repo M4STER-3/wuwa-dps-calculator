@@ -34,7 +34,7 @@ export function evaluateValueExpression(expression: ValueExpression, context: Co
       case "subtract": { const left=visit(node.left,next), right=visit(node.right,next); if(left!==undefined&&right!==undefined)value=left-right; break; }
       case "clamp": { const x=visit(node.value,next); if(x!==undefined)value=Math.min(node.max,Math.max(node.min,x)); break; }
       case "cap": { const x=visit(node.value,next); if(x!==undefined)value=Math.min(node.max,x); break; }
-      case "stack-threshold": value=(options.stacks??0)>=node.threshold?visit(node.then,next):node.otherwise?visit(node.otherwise,next):0; break;
+      case "stack-threshold": if(options.stacks===undefined)break;value=options.stacks>=node.threshold?visit(node.then,next):node.otherwise?visit(node.otherwise,next):0; break;
     }
     if (value === undefined && diagnostics.length === 0) diagnostics.push({ code: "missing-variable", message: `Missing value for ${node.kind}.`, path: node.kind });
     if (value !== undefined && !Number.isFinite(value)) { diagnostics.push({ code: "invalid-expression", message: "Expression produced a non-finite value.", path: node.kind }); return; }
@@ -55,8 +55,8 @@ export function evaluatePredicate(p: CombatPredicate, c: CombatContext): Predica
   else if(p.kind==="resource")actual=c.resources?.[p.resourceId];
   else if(p.kind==="has-effect")actual=c.activeEffectIds?.includes(p.id);
   else if(p.kind==="state-active")actual=c.states?.includes(p.id);
-  else if(p.kind==="has-status")actual=c.statuses?.[p.id]??0;
-  else if(p.kind==="target-has-status")actual=c.targetStatuses?.[p.id]??0;
+  else if(p.kind==="has-status")actual=c.statuses===undefined?undefined:c.statuses[p.id]??0;
+  else if(p.kind==="target-has-status")actual=c.targetStatuses===undefined?undefined:c.targetStatuses[p.id]??0;
   else if(p.kind==="shield-active")actual=c.shieldActive;
   else if(p.kind==="on-field")actual=c.onField;
   else if(p.kind==="inside-domain")actual=c.domains?.includes(p.domainId);

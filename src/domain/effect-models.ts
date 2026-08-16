@@ -44,13 +44,14 @@ export type CombatPredicate =
 export interface EffectLifecycle {
   duration: { kind: "indefinite" } | { kind: "fixed"; seconds: number };
   refresh?: "no-refresh" | "reset-duration" | "reset-only-below-max-stacks" | "no-reset-at-max-stacks";
-  extension?: { seconds: number; limitSeconds: number };
+  extension?: { seconds: number; limitSeconds: number; maxExtensions?: number };
   uniqueness?: "replace-existing" | "refresh-existing" | "reject-duplicate" | "same-name";
   exclusiveGroup?: string;
   stacks?: { kind: "shared" | "independent-expirations"; max: number; initial?: number };
 }
 export type CooldownScope = "global" | "owner" | "source" | "action" | "target" | "action-target" | "source-target" | "element" | "custom";
 export interface CooldownDefinition { seconds: number; scope: CooldownScope; customKey?: string; maxTriggers?: number; }
+export type TriggerCountScope = "global" | "owner" | "target" | "owner-target" | "instance";
 
 export type CombatEventKind = "rotation-step-start" | "action-start" | "action-end" | "action-hit" |
   "damage-dealt" | "critical-hit" | "successful-dodge" | "intro" | "outro" | "switch-in" |
@@ -62,14 +63,16 @@ export type SnapshotPolicy = { stats: "trigger" | "hit" | "unknown"; stacks: "tr
 export interface EmittedActionDefinition { actionId: string; delaySeconds?: number; actorId?: string; damageOwnerId?: string; scalingOwnerId?: string; attribution?: "direct" | "echo" | "follow-up" | "coordinated" | "summon" | "status" | "tune"; snapshot: SnapshotPolicy; }
 export type TriggerOperation =
   | { kind: "activate-effect" | "refresh-effect" | "expire-effect"; effectId: string }
+  | { kind: "extend-effect"; effectId: string }
   | { kind: "gain-stacks" | "consume-stacks"; effectId: string; amount: ValueExpression | "all" }
+  | { kind: "clear-stacks"; effectId: string }
   | { kind: "resource"; operation: "gain" | "consume" | "set" | "set-max" | "consume-all" | "consume-up-to"; resourceId: string; amount?: ValueExpression }
   | { kind: "apply-status" | "remove-status"; statusId: string; targetId?: string; stacks?: ValueExpression }
   | { kind: "enter-state" | "exit-state" | "change-form"; stateId: string }
   | { kind: "start-cooldown"; cooldown: CooldownDefinition }
   | { kind: "emit-event"; eventKind: CombatEventKind; delaySeconds: number }
   | { kind: "emit-action"; action: EmittedActionDefinition };
-export interface TriggerDefinition { id: string; event: CombatEventKind; predicates?: readonly CombatPredicate[]; operations: readonly TriggerOperation[]; cooldown?: CooldownDefinition; maxTriggers?: number; externalContextRequired?: boolean; }
+export interface TriggerDefinition { id: string; event: CombatEventKind; predicates?: readonly CombatPredicate[]; operations: readonly TriggerOperation[]; cooldown?: CooldownDefinition; maxTriggers?: number; triggerCountScope?: TriggerCountScope; externalContextRequired?: boolean; }
 export interface StatusDefinition { id: string; label: string; maxStacks: number; durationSeconds?: number; periodic?: { intervalSeconds: number; maxTicks: number; emittedAction: EmittedActionDefinition; consumeStacks?: number | "all" }; transformAtMaxTo?: string; }
 
 export type EffectSelector =
@@ -140,10 +143,11 @@ export interface EffectDefinition {
   };
   target: EffectTargetScope;
   rules: readonly EffectRuleDefinition[];
-  /** Documentation for the future State Engine. Never executed by this resolver. */
+  /** Legacy documentation-only activation metadata; structured lifecycle/triggers are executed instead. */
   activation?: { description: string; durationSeconds?: number };
   lifecycle?: EffectLifecycle;
   triggers?: readonly TriggerDefinition[];
+  statuses?: readonly StatusDefinition[];
 }
 
 export interface ActionDefinitionV02 {

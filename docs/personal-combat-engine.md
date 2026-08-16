@@ -1,31 +1,61 @@
 # Personal Combat Engine V0.1
 
-Le moteur personnel compose la timeline déclarative, la file d'événements, le State Engine, le resolver d'effets et le Damage Engine. Il ne simule pas une équipe et n'importe jamais les effets d'un autre owner. Un événement externe peut uniquement déclencher une action dont le `damageOwnerId` est le Resonator sélectionné ou une entité possédée.
+Le moteur personnel compose la timeline déclarative, le State/Trigger Engine, la file d'événements, le resolver d'effets et le Damage Engine. Il ne simule pas une équipe. Un événement externe peut servir de trigger, mais son propre dommage n'est jamais compté.
 
-## Combat Context et statistiques
+## Supported and executed
 
-`finalStats` demeure le panneau final permanent et n'est jamais reconstruit. Une base vérifiée séparée (`RuntimeBaseStatBasis`) sert uniquement aux deltas temporaires : `effective = panel + basis × percent + flat`. Un pourcentage ATK/HP/DEF sans base exacte produit `missing-base-stat-basis`. L'audit conserve panneau, base, contributions et valeur effective sans mutation des entrées.
+### Context, stats and deterministic data
 
-Les `ValueExpression` sont un AST fermé : constantes, stacks, table exacte par rank, stats, ressources, addition, soustraction, multiplication, min/max, clamp/cap et seuil de stacks. Les valeurs manquantes, non finies, ranks absents et cycles sont unsupported. Les stats effectives sont évaluées depuis un snapshot déterministe; les effets runtime ne peuvent donc pas créer une dépendance order-dependent implicite.
+- `finalStats` reste l'autorité du panneau permanent et n'est jamais reconstruit.
+- Les deltas runtime suivent `effective = panel + exact base-stat basis × percent + flat`. Une base ATK/HP/DEF absente est unsupported.
+- Les expressions fermées couvrent constantes, stacks, rank exact, panel stat, ressource, arithmétique, min/max, clamp/cap et seuil de stacks. NaN, Infinity, variable/rank absent et cycle sont diagnostiqués.
+- Les predicates couvrent identities, ownership, action/type/élément/mode, HP, panel stat, ressources, effects, states, statuses, shield, on-field et domains, avec AND/OR/NOT.
+- Les expressions runtime dépendant d'une `effective` stat modifiée dans le même snapshot sont explicitement unsupported afin d'éviter l'ordre arbitraire des arrays.
 
-Les `CombatPredicate` couvrent identités/ownership, action, type, élément, mode, HP, stats, ressources, effets, états, statuses de l'acteur ou de la cible, shield, on-field et domaines. AND/OR/NOT sont composables. Faux signifie ignored; contexte absent signifie unsupported.
+### State, lifecycle and isolation
 
-## Lifecycle, ressources et cibles
+- Les opérations sont isolées par owner; les statuses sont isolés par target.
+- `activate-effect` résout la définition demandée par id, même lorsque le trigger appartient à une autre définition.
+- Sont exécutés : fixed/indefinite duration, expiration, reset/no refresh, reset-only-below-max, no-reset-at-max, extension bornée et nombre maximal d'extensions, replace/reject duplicate/same-name, exclusive groups, shared stacks, independent stack expirations, caps, gain/consume/consume-all/clear.
+- Les stacks indépendantes reçoivent chacune leur expiration; une consommation retire d'abord les expirations les plus anciennes.
+- Les ressources exécutent gain/consume/set/set-max/consume-all/consume-up-to avec validation stricte et clamp. Les opérations nécessitant un montant refusent son absence.
+- Les cooldowns supportent global, owner, source, action, target, action+target, source+target, element et custom. Une custom key représente explicitement un groupe partagé; les autres clés incluent le trigger source et évitent les collisions accidentelles.
+- `maxTriggers` possède un scope déclaré global, owner, target, owner-target ou instance.
 
-Le State Engine conserve acteurs, ressources, formes, named states, HP/shield minimal, effets actifs, targets séparées, statuses, marks, cooldowns, compteurs et registries. Les ressources supportent gain, consume, set, max, consume-all et consume-up-to avec clamp. Les lifecycle metadata séparent durée, refresh, extension, unicité/exclusivité et stacks de la politique d'agrégation numérique.
+### Events, statuses and damage
 
-Les scopes ICD sont global, owner, source, action, target, action+target, source+target, element et custom contrôlé. Les clés sont déterministes. Les transitions et diagnostics sont auditables. Les requirements historiques textuels ne sont jamais exécutés et produisent `unstructured-requirement` lorsqu'ils sont nécessaires.
+- À timestamp égal, l'ordre est expiration, state, resource, rotation/action-start, action-hit, damage-dealt, action-end, activation, puis id lexical. Une expiration exactement au timestamp d'un hit est appliquée avant ce hit.
+- La queue accepte des événements frères identiques lorsqu'ils ont des ids/occurrences distincts. Les limites de profondeur, récursion zéro délai et nombre total protègent des boucles.
+- Les statuses sont stockés sur leur target, ont durée/stacks, planifient uniquement une cadence explicitement déclarée, émettent une action via la queue, consomment leurs stacks et peuvent se transformer au maximum.
+- Une action dérivée transporte actor, triggering actor, source entity, damage owner et scaling owner. Personal V0.1 exige que le scaling owner soit le Resonator sélectionné.
+- `action-replacement` est résolu avant requirements/talent/Motion Value. `damage-type-replacement` produit le type effectif utilisé par selectors, bonus de type et Damage Engine. L'audit conserve les ids/types base et effectifs.
+- Les Motion Value modifiers V0.1 portent sur le total global de l'occurrence. L'addition conserve proportionnellement les groupes; aucun ciblage de hit group n'est modélisé ou accepté.
+- Une action calculée émet `damage-dealt`, qui peut déclencher une chaîne bornée. Aucun `critical-hit` probabiliste n'est dérivé de l'espérance de Crit.
+- Tune Break/Rupture continuent d'utiliser les formules validées du Damage Engine. Fusion Burst reste `formula-not-supported`.
 
-## Événements et ordre
+### Hit timing and snapshots
 
-La taxonomie inclut rotation/action/hit/damage/crit/dodge/switch/Intro/Outro/Echo, ressources, state/effect/stack, heal/shield/status, Tune, Fusion Burst et custom. À timestamp égal : timestamp, priorité système documentée, puis id lexical. La queue borne le nombre d'événements et la profondeur, et rejette les cycles dérivés identiques.
+- Sans `hitTimingsSeconds`, le moteur peut calculer une occurrence agrégée à `action-start`; cela n'émet aucun faux `action-hit`.
+- Si une définition pertinente écoute `action-hit`, `damage-dealt` dépendant des hits ou `critical-hit`, l'absence de timings rend le résultat partial avec `hit-timing-required`.
+- Avec timings explicites, les vrais hit events sont émis et les groupes sont ventilés par hit; une incohérence entre hits et multipliers est unsupported.
+- Les emitted actions exécutent `stats: trigger|hit` et `stacks: trigger|tick` en capturant les instances actives au trigger ou en lisant l'état au hit/tick. `unknown` est unsupported.
 
-Une timeline sans `hitTimingsSeconds` émet start/end mais aucun hit inventé. Les dégâts directs complets peuvent rester attachés à l'action déclarée; une mécanique entre hits exige des hits explicites et reçoit `hit-timing-required`.
+### Loader, attribution and result
 
-Les emitted actions repassent par le Damage Engine. Elles transportent actor, owner, target, origine, attribution et `SnapshotPolicy` (stats trigger/hit, stacks trigger/tick). Une policy inconnue est unsupported. Les statuses périodiques exigent intervalle et nombre de ticks explicites. Fusion Burst reste transportable mais `formula-not-supported`.
+- Le loader inspecte automatiquement les `structuredEffect` du Resonator. Les objets Weapon/Sonata/Main Echo doivent être résolus explicitement dans le loadout, puisque `UserBuild` ne stocke que leurs ids; aucune donnée n'est devinée.
+- Les rules de Sequence utilisent `requiredSequence <= build.sequence`. Les rules `already-in-final-stats` restent auditables et ne contribuent jamais au runtime.
+- Les dégâts externes et les effets d'un owner étranger ne sont pas comptés. Les owned entities doivent être déclarées.
+- Le résultat expose durée complète, damage/DPS, breakdowns direct/Echo/follow-up/coordinated/summon/status/Tune, action/source, event log, transitions, audits, diagnostics et coverage.
+- `partial` est vrai uniquement pour `relevant-unsupported` ou `not-emitted-due-to-missing-context`. Coverage distingue ces catégories de `modeled-unused`.
 
-## Résultat, couverture et limites
+## Modeled for future / unsupported
 
-`simulatePersonalCombat` retourne dommages/DPS sur la durée entière, attribution direct/Echo/follow-up/coordinated/summon/status/Tune, breakdowns action/source, event log, transitions, audits et couverture. `partial` ne devient vrai que pour une mécanique pertinente non résolue; une mécanique présente mais non émise n'invente aucun dommage.
-
-Limites actuelles : pas de Team DPS, propagation Outro, quickswap, ciblage multi-cible avancé, cadence implicite, formule Fusion Burst, interpolation de rank/talent, ni parsing de texte. Les primitives owner/actor/scaling owner/target et les targets indexées permettent une extension future sans confondre Personal et Team.
+- Team DPS, buffs d'équipiers, propagation Outro, quickswap et rotation à trois acteurs.
+- Formule de dégâts Fusion Burst.
+- Interpolation de rank ou talent; seules les tables exactes sont acceptées.
+- Parsing de descriptions historiques ou cadence déduite du texte.
+- Dépendances entre runtime stats effectives dans un même snapshot et résolution de graphes cycliques.
+- Motion Value ciblant un groupe/hit particulier.
+- Scaling depuis un owner autre que le Resonator sélectionné.
+- Génération probabiliste de `critical-hit` depuis l'expected Crit Rate; un tel événement doit être fourni explicitement par un scénario déterministe.
+- Multi-target damage aggregation avancée. L'état des targets est déjà indexé et isolé, mais l'API principale reste mono-cible.
