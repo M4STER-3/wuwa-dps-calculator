@@ -81,4 +81,88 @@ describe("Damage Engine V0.2 — Tune Break / Tune Rupture", () => {
       context: { resonatorId: "aemeath", resonanceMode: "fusion-burst" },
     })).toMatchObject({ status: "unsupported", reason: "invalid-resonance-mode" });
   });
+
+  it.each(["defenseReduction", "defenseIgnore"] as const)(
+    "%s modifie Tune Break sans fusionner les modificateurs DEF",
+    (modifier) => {
+      const baseline = supported(calculateTuneBreakDamage({
+        finalStats: aemeathPreset.finalStats, attackerLevel: 90,
+        enemyClass: "4C", target: target90,
+      }));
+      const result = supported(calculateTuneBreakDamage({
+        finalStats: aemeathPreset.finalStats, attackerLevel: 90,
+        enemyClass: "4C", target: target90, modifiers: { [modifier]: 0.2 },
+      }));
+      expect(result.total.nonCrit).toBeGreaterThan(baseline.total.nonCrit);
+      expect(result[modifier]).toBe(0.2);
+      expect(result[modifier === "defenseReduction" ? "defenseIgnore" : "defenseReduction"]).toBe(0);
+    },
+  );
+
+  it.each(["defenseReduction", "defenseIgnore"] as const)(
+    "%s modifie Tune Rupture sans fusionner les modificateurs DEF",
+    (modifier) => {
+      const base = {
+        action: action("starburst"), finalStats: aemeathPreset.finalStats,
+        attackerLevel: 90, enemyClass: "4C" as const,
+        element: "fusion" as const, target: target90,
+      };
+      const baseline = supported(calculateTuneRuptureDamage(base));
+      const result = supported(calculateTuneRuptureDamage({
+        ...base, modifiers: { [modifier]: 0.2 },
+      }));
+      expect(result.total.nonCrit).toBeGreaterThan(baseline.total.nonCrit);
+      expect(result[modifier]).toBe(0.2);
+      expect(result[modifier === "defenseReduction" ? "defenseIgnore" : "defenseReduction"]).toBe(0);
+    },
+  );
+
+  it.each(["resistanceReduction", "resistanceIgnore"] as const)(
+    "%s s'applique uniquement à la résistance physique de Tune Break",
+    (modifier) => {
+      const result = supported(calculateTuneBreakDamage({
+        finalStats: aemeathPreset.finalStats, attackerLevel: 90,
+        enemyClass: "4C",
+        target: { ...target90, elementalResistance: { fusion: 0.9 } },
+        modifiers: { [modifier]: 0.05 },
+      }));
+      expect(result.baseResistance).toBe(0.1);
+      expect(result.effectiveResistance).toBeCloseTo(0.05, 12);
+      expect(result[modifier]).toBe(0.05);
+    },
+  );
+
+  it.each(["resistanceReduction", "resistanceIgnore"] as const)(
+    "%s s'applique à la résistance élémentaire de Tune Rupture",
+    (modifier) => {
+      const result = supported(calculateTuneRuptureDamage({
+        action: action("starburst"), finalStats: aemeathPreset.finalStats,
+        attackerLevel: 90, enemyClass: "4C", element: "fusion",
+        target: { ...target90, physicalResistance: 0.9 },
+        modifiers: { [modifier]: 0.05 },
+      }));
+      expect(result.baseResistance).toBe(0.1);
+      expect(result.effectiveResistance).toBeCloseTo(0.05, 12);
+      expect(result[modifier]).toBe(0.05);
+    },
+  );
+
+  it("additionne le Tune Break Boost permanent et temporaire pour les deux formules", () => {
+    const modifiers = { temporaryTuneBreakBoostPercent: 20 };
+    const tuneBreak = supported(calculateTuneBreakDamage({
+      finalStats: aemeathPreset.finalStats, attackerLevel: 90,
+      enemyClass: "4C", target: target90, modifiers,
+    }));
+    const tuneRupture = supported(calculateTuneRuptureDamage({
+      action: action("starburst"), finalStats: aemeathPreset.finalStats,
+      attackerLevel: 90, enemyClass: "4C", element: "fusion",
+      target: target90, modifiers,
+    }));
+    for (const result of [tuneBreak, tuneRupture]) {
+      expect(result.permanentTuneBreakBoostPercent).toBe(10);
+      expect(result.temporaryTuneBreakBoostPercent).toBe(20);
+      expect(result.effectiveTuneBreakBoostPercent).toBe(30);
+      expect(result.tuneBreakBoostMultiplier).toBeCloseTo(1.3, 12);
+    }
+  });
 });

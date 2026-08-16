@@ -132,11 +132,20 @@ export const TUNE_ENEMY_BASE: Readonly<Record<TuneEnemyClass, number>> = {
   "4C": 10027,
 };
 
+export interface TuneDamageModifiers {
+  defenseReduction?: number;
+  defenseIgnore?: number;
+  resistanceReduction?: number;
+  resistanceIgnore?: number;
+  temporaryTuneBreakBoostPercent?: number;
+}
+
 export interface TuneBreakRequest {
   finalStats: FinalStats;
   attackerLevel: number;
   enemyClass: TuneEnemyClass;
   target: DamageTarget;
+  modifiers?: TuneDamageModifiers;
   /** Required outside level 90, where the verified multiplier is 16. */
   verifiedLevelMultiplier?: number;
 }
@@ -158,6 +167,7 @@ export interface TuneRuptureRequest {
   enemyClass: TuneEnemyClass;
   element: Element;
   target: DamageTarget;
+  modifiers?: TuneDamageModifiers;
   additionalTuneAmpPercent?: number;
   critOverride?: TuneCritOverride;
   context?: { resonatorId: string; resonanceMode: AemeathResonanceMode };
@@ -167,9 +177,17 @@ export interface TuneDamageResult {
   status: "supported";
   formula: "tune-break-v0.2" | "tune-rupture-v0.2";
   tuneEnemyBase: number;
+  defenseReduction: number;
+  defenseIgnore: number;
   defenseMultiplier: number;
+  baseResistance: number;
+  resistanceReduction: number;
+  resistanceIgnore: number;
+  effectiveResistance: number;
   resistanceMultiplier: number;
-  tuneBreakBoostPercent: number;
+  permanentTuneBreakBoostPercent: number;
+  temporaryTuneBreakBoostPercent: number;
+  effectiveTuneBreakBoostPercent: number;
   tuneBreakBoostMultiplier: number;
   tuneAmpPercent?: number;
   levelMultiplier?: number;
@@ -185,24 +203,57 @@ export function rupturousTrailTuneAmp(stacks: number): number {
 }
 
 function tuneCommon(
-  request: Pick<TuneBreakRequest, "finalStats" | "attackerLevel" | "target">,
-  resistance: number,
+  request: Pick<TuneBreakRequest, "finalStats" | "attackerLevel" | "target" | "modifiers">,
+  baseResistance: number,
 ) {
   validateFinalStats(request.finalStats);
   assertLevel(request.attackerLevel, "Le niveau de l'attaquant");
   assertLevel(request.target.level, "Le niveau de l'ennemi");
-  assertFinite(resistance, "La résistance Tune");
+  assertFinite(baseResistance, "La résistance Tune brute");
+  const modifiers = request.modifiers ?? {};
+  const defenseReduction = ratioModifier(modifiers, "defenseReduction", 1);
+  const defenseIgnore = ratioModifier(modifiers, "defenseIgnore", 1);
+  const resistanceReduction = ratioModifier(modifiers, "resistanceReduction");
+  const resistanceIgnore = ratioModifier(modifiers, "resistanceIgnore");
+  const temporaryTuneBreakBoostPercent =
+    modifiers.temporaryTuneBreakBoostPercent ?? 0;
+  assertFinite(
+    temporaryTuneBreakBoostPercent,
+    "Le Tune Break Boost temporaire",
+  );
   const defenseMultiplier = calculateDefenseMultiplier(
     request.attackerLevel,
     request.target.level,
+    defenseReduction,
+    defenseIgnore,
   ).multiplier;
-  const resistanceMultiplier = calculateResistanceMultiplier(resistance);
-  const tuneBreakBoostPercent = request.finalStats.tuneBreakBoost;
+  const effectiveResistance =
+    baseResistance - resistanceReduction - resistanceIgnore;
+  const resistanceMultiplier =
+    calculateResistanceMultiplier(effectiveResistance);
+  const permanentTuneBreakBoostPercent = request.finalStats.tuneBreakBoost;
+  const effectiveTuneBreakBoostPercent =
+    permanentTuneBreakBoostPercent + temporaryTuneBreakBoostPercent;
+  const tuneBreakBoostMultiplier =
+    1 + percentToRatio(effectiveTuneBreakBoostPercent);
+  if (tuneBreakBoostMultiplier < 0) {
+    throw new DamageCalculationError(
+      "Le Tune Break Boost effectif ne peut pas produire un multiplicateur négatif.",
+    );
+  }
   return {
+    defenseReduction,
+    defenseIgnore,
     defenseMultiplier,
+    baseResistance,
+    resistanceReduction,
+    resistanceIgnore,
+    effectiveResistance,
     resistanceMultiplier,
-    tuneBreakBoostPercent,
-    tuneBreakBoostMultiplier: 1 + percentToRatio(tuneBreakBoostPercent),
+    permanentTuneBreakBoostPercent,
+    temporaryTuneBreakBoostPercent,
+    effectiveTuneBreakBoostPercent,
+    tuneBreakBoostMultiplier,
   };
 }
 
