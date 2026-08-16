@@ -18,7 +18,7 @@ Le moteur personnel compose la timeline déclarative, le State/Trigger Engine, l
 - `activate-effect` résout la définition demandée par id, même lorsque le trigger appartient à une autre définition.
 - Sont exécutés : fixed/indefinite duration, expiration, reset/no refresh, reset-only-below-max, no-reset-at-max, extension bornée et nombre maximal d'extensions, replace/reject duplicate/same-name, exclusive groups, shared stacks, independent stack expirations, caps, gain/consume/consume-all/clear.
 - Les stacks indépendantes reçoivent chacune leur expiration; une consommation retire d'abord les expirations les plus anciennes.
-- Les ressources exécutent gain/consume/set/set-max/consume-all/consume-up-to avec validation stricte et clamp. Les opérations nécessitant un montant refusent son absence.
+- Les opérations de trigger sur ressources exécutent gain/consume/set/set-max/consume-all/consume-up-to avec validation stricte et clamp. Les `CombatAction.costs/gains` historiques ne sont pas encore automatiquement traduits en événements de ressource.
 - Les cooldowns supportent global, owner, source, action, target, action+target, source+target, element et custom. Une custom key représente explicitement un groupe partagé; les autres clés incluent le trigger source et évitent les collisions accidentelles.
 - `maxTriggers` possède un scope déclaré global, owner, target, owner-target ou instance.
 
@@ -30,7 +30,7 @@ Le moteur personnel compose la timeline déclarative, le State/Trigger Engine, l
 - Une action dérivée transporte actor, triggering actor, source entity, damage owner et scaling owner. Personal V0.1 exige que le scaling owner soit le Resonator sélectionné.
 - `action-replacement` est résolu avant requirements/talent/Motion Value. `damage-type-replacement` produit le type effectif utilisé par selectors, bonus de type et Damage Engine. L'audit conserve les ids/types base et effectifs.
 - Les Motion Value modifiers V0.1 portent sur le total global de l'occurrence. L'addition conserve proportionnellement les groupes; aucun ciblage de hit group n'est modélisé ou accepté.
-- Une action calculée émet `damage-dealt`, qui peut déclencher une chaîne bornée. Aucun `critical-hit` probabiliste n'est dérivé de l'espérance de Crit.
+- Un vrai hit calculé émet `damage-dealt`, qui peut déclencher une chaîne bornée. Un calcul agrégé sans hit timings n'en émet pas. Aucun `critical-hit` probabiliste n'est dérivé de l'espérance de Crit; un trigger Crit sans événement explicite produit `critical-hit-context-required`.
 - Tune Break/Rupture continuent d'utiliser les formules validées du Damage Engine. Fusion Burst reste `formula-not-supported`.
 
 ### Hit timing and snapshots
@@ -46,7 +46,7 @@ Le moteur personnel compose la timeline déclarative, le State/Trigger Engine, l
 - Les rules de Sequence utilisent `requiredSequence <= build.sequence`. Les rules `already-in-final-stats` restent auditables et ne contribuent jamais au runtime.
 - Les dégâts externes et les effets d'un owner étranger ne sont pas comptés. Les owned entities doivent être déclarées.
 - Le résultat expose durée complète, damage/DPS, breakdowns direct/Echo/follow-up/coordinated/summon/status/Tune, action/source, event log, transitions, audits, diagnostics et coverage.
-- `partial` est vrai uniquement pour `relevant-unsupported` ou `not-emitted-due-to-missing-context`. Coverage distingue ces catégories de `modeled-unused`.
+- `partial` est vrai uniquement pour `relevant-unsupported` ou `not-emitted-due-to-missing-context`. Coverage distingue ces catégories de `modeled-unused`, mais l'inventaire automatique de toutes les mécaniques data non utilisées reste limité : `modeledUnused` ne constitue pas encore une mesure exhaustive du kit.
 
 ## Modeled for future / unsupported
 
@@ -55,6 +55,9 @@ Le moteur personnel compose la timeline déclarative, le State/Trigger Engine, l
 - Interpolation de rank ou talent; seules les tables exactes sont acceptées.
 - Parsing de descriptions historiques ou cadence déduite du texte.
 - Dépendances entre runtime stats effectives dans un même snapshot et résolution de graphes cycliques.
+- Application automatique des `CombatAction.costs/gains`, marks génériques, registries déclaratifs et shield operations. Les conteneurs d'état existent, mais ces opérations sont modeled-only.
+- `CooldownDefinition.maxTriggers`; le runtime utilise actuellement `TriggerDefinition.maxTriggers` et son scope.
+- `ActiveEffectInstance.startTimeSeconds/endTimeSeconds`; le State Engine utilise `activatedAt/expiresAt` à la place.
 - Motion Value ciblant un groupe/hit particulier.
 - Scaling depuis un owner autre que le Resonator sélectionné.
 - Génération probabiliste de `critical-hit` depuis l'expected Crit Rate; un tel événement doit être fourni explicitement par un scénario déterministe.
