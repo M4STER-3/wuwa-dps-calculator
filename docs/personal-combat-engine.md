@@ -18,7 +18,7 @@ Le moteur personnel compose la timeline déclarative, le State/Trigger Engine, l
 - `activate-effect` résout la définition demandée par id, même lorsque le trigger appartient à une autre définition.
 - Sont exécutés : fixed/indefinite duration, expiration, reset/no refresh, reset-only-below-max, no-reset-at-max, extension bornée et nombre maximal d'extensions, replace/reject duplicate/same-name, exclusive groups, shared stacks, independent stack expirations, caps, gain/consume/consume-all/clear.
 - Les stacks indépendantes reçoivent chacune leur expiration; une consommation retire d'abord les expirations les plus anciennes.
-- Les opérations de trigger sur ressources exécutent gain/consume/set/set-max/consume-all/consume-up-to avec validation stricte et clamp. Les `CombatAction.costs/gains` historiques ne sont pas encore automatiquement traduits en événements de ressource.
+- Les opérations de trigger sur ressources exécutent gain/consume/set/set-max/consume-all/consume-up-to avec validation stricte et clamp. Le resolver pur d'action supporte désormais les transactions explicitement déclarées `before-action`/`after-action`, de façon atomique et auditée. Les `CombatAction.costs/gains` historiques ne sont pas automatiquement traduits : leur timing n'est pas structuré.
 - Les cooldowns supportent global, owner, source, action, target, action+target, source+target, element et custom. Une custom key représente explicitement un groupe partagé; les autres clés incluent le trigger source et évitent les collisions accidentelles.
 - `maxTriggers` possède un scope déclaré global, owner, target, owner-target ou instance.
 

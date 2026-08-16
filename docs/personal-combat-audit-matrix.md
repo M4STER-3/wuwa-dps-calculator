@@ -11,7 +11,7 @@ Cette matrice applique la règle : une primitive n'est « supported » que si mo
 | Fixed/refresh/extension/uniqueness lifecycle | yes | yes | yes | consolidation lifecycle tests | yes |
 | Shared/independent stacks | yes | yes | yes | staggered-expiration tests | yes |
 | Trigger resource operations | yes | yes | yes | missing/invalid amount tests | yes |
-| Automatic CombatAction costs/gains | legacy model | no | no | none | documented unsupported |
+| Explicit staged action resource transaction | yes | pure atomic resolver | integration pending verified action stages | atomicity/cap/audit unit tests | legacy unstructured costs/gains remain unsupported |
 | Status duration/periodic/consume/transform | yes | yes | yes | end-to-end status test | yes |
 | Action replacement | yes | yes | yes | enhanced action test | yes |
 | Damage type replacement | yes | yes | yes | effective type audit/damage test | yes |
