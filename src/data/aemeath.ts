@@ -8,6 +8,7 @@ import type {
   SourceMetadata,
   Weapon,
 } from "@/domain/models";
+import type { EffectDefinition } from "@/domain/effect-models";
 
 const verifiedAt = "2026-08-16";
 const reviewedSources =
@@ -79,6 +80,18 @@ const aemeathActions: readonly CombatAction[] = [
 ];
 
 const effect = (value: Omit<CombatEffect, "source">): CombatEffect => ({ ...value, source: aemeathGameSource });
+const structured = (
+  id: string,
+  label: string,
+  sourceId: string,
+  sourceType: EffectDefinition["source"]["type"],
+  target: EffectDefinition["target"],
+  rules: EffectDefinition["rules"],
+  activation?: EffectDefinition["activation"],
+): EffectDefinition => ({
+  id, label, target, rules, activation,
+  source: { id: sourceId, type: sourceType, label, metadata: aemeathGameSource },
+});
 const aemeathEffects: readonly CombatEffect[] = [
   effect({ id: "stardust-resonance", name: "Stardust Resonance", sourceId: "overdrive", trigger: "Heavenfall Edict: Overdrive", target: "self", effect: "Le prochain Seraphic Duet ne consomme pas les Trail concernés.", durationSeconds: 30, endCondition: "Expire après 2 utilisations de Seraphic Duet ou après 30 s." }),
   effect({ id: "unbound", name: "Heavenfall Edict: Unbound", sourceId: "overdrive", trigger: "Heavenfall Edict: Overdrive", target: "self", effect: "Remplace Overdrive par Finale; Resonance Rate au maximum déclenche Instant Response.", durationSeconds: 60, endCondition: "Finale termine l’état, ou expiration après 60 s." }),
@@ -88,7 +101,8 @@ const aemeathEffects: readonly CombatEffect[] = [
   effect({ id: "rupturous-trail", name: "Rupturous Trail", sourceId: "to-sculpt-the-silence", trigger: "Tune Rupture - Interfered approprié", target: "enemy", effect: "Applique 10 Rupturous Trail.", maxStacks: 30, stackRule: "10 stacks par application S0.", durationSeconds: 30, refreshRule: "Selon l’application du kit." }),
   effect({ id: "fusion-trail", name: "Fusion Trail", sourceId: "to-sculpt-the-silence", trigger: "Conditions Fusion Burst appropriées", target: "enemy", effect: "Applique Fusion Trail.", maxStacks: 30, durationSeconds: 30, refreshRule: "Selon l’application du kit." }),
   effect({ id: "trail-application-icd", name: "Trail application ICD", sourceId: "to-sculpt-the-silence", trigger: "Une compétence listée applique Tune Rupture - Shifting ou Fusion Burst", target: "enemy", effect: "Limite le déclenchement de l’effet.", internalCooldown: { seconds: 3, scope: "action-and-target" } }),
-  effect({ id: "before-all-sounds", name: "Before All Sounds", sourceId: "before-all-sounds", trigger: "Heavy Attack normal ou Mech sous Instant Response", target: "self", effect: "Heavy Attack gagne 200 % DMG Amplification.", value: 200, valueType: "damage-amplification" }),
+  effect({ id: "before-all-sounds", name: "Before All Sounds", sourceId: "before-all-sounds", trigger: "Heavy Attack normal ou Mech sous Instant Response", target: "self", effect: "Heavy Attack gagne 200 % DMG Amplification.", value: 200, valueType: "damage-amplification",
+    structuredEffect: structured("before-all-sounds", "Before All Sounds", "aemeath", "resonator", "self", [{ id: "heavy-amplification", label: "Instant Response Heavy amplification", accounting: "runtime", selectors: [{ kind: "damage-type", anyOf: ["heavyAttack"] }], modifiers: [{ kind: "damage-amplification", value: 200, stacking: "additive" }] }], { description: "Instant Response is active; activation is external." }) }),
   effect({ id: "between-stars-tune", name: "Between the Stars — Tune Rupture", sourceId: "between-the-stars", trigger: "Un Resonator distinct applique Tune Rupture - Shifting ou les dégâts Tune Rupture appropriés", target: "self", effect: "+20 % Crit DMG par contributeur; à 3 stacks Finale gagne 25 % DMG Amplification.", value: 20, valueType: "crit-damage", maxStacks: 3, stackRule: "Chaque Resonator ne contribue qu’une fois.", durationSeconds: null, resetRule: "Un Resonator rejoint l’équipe ou changement de Resonance Mode." }),
   effect({ id: "between-stars-fusion", name: "Between the Stars — Fusion Burst", sourceId: "between-the-stars", trigger: "Chaque membre pertinent contribue", target: "self", effect: "+30 % Crit DMG par contributeur; à 2 stacks Finale gagne 25 % DMG Amplification.", value: 30, valueType: "crit-damage", maxStacks: 2, stackRule: "Chaque Resonator ne contribue qu’une fois.", durationSeconds: null, resetRule: "Un Resonator rejoint l’équipe ou changement de Resonance Mode." }),
   effect({ id: "silent-protection-tune", name: "Silent Protection — Tune Rupture", sourceId: "outro", trigger: "Outro Skill", target: "other-team-members", effect: "10 % All-DMG Amplification, porté à 20 % pour un Resonator capable de Tune Rupture - Shifting.", value: 10, valueType: "damage-amplification", durationSeconds: 20, refreshRule: "Une nouvelle utilisation remplace/réinitialise l’effet." }),
@@ -164,8 +178,13 @@ export const aemeath: Resonator = {
 };
 
 const polestarEffects: readonly CombatEffect[] = [
-  effect({ id: "everbright-r1-base", name: "Everbright Polestar R1", sourceId: "everbright-polestar", trigger: "Équipée", target: "self", effect: "+12 % All-Attribute DMG Bonus.", value: 12, valueType: "damage-bonus" }),
-  effect({ id: "everbright-r1-liberation", name: "Everbright Polestar R1 — Polestar", sourceId: "everbright-polestar", trigger: "Le porteur inflige Tune Rupture - Shifting ou Fusion Burst", target: "self", effect: "Resonance Liberation DMG ignore 32 % DEF et 10 % Fusion RES.", durationSeconds: 8, refreshRule: "Nouveau déclenchement selon le passif." }),
+  effect({ id: "everbright-r1-base", name: "Everbright Polestar R1", sourceId: "everbright-polestar", trigger: "Équipée", target: "self", effect: "+12 % All-Attribute DMG Bonus.", value: 12, valueType: "damage-bonus",
+    structuredEffect: structured("everbright-r1-base", "Everbright Polestar R1", "everbright-polestar", "weapon", "self", [{ id: "all-damage", label: "+12% All-Attribute DMG", accounting: "runtime", modifiers: [{ kind: "all-damage-bonus", value: 12, stacking: "additive" }] }]) }),
+  effect({ id: "everbright-r1-liberation", name: "Everbright Polestar R1 — Polestar", sourceId: "everbright-polestar", trigger: "Le porteur inflige Tune Rupture - Shifting ou Fusion Burst", target: "self", effect: "Resonance Liberation DMG ignore 32 % DEF et 10 % Fusion RES.", durationSeconds: 8, refreshRule: "Nouveau déclenchement selon le passif.",
+    structuredEffect: structured("everbright-r1-liberation", "Everbright Polestar R1 — Polestar", "everbright-polestar", "weapon", "self", [
+      { id: "liberation-def-ignore", label: "Liberation DEF Ignore", accounting: "runtime", selectors: [{ kind: "damage-type", anyOf: ["resonanceLiberation"] }], modifiers: [{ kind: "defense-ignore", value: 0.32, stacking: "additive" }] },
+      { id: "fusion-res-ignore", label: "Fusion RES Ignore", accounting: "runtime", selectors: [{ kind: "element", anyOf: ["fusion"] }], modifiers: [{ kind: "resistance-ignore", value: 0.1, stacking: "additive" }] },
+    ], { description: "Tune Rupture - Shifting or Fusion Burst was dealt.", durationSeconds: 8 }) }),
 ];
 export const everbrightPolestar: Weapon = {
   id: "everbright-polestar", name: "Everbright Polestar", type: "sword", rarity: 5,
@@ -179,7 +198,11 @@ export const trailblazingStar: Sonata = {
   effectDescription: "2-piece: +10 % Fusion DMG. 5-piece: après Fusion Burst ou Tune Rupture - Shifting, +20 % Crit Rate et +20 % Fusion DMG pendant 8 s.",
   effects: [
     effect({ id: "trailblazing-2pc", name: "Trailblazing Star 2-piece", sourceId: "trailblazing-star", trigger: "2 pièces équipées", target: "self", effect: "+10 % Fusion DMG.", value: 10, valueType: "damage-bonus" }),
-    effect({ id: "trailblazing-5pc", name: "Trailblazing Star 5-piece", sourceId: "trailblazing-star", trigger: "Applique Fusion Burst ou Tune Rupture - Shifting", target: "self", effect: "+20 % Crit Rate et +20 % Fusion DMG.", durationSeconds: 8 }),
+    effect({ id: "trailblazing-5pc", name: "Trailblazing Star 5-piece", sourceId: "trailblazing-star", trigger: "Applique Fusion Burst ou Tune Rupture - Shifting", target: "self", effect: "+20 % Crit Rate et +20 % Fusion DMG.", durationSeconds: 8,
+      structuredEffect: structured("trailblazing-5pc", "Trailblazing Star 5-piece", "trailblazing-star", "sonata", "self", [
+        { id: "crit-rate", label: "+20% Crit Rate", accounting: "runtime", modifiers: [{ kind: "crit-rate-bonus", value: 20, stacking: "additive" }] },
+        { id: "fusion-damage", label: "+20% Fusion DMG", accounting: "runtime", selectors: [{ kind: "element", anyOf: ["fusion"] }], modifiers: [{ kind: "elemental-damage-bonus", value: 20, stacking: "additive" }] },
+      ], { description: "Fusion Burst or Tune Rupture - Shifting was applied.", durationSeconds: 8 }) }),
   ],
   source: aemeathGameSource,
 };
@@ -188,7 +211,8 @@ export const sigillum: MainEcho = {
   id: "sigillum", name: "Sigillum", sonataIds: ["trailblazing-star"],
   skillDescription: "Summon Echo: 68.40 % puis 205.20 % Fusion DMG; cooldown 20 s. Main Echo d’Aemeath: +25 % Resonance Liberation DMG Bonus.",
   action: action({ id: "sigillum-skill", name: "Sigillum Echo Skill", talent: "echoSkill", damageType: "echoSkill", multipliers: [{ percent: 68.4, hits: 1 }, { percent: 205.2, hits: 1 }], cooldownSeconds: 20 }),
-  effects: [effect({ id: "sigillum-main-aemeath", name: "Sigillum Main Echo — Aemeath", sourceId: "sigillum", trigger: "Sigillum équipé en Main Echo par Aemeath", target: "self", effect: "+25 % Resonance Liberation DMG Bonus.", value: 25, valueType: "damage-bonus" })],
+  effects: [effect({ id: "sigillum-main-aemeath", name: "Sigillum Main Echo — Aemeath", sourceId: "sigillum", trigger: "Sigillum équipé en Main Echo par Aemeath", target: "self", effect: "+25 % Resonance Liberation DMG Bonus.", value: 25, valueType: "damage-bonus",
+    structuredEffect: structured("sigillum-main-aemeath", "Sigillum Main Echo — Aemeath", "sigillum", "echo", "self", [{ id: "liberation-damage", label: "+25% Resonance Liberation DMG", accounting: "runtime", selectors: [{ kind: "damage-type", anyOf: ["resonanceLiberation"] }], modifiers: [{ kind: "damage-type-bonus", value: 25, stacking: "additive" }] }]) })],
   source: aemeathGameSource,
 };
 

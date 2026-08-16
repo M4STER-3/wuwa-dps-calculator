@@ -21,6 +21,14 @@ Les effets temporaires ou conditionnels ne font pas partie de `finalStats`. Le T
 
 Le Damage Engine suit la même frontière : pour un scaling ATK, HP ou DEF, il lit directement la valeur correspondante dans `UserBuild.finalStats`. Il ne reconstruit jamais le panneau depuis le personnage, l'arme, les Echoes, le Sonata ou les Minor Fortes. Les modificateurs temporaires lui sont fournis explicitement par un contexte séparé et ne sont pas activés automatiquement depuis l'équipement ou la timeline.
 
+### Universal Effect & Modifier Engine V0.1
+
+`src/domain/effect-models.ts` sépare les définitions structurées et auditées des occurrences déjà actives. `src/domain/effect-engine.ts` filtre ces occurrences par portée, élément, Damage Type, mode, action, owner/source/cible, puis agrège uniquement les familles compatibles avec `DamageModifiers`, `TuneDamageModifiers` et les overrides Crit explicites.
+
+Cette couche ne parse jamais les descriptions historiques, ne reconstruit aucune statistique de `finalStats` et ne contient aucune formule de dégâts. Les règles `already-in-final-stats` et `informational` sont auditées mais ne contribuent pas. Elle ne déclenche, n'expire et ne rafraîchit aucune instance : ces responsabilités appartiennent au futur Trigger/State Engine.
+
+Voir [`docs/universal-effect-engine.md`](./universal-effect-engine.md) pour les selectors, modifiers, stacking V0.1, diagnostics, audit trail et exemples structurés Aemeath.
+
 ## Persistance
 
 La clé `wuwa-character-box:v1` contient un `CharacterBox` versionné. Les données sont validées à la lecture ; une charge absente, corrompue, incompatible ou contenant des doublons revient à une Box vide sûre. La persistance est locale au navigateur et à l'appareil.
@@ -44,3 +52,5 @@ Voir [`docs/damage-engine.md`](./damage-engine.md) pour la formule d'une action 
 La couche `src/domain/combat-simulation.ts` relie désormais la projection du Temporal Engine aux `CombatAction` puis au Damage Engine. Elle ne reconstruit ni stats, ni timeline, ni formule : elle produit des résultats par occurrence, agrège uniquement les dégâts supportés et divise par la durée complète de rotation. Les exclusions restent structurées et rendent le résultat explicitement partiel.
 
 Voir [`docs/combat-simulation.md`](./combat-simulation.md) pour les statuts, le contrat de `supportedDamage` / `supportedDps`, la référence Aemeath S0 et les mécaniques non émises.
+
+Combat Simulation V0.1 n'appelle pas encore le Universal Effect Engine. Son DPS partiel de référence reste inchangé; le branchement via un Combat Context est une étape ultérieure.

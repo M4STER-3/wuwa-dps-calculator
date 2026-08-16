@@ -1,3 +1,5 @@
+import type { EffectDefinition } from "./effect-models";
+
 export const elements = [
   "aero",
   "glacio",
@@ -126,6 +128,8 @@ export interface CombatEffect {
     scope: "target" | "action-and-target";
   };
   source: SourceMetadata;
+  /** Optional deterministic rules; legacy human-readable fields remain supported. */
+  structuredEffect?: EffectDefinition;
 }
 
 export interface CombatRotation {
