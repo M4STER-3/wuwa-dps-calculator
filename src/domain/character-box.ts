@@ -128,6 +128,7 @@ export function isValidBuild(build: unknown): build is UserBuild {
     stats.critDamage,
     stats.energyRegen,
     stats.healingBonus,
+    stats.tuneBreakBoost,
   ];
   if (!baseStats.every(isNonNegativeNumber)) return false;
   if (
@@ -158,7 +159,31 @@ export function parseCharacterBox(serialized: string | null): CharacterBox {
   try {
     const candidate: unknown = JSON.parse(serialized);
     if (!candidate || typeof candidate !== "object") return emptyCharacterBox();
-    const box = candidate as Partial<CharacterBox>;
+    const rawBox = candidate as { schemaVersion?: unknown; builds?: unknown };
+    // V0.2 adds a permanent stat without discarding otherwise valid V0.1 boxes.
+    const normalizedBuilds = Array.isArray(rawBox.builds)
+      ? rawBox.builds.map((build: unknown) => {
+        if (
+          build &&
+          typeof build === "object" &&
+          "finalStats" in build &&
+          build.finalStats &&
+          typeof build.finalStats === "object" &&
+          !("tuneBreakBoost" in build.finalStats)
+        ) {
+          const record = build as Record<string, unknown>;
+          return {
+            ...record,
+            finalStats: {
+              ...(record.finalStats as Record<string, unknown>),
+              tuneBreakBoost: record.resonatorId === "aemeath" ? 10 : 0,
+            },
+          };
+        }
+        return build;
+      })
+      : rawBox.builds;
+    const box = { ...rawBox, builds: normalizedBuilds } as Partial<CharacterBox>;
     if (
       box.schemaVersion !== 1 ||
       !Array.isArray(box.builds) ||

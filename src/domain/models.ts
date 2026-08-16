@@ -217,6 +217,8 @@ export interface FinalStats {
   critDamage: number;
   energyRegen: number;
   healingBonus: number;
+  /** Permanent Tune Break Boost, expressed in percentage points. */
+  tuneBreakBoost: number;
   elementalDamageBonus: Record<Element, number>;
   damageTypeBonus: Record<(typeof damageTypes)[number], number>;
 }

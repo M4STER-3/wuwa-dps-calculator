@@ -11,6 +11,8 @@ export type ScalingAttribute = "attack" | "hp" | "defense";
 export interface DamageTarget {
   level: number;
   elementalResistance: Readonly<Partial<Record<Element, number>>>;
+  /** Physical RES is independent from every elemental resistance. */
+  physicalResistance: number;
 }
 
 export interface DamageModifiers {
@@ -39,6 +41,8 @@ export interface StandardDamageRequest {
 
 export type UnsupportedDamageReason =
   | "tune-amp-not-implemented"
+  | "unsupported-tune-break-level"
+  | "invalid-resonance-mode"
   | "missing-standard-damage-type"
   | "missing-motion-values";
 
@@ -117,6 +121,148 @@ export class DamageCalculationError extends Error {
     super(message);
     this.name = "DamageCalculationError";
   }
+}
+
+export type TuneEnemyClass = "1C" | "3C" | "4C";
+export type AemeathResonanceMode = "tune-rupture" | "fusion-burst";
+
+export const TUNE_ENEMY_BASE: Readonly<Record<TuneEnemyClass, number>> = {
+  "1C": 716,
+  "3C": 2149,
+  "4C": 10027,
+};
+
+export interface TuneBreakRequest {
+  finalStats: FinalStats;
+  attackerLevel: number;
+  enemyClass: TuneEnemyClass;
+  target: DamageTarget;
+  /** Required outside level 90, where the verified multiplier is 16. */
+  verifiedLevelMultiplier?: number;
+}
+
+export interface TuneCritOverride {
+  critRatePercent: number;
+  critDamagePercent: number;
+}
+
+export const AEMEATH_S6_TUNE_RUPTURE_CRIT: TuneCritOverride = {
+  critRatePercent: 80,
+  critDamagePercent: 275,
+};
+
+export interface TuneRuptureRequest {
+  action: CombatAction;
+  finalStats: FinalStats;
+  attackerLevel: number;
+  enemyClass: TuneEnemyClass;
+  element: Element;
+  target: DamageTarget;
+  additionalTuneAmpPercent?: number;
+  critOverride?: TuneCritOverride;
+  context?: { resonatorId: string; resonanceMode: AemeathResonanceMode };
+}
+
+export interface TuneDamageResult {
+  status: "supported";
+  formula: "tune-break-v0.2" | "tune-rupture-v0.2";
+  tuneEnemyBase: number;
+  defenseMultiplier: number;
+  resistanceMultiplier: number;
+  tuneBreakBoostPercent: number;
+  tuneBreakBoostMultiplier: number;
+  tuneAmpPercent?: number;
+  levelMultiplier?: number;
+  expectedCritMultiplier: number;
+  total: DamageAmounts;
+}
+
+export function rupturousTrailTuneAmp(stacks: number): number {
+  if (!Number.isInteger(stacks) || stacks < 0) {
+    throw new DamageCalculationError("Les stacks Rupturous Trail doivent être un entier positif.");
+  }
+  return 4 * stacks;
+}
+
+function tuneCommon(
+  request: Pick<TuneBreakRequest, "finalStats" | "attackerLevel" | "target">,
+  resistance: number,
+) {
+  validateFinalStats(request.finalStats);
+  assertLevel(request.attackerLevel, "Le niveau de l'attaquant");
+  assertLevel(request.target.level, "Le niveau de l'ennemi");
+  assertFinite(resistance, "La résistance Tune");
+  const defenseMultiplier = calculateDefenseMultiplier(
+    request.attackerLevel,
+    request.target.level,
+  ).multiplier;
+  const resistanceMultiplier = calculateResistanceMultiplier(resistance);
+  const tuneBreakBoostPercent = request.finalStats.tuneBreakBoost;
+  return {
+    defenseMultiplier,
+    resistanceMultiplier,
+    tuneBreakBoostPercent,
+    tuneBreakBoostMultiplier: 1 + percentToRatio(tuneBreakBoostPercent),
+  };
+}
+
+export function calculateTuneBreakDamage(
+  request: TuneBreakRequest,
+): TuneDamageResult | UnsupportedDamageResult {
+  const placeholder = { id: "tune-break", name: "Tune Break" } as CombatAction;
+  const levelMultiplier =
+    request.attackerLevel === 90 ? 16 : request.verifiedLevelMultiplier;
+  if (levelMultiplier === undefined) {
+    return unsupported(placeholder, "unsupported-tune-break-level", "Le multiplicateur Tune Break n'est vérifié qu'au niveau 90; fournissez un multiplicateur vérifié explicite.");
+  }
+  assertNonNegativeFinite(levelMultiplier, "Le multiplicateur de niveau Tune Break");
+  const common = tuneCommon(request, request.target.physicalResistance);
+  const nonCrit =
+    TUNE_ENEMY_BASE[request.enemyClass] * levelMultiplier *
+    common.defenseMultiplier * common.resistanceMultiplier *
+    common.tuneBreakBoostMultiplier;
+  return {
+    status: "supported", formula: "tune-break-v0.2",
+    tuneEnemyBase: TUNE_ENEMY_BASE[request.enemyClass], levelMultiplier,
+    ...common, expectedCritMultiplier: 1,
+    total: { nonCrit, crit: nonCrit, expected: nonCrit },
+  };
+}
+
+export function calculateTuneRuptureDamage(
+  request: TuneRuptureRequest,
+): TuneDamageResult | UnsupportedDamageResult {
+  if (request.context?.resonatorId === "aemeath" && request.context.resonanceMode !== "tune-rupture") {
+    return unsupported(request.action, "invalid-resonance-mode", "Aemeath doit être en mode tune-rupture pour cette instance.");
+  }
+  if (request.action.scaling !== "tuneAmp" || request.action.multipliers.length === 0) {
+    return unsupported(request.action, "missing-motion-values", "L'action ne possède aucun Tune AMP calculable.");
+  }
+  const additionalTuneAmpPercent = request.additionalTuneAmpPercent ?? 0;
+  assertNonNegativeFinite(additionalTuneAmpPercent, "Le Tune AMP additionnel");
+  const tuneAmpPercent = request.action.multipliers.reduce((sum, group, index) => {
+    assertNonNegativeFinite(group.percent, `Le Tune AMP du groupe ${index}`);
+    if (!Number.isInteger(group.hits) || group.hits <= 0) throw new DamageCalculationError(`Le nombre de hits du groupe ${index} est invalide.`);
+    return sum + group.percent * group.hits;
+  }, 0) + additionalTuneAmpPercent;
+  const resistance = request.target.elementalResistance[request.element] ?? 0;
+  const common = tuneCommon(request, resistance);
+  const base = TUNE_ENEMY_BASE[request.enemyClass] * percentToRatio(tuneAmpPercent) *
+    common.defenseMultiplier * common.resistanceMultiplier * common.tuneBreakBoostMultiplier;
+  const override = request.critOverride;
+  if (override) {
+    assertNonNegativeFinite(override.critRatePercent, "Tune Rupture Crit Rate");
+    assertNonNegativeFinite(override.critDamagePercent, "Tune Rupture Crit DMG");
+  }
+  const critRate = override ? Math.min(1, percentToRatio(override.critRatePercent)) : 0;
+  const critDamageMultiplier = override ? percentToRatio(override.critDamagePercent) : 1;
+  const expectedCritMultiplier = 1 + critRate * (critDamageMultiplier - 1);
+  return {
+    status: "supported", formula: "tune-rupture-v0.2",
+    tuneEnemyBase: TUNE_ENEMY_BASE[request.enemyClass], tuneAmpPercent,
+    ...common, expectedCritMultiplier,
+    total: { nonCrit: base, crit: base * critDamageMultiplier, expected: base * expectedCritMultiplier },
+  };
 }
 
 export const percentToRatio = (percent: number): number => percent / 100;
@@ -226,6 +372,7 @@ function validateFinalStats(finalStats: FinalStats): void {
     ["DEF finale", finalStats.defense],
     ["Crit Rate", finalStats.critRate],
     ["Crit DMG", finalStats.critDamage],
+    ["Tune Break Boost", finalStats.tuneBreakBoost],
   ] as const) {
     assertNonNegativeFinite(value, label);
   }

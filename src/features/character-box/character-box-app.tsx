@@ -580,6 +580,7 @@ function BuildEditor({
                 ["Crit DMG (%)", "critDamage"],
                 ["Energy Regen (%)", "energyRegen"],
                 ["Healing Bonus (%)", "healingBonus"],
+                ["Tune Break Boost (%)", "tuneBreakBoost"],
               ] as const
             ).map(([label, key]) =>
               field(
