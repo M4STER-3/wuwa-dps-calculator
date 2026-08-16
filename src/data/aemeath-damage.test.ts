@@ -16,7 +16,7 @@ const calculate = (actionId: string) => {
     attackerLevel: build.characterLevel,
     scalingAttribute: "attack",
     element: aemeath.element,
-    target: { level: 90, elementalResistance: { fusion: 0 } },
+    target: { level: 90, elementalResistance: { fusion: 0 }, physicalResistance: 0 },
   });
   expect(result.status).toBe("supported");
   if (result.status !== "supported") throw new Error(result.message);
@@ -100,7 +100,7 @@ describe("validation réelle des dégâts individuels d'Aemeath", () => {
       attackerLevel: build.characterLevel,
       scalingAttribute: "attack",
       element: aemeath.element,
-      target: { level: 90, elementalResistance: { fusion: 0 } },
+      target: { level: 90, elementalResistance: { fusion: 0 }, physicalResistance: 0 },
     });
     expect(result).toMatchObject({
       status: "unsupported",

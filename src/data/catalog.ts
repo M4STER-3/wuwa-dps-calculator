@@ -76,6 +76,7 @@ const emptyFinalStats = () => ({
   critDamage: 0,
   energyRegen: 0,
   healingBonus: 0,
+  tuneBreakBoost: 0,
   elementalDamageBonus: {
     aero: 0,
     glacio: 0,

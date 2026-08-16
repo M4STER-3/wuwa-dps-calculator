@@ -92,6 +92,26 @@ describe("Character Box", () => {
     ).toEqual(emptyCharacterBox());
   });
 
+  it("normalise Tune Break Boost sans perdre les anciennes builds", () => {
+    const aemeath = createBuild();
+    const fixture = createBuild(fixturePreset, 1);
+    const aemeathStats: Partial<typeof aemeath.finalStats> = { ...aemeath.finalStats };
+    const fixtureStats: Partial<typeof fixture.finalStats> = { ...fixture.finalStats };
+    delete aemeathStats.tuneBreakBoost;
+    delete fixtureStats.tuneBreakBoost;
+    const migrated = parseCharacterBox(JSON.stringify({
+      schemaVersion: 1,
+      builds: [
+        { ...aemeath, finalStats: aemeathStats },
+        { ...fixture, finalStats: fixtureStats },
+      ],
+    }));
+    expect(migrated.builds).toHaveLength(2);
+    expect(migrated.builds[0].finalStats.tuneBreakBoost).toBe(10);
+    expect(migrated.builds[1].finalStats.tuneBreakBoost).toBe(0);
+    expect(migrated.builds[0].finalStats.attack).toBe(aemeath.finalStats.attack);
+  });
+
   it("refuse les niveaux d'aptitude hors de la plage 1 à 10", () => {
     for (const level of [0, 11, 1.5]) {
       const build = createBuild();

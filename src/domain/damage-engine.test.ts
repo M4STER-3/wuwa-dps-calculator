@@ -34,6 +34,7 @@ const stats = (patch: Partial<FinalStats> = {}): FinalStats => ({
   critDamage: 200,
   energyRegen: 100,
   healingBonus: 0,
+  tuneBreakBoost: 0,
   elementalDamageBonus: {
     aero: 0,
     glacio: 0,
@@ -60,7 +61,7 @@ const request = (
   attackerLevel: 90,
   scalingAttribute: "attack",
   element: "fusion",
-  target: { level: 90, elementalResistance: { fusion: 0 } },
+  target: { level: 90, elementalResistance: { fusion: 0 }, physicalResistance: 0 },
   ...patch,
 });
 const supported = (input: StandardDamageRequest) => {
@@ -180,6 +181,7 @@ describe("Damage Engine V0.1", () => {
         target: {
           level: 90,
           elementalResistance: { fusion: 0.2, glacio: 0.9 },
+          physicalResistance: 0,
         },
         modifiers: { resistanceReduction: 0.1, resistanceIgnore: 0.05 },
       }),
