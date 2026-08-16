@@ -1,37 +1,46 @@
-# Chisa validation dossier — research-gated
+# Chisa validation dossier
 
-Verification date: **2026-08-16**.
+Verification date: **2026-08-16**. Implementation uses only the externally supplied research packet; Codex performed no further Internet research. Packet sources are Wuthering Waves Wiki/Fandom, Prydwen, Wuwa Wiki, with Wuthering.gg as a display cross-check. Confidence and disagreements remain data-owned.
 
-## Research outcome
+## Identity and exact base data
 
-Only the task-allowlisted hosts were contacted: WutheringTools, Wuthering Waves Wiki/Fandom, and Prydwen. WutheringTools returned only its human-readable application shell; its game data and calculator require a JavaScript application bundle. Downloading or executing that bundle is expressly forbidden by the mission. Fandom and Prydwen returned Cloudflare challenge pages whose completion likewise requires third-party script execution. No redirect was followed and no non-allowlisted hostname was contacted.
+Chisa is a 5-star Havoc Broadblade Support/Healer/Negative Status support. Exact Lv90 internal stats are HP `10775.00`, ATK `437.50`, and DEF `1136.65`; common displays are 10775/438/1137. Base Crit is 5%/150%, Energy Regen 100%, Resonance Energy 125, and minor Forte totals are Crit Rate +8% and ATK +12%. Internal ATK/DEF are preserved.
 
-Consequently, no exact Chisa value could be independently read or transcribed under the network policy. This repository does **not** promote recollection, guessed values, interpolation, or engine-produced numbers to verified Game Data or external fixtures. Chisa is therefore not added to the catalog in this change. In particular, Lv90 HP/ATK/DEF/Energy, talent tables, hit groups, resources, Unseen Snare/Havoc Bane/Thread of Bane semantics, sustain formulas, Sequences, equipment, and WutheringTools display results remain **unsupported/unverified**.
+## Exact talent coverage
 
-## Coverage profile and implementation boundary
+The generic sparse talent schema stores exact level-owned hit groups and never interpolates. Skill, Forte Chainsaw actions, Liberation, Intro, Eradication shield, and Liberation sustain have complete Lv1–10 packet tables. Most Basic-family actions support exact Lv1 and Lv10 only; Lv2–9 remain unsupported. Heavy Attack supports Lv10 only because Lv1 is disputed (Fandom 8.00%×2 versus multiple current sources 18.00%×2).
 
-| Mechanic | Aemeath | Chisa result in this audit |
-| --- | --- | --- |
-| ATK and Tune damage calibration | externally calibrated | no admissible Chisa fixture |
-| Resources | legacy costs/gains declared | generic atomic staged resolver added; Chisa stages unverified |
-| Forms and replacement | generic primitives exist | Chisa mapping unverified |
-| Target statuses, stacks and ICD | generic target-local state exists | exact Snare/Bane semantics unverified |
-| DEF Reduction vs DEF Ignore | separate formula terms exist | Thread eligibility unverified |
-| Multi-hit / hit groups | calibrated totals and groups | Sawring values/modifiers unverified |
-| Healing and shields | incomplete | Chisa formulas unverified |
-| External ally trigger ownership | generic integration proof exists | Chisa permission/ICD unverified |
-| Team/Outro | Team Engine deferred | remains explicitly deferred |
+Implemented actions include Basic stages 1–2, Rending Lunge, Death Snip and its separate additional component, Thread Withdrawn, Heavy, Mid-air, Severed Facet, Hanging Finality, both Dodge Counters, Eye of Unraveling, Serrated Loop/hold, all supplied Sawring Blitz/hold/additional variants, Chainsaw Dodge/hold, Eradication, Moment of Nihility, and Intro. Damage classifications and ordered hit groups are preserved.
 
-The new resource resolver is Resonator-agnostic. It validates all operations in a stage on a private copy, rejects a partial payment, never permits negative resources, caps gains, preserves the original state after rejection, and returns an ordered audit. A data definition must explicitly declare `before-action` or `after-action`; legacy `CombatAction.costs/gains` remain unsupported because their timing is not encoded.
+## Universal primitives exercised
+
+- Atomic staged resource transactions reject mixed gain/consume stages, so a gain cannot finance a same-stage cost.
+- Sparse exact talent resolution returns unsupported for a missing/disputed level.
+- Healing and shield results are distinct typed personal outcomes, not damage.
+- Group-targeted additive MV distribution supports Eradication's 20%/80% split without action-id branches.
+- Trigger operations can be attributed generically to a definition-owned source when a foreign actor triggers an owned status.
+- Exact Sequence-owned cooldown overrides model S4's target ICD without a Chisa branch.
+
+## Resources, forms, and unknown timing
+
+Ring of Chainsaw, Lifethread - Jetstream, Chainsaw Fever, Resonance Energy, and Concerto are structured with verified caps. Known costs/gains remain declared; unknown per-hit Ring quantities are not guessed. Lifethread regen/lockout, Chainsaw Fever grace/depletion, Burnout Ring depletion, hit timestamps, animation timings, and rotation duration remain unsupported. Scissors/Chainsaw forms and exact action requirements are data-owned; transitions requiring unknown timestamps remain descriptive rather than synthesized.
+
+## Unseen Snare, Havoc Bane, and Thread of Bane
+
+Unseen Snare is target-local for 30s. Verified action-hit applications are structured; lock-on remains an external/manual event because it is not a combat action. Direct Resonator damage to a Snared target applies one Chisa-owned Havoc Bane stack with a target-local 2s ICD, reduced to 1s at S4. External ally damage is never aggregated as Chisa personal damage.
+
+Current v2.8+ Havoc Bane is a Negative Status, max 3 at base, reducing enemy DEF by 2% per stack. It emits no periodic damage. Exact duration/refresh is not verified, so automatic expiry is unsupported. Outro's team-context max-cap increase to 6 is stored/deferred.
+
+Thread of Bane is a separate attacker-side 18% DEF Ignore against a Snared target. It is manual/explicit in Personal context; teammate propagation through Outro is deferred. Numerical tests keep target DEF Reduction and attacker DEF Ignore as independent terms.
+
+## Sustain, Sequences, and equipment
+
+Death Snip and Liberation healing plus Eradication shielding use exact packet formulas. Nearby-team propagation is deferred; Personal Lab exposes formula amounts and shield duration. All Ends Here supplies runtime Havoc/Healing bonuses.
+
+Safely modeled personal Sequence pieces include S2 Havoc RES Ignore, S3 Chainsaw MV-layer increase, S4 ICD, and S5 Liberation bonus. S1 fixed capped damage, interruption immunity, Vibration, S6 fatal-hit prevention/Finality, and Team-only pieces remain stored or explicitly unsupported.
+
+Kumokiri R1 stores permanent ATK as already-in-final-stats, runtime Liberation stacks, and deferred team behavior. Thread of Severed Fate stores its 5s runtime ATK/Liberation effects. Reminiscence: Threnodian - Leviathan is editorial metadata only; its action/equipment effects were not supplied and are not invented.
 
 ## External calibration and rotation
 
-No Chisa external benchmark was manufactured. There are zero Chisa benchmark actions, mismatches, or talent checkpoints. No action list, hit timestamp, animation timing, duration, or DPS was inferred. Aemeath remains the calibration reference and its fixture is unchanged.
-
-## Next validation Resonator
-
-Chisa remains the intended second universality stress test once admissible, human-readable exact data is available. Verina remains the intended third validation Resonator and is intentionally **not** implemented here. Verina is useful next because healing, simple resource flow, coordinated attacks, buffs, and the support/team boundary broaden coverage without duplicating Chisa's complexity.
-
-## Classification rationale
-
-The engine cannot honestly claim Chisa support without verified data. The current outcome is therefore **FOUNDATION NOT READY FOR THIRD RESONATOR**: research access, Chisa Game Data, composed Chisa scenarios, external fixtures, and sustain outcomes are still P1 blockers rather than silently ignored functionality.
+No Chisa WutheringTools fixture exists yet. No Normal/Average/Crit or per-hit values are derived from this engine and labeled external. The supplied structural rotation is informational only; no duration, hit timings, or DPS claim is created. Aemeath remains the external calibration reference; Chisa is the second universality stress test. Verina remains the intentionally deferred third candidate.

@@ -42,4 +42,18 @@ describe("action resource transactions", () => {
     expect(resolveActionResourceTransaction(resources, [{ resourceId: "unknown", operation: "consume", amount: 1, stage: "before-action" }], "before-action")).toMatchObject({ status: "rejected", diagnostic: "missing-action-resource" });
     expect(resolveActionResourceTransaction(resources, [{ resourceId: "ring", operation: "gain", amount: Number.NaN, stage: "after-action" }], "after-action")).toMatchObject({ status: "rejected", diagnostic: "invalid-action-resource-change" });
   });
+
+  it("never lets a same-stage gain finance a cost", () => {
+    const result = resolveActionResourceTransaction({ ring: { current: 0, max: 100 } }, [
+      { resourceId: "ring", operation: "gain", amount: 100, stage: "before-action" },
+      { resourceId: "ring", operation: "consume", amount: 100, stage: "before-action" },
+    ], "before-action");
+    expect(result).toMatchObject({ status: "rejected", diagnostic: "mixed-action-resource-stage", resources: { ring: { current: 0 } } });
+  });
+
+  it("defines empty stages as successful no-ops and audits zero operations", () => {
+    expect(resolveActionResourceTransaction(resources, [], "before-action")).toEqual({ status: "applied", resources: { ...resources }, audit: [] });
+    const zero = resolveActionResourceTransaction(resources, [{ resourceId: "ring", operation: "consume", amount: 0, stage: "before-action" }], "before-action");
+    expect(zero).toMatchObject({ status: "applied", resources: { ring: { current: 80 } }, audit: [{ before: 80, after: 80 }] });
+  });
 });

@@ -3,6 +3,8 @@ import { mainEchoes, presets, resonators, sonatas, weapons } from "./catalog";
 
 const aemeath = resonators.find((entry) => entry.id === "aemeath")!;
 const aemeathPreset = presets.find((entry) => entry.resonatorId === "aemeath")!;
+const chisa = resonators.find((entry) => entry.id === "chisa")!;
+const chisaPreset = presets.find((entry) => entry.resonatorId === "chisa")!;
 
 describe("cohérence du catalogue", () => {
   it("utilise des identifiants uniques", () => {
@@ -72,12 +74,12 @@ describe("cohérence du catalogue", () => {
       sonatas
         .filter((entry) => entry.source.kind !== "technical-fixture")
         .map((entry) => entry.id),
-    ).toEqual(["trailblazing-star"]);
+    ).toEqual(["trailblazing-star", "thread-of-severed-fate"]);
     expect(
       mainEchoes
         .filter((entry) => entry.source.kind !== "technical-fixture")
         .map((entry) => entry.name),
-    ).toEqual(["Sigillum"]);
+    ).toEqual(["Sigillum", "Reminiscence: Threnodian - Leviathan"]);
   });
 
   it("documente le kit Lv10 et les inconnues temporelles sans timeline DPS", () => {
@@ -90,5 +92,11 @@ describe("cohérence du catalogue", () => {
       policy: "no-quickswap",
       totalDurationSeconds: { value: 11.69, confidence: "community-calculation" },
     });
+  });
+
+  it("intègre Chisa et son équipement par les mêmes catalogues génériques",()=>{
+    expect(chisa).toMatchObject({name:"Chisa",element:"havoc",weaponType:"broadblade",rarity:5,combat:{level10Only:false}});
+    expect(chisaPreset).toMatchObject({characterLevel:90,sequence:0,weapon:{weaponId:"kumokiri",level:90,rank:1},sonataId:"thread-of-severed-fate",mainEchoId:"reminiscence-threnodian-leviathan"});
+    expect(weapons.find(entry=>entry.id==="kumokiri")?.level90Stats).toEqual({baseAttack:500,displayBaseAttack:500,critRate:36});
   });
 });

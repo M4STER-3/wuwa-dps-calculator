@@ -44,7 +44,8 @@ export type UnsupportedDamageReason =
   | "unsupported-tune-break-level"
   | "invalid-resonance-mode"
   | "missing-standard-damage-type"
-  | "missing-motion-values";
+  | "missing-motion-values"
+  | "missing-exact-talent-data";
 
 export interface UnsupportedDamageResult {
   status: "unsupported";

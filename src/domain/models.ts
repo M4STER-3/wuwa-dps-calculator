@@ -39,6 +39,17 @@ export const damageTypes = [
 
 export type Sequence = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type Rarity = 4 | 5;
+export type TalentLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+export interface MotionValueGroup { percent: number; hits: number; }
+export interface ScaledOutcomeFormula { scalingAttribute: "attack" | "hp" | "defense"; percent: number; flat: number; }
+export interface ActionOutcomeDefinition {
+  healingByTalentLevel?: Readonly<Partial<Record<TalentLevel, ScaledOutcomeFormula>>>;
+  shieldByTalentLevel?: Readonly<Partial<Record<TalentLevel, ScaledOutcomeFormula>>>;
+  shieldDurationSeconds?: number;
+  target: "self" | "nearby-resonators";
+}
+export type ActionResourceStage = "before-action" | "after-action";
+export interface ActionResourceOperation { resourceId: string; operation: "consume" | "gain"; amount: number; stage: ActionResourceStage; }
 
 export const confidenceLevels = [
   "verified-game-data",
@@ -87,8 +98,13 @@ export interface CombatAction {
     condition: string;
   };
   scaling?: "damage" | "tuneAmp";
-  level: 10;
-  multipliers: ReadonlyArray<{ percent: number; hits: number }>;
+  /** Default/authoring level. Exact alternate levels are sparse and never interpolated. */
+  level: TalentLevel;
+  multipliers: readonly MotionValueGroup[];
+  multipliersByTalentLevel?: Readonly<Partial<Record<TalentLevel, readonly MotionValueGroup[]>>>;
+  outcomes?: ActionOutcomeDefinition;
+  /** Only verified execution stages belong here; unknown legacy costs/gains stay diagnostic-only. */
+  resourceOperations?: readonly ActionResourceOperation[];
   costs?: ReadonlyArray<{ resource: string; amount: number | null }>;
   gains?: ReadonlyArray<{ resource: string; amount: number | null }>;
   cooldownSeconds?: number;
@@ -144,7 +160,8 @@ export interface CombatRotation {
 }
 
 export interface ResonatorCombatData {
-  level10Only: true;
+  /** Legacy capability marker retained for Lv10-only data sets such as Aemeath. */
+  level10Only: boolean;
   forms: readonly string[];
   modes: readonly string[];
   resources: readonly CombatResource[];

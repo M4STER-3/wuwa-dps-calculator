@@ -1,13 +1,6 @@
 import type { ResourceView } from "./combat-context";
-
-export type ActionResourceStage = "before-action" | "after-action";
-
-export interface ActionResourceOperation {
-  resourceId: string;
-  operation: "consume" | "gain";
-  amount: number;
-  stage: ActionResourceStage;
-}
+import type { ActionResourceOperation, ActionResourceStage } from "./models";
+export type { ActionResourceOperation, ActionResourceStage } from "./models";
 
 export interface ActionResourceAuditEntry extends ActionResourceOperation {
   before: number;
@@ -24,7 +17,7 @@ export type ActionResourceTransactionResult =
       status: "rejected";
       resources: Readonly<Record<string, ResourceView>>;
       audit: readonly [];
-      diagnostic: "invalid-action-resource-change" | "missing-action-resource" | "insufficient-action-resource";
+      diagnostic: "invalid-action-resource-change" | "missing-action-resource" | "insufficient-action-resource" | "mixed-action-resource-stage";
       resourceId: string;
     };
 
@@ -39,9 +32,12 @@ export function resolveActionResourceTransaction(
 ): ActionResourceTransactionResult {
   const working: Record<string, ResourceView> = { ...resources };
   const audit: ActionResourceAuditEntry[] = [];
+  const staged = operations.filter((operation) => operation.stage === stage);
+  if (new Set(staged.map((operation) => operation.operation)).size > 1) {
+    return rejected(resources, "mixed-action-resource-stage", staged[0]?.resourceId ?? "");
+  }
 
-  for (const operation of operations) {
-    if (operation.stage !== stage) continue;
+  for (const operation of staged) {
     const view = working[operation.resourceId];
     if (!view) return rejected(resources, "missing-action-resource", operation.resourceId);
     if (!Number.isFinite(operation.amount) || operation.amount < 0 || !Number.isFinite(view.current) || !Number.isFinite(view.max) || view.max <= 0 || view.current < 0 || view.current > view.max) {

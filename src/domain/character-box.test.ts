@@ -15,6 +15,7 @@ const aemeathPreset = presets.find((preset) => preset.resonatorId === "aemeath")
 const fixturePreset = presets.find(
   (preset) => preset.source.kind === "technical-fixture",
 )!;
+const chisaPreset = presets.find((preset)=>preset.resonatorId==="chisa")!;
 
 const createBuild = (preset = aemeathPreset, index = 0) =>
   createBuildFromPreset(preset, {
@@ -126,5 +127,13 @@ describe("Character Box", () => {
         ),
       ).toEqual(emptyCharacterBox());
     }
+  });
+
+  it("crée et édite un build Chisa via le preset/catalogue générique",()=>{
+    const chisa=createBuild(chisaPreset,2);
+    expect(chisa).toMatchObject({resonatorId:"chisa",characterLevel:90,sequence:0,weapon:{weaponId:"kumokiri"}});
+    const box=addBuild(emptyCharacterBox(),chisa);
+    const edited={...chisa,skillLevels:{...chisa.skillLevels,resonanceSkill:6},sequence:4 as const};
+    expect(updateBuild(box,edited).builds[0]).toMatchObject({sequence:4,skillLevels:{resonanceSkill:6}});
   });
 });

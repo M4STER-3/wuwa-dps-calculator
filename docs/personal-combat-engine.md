@@ -18,7 +18,7 @@ Le moteur personnel compose la timeline déclarative, le State/Trigger Engine, l
 - `activate-effect` résout la définition demandée par id, même lorsque le trigger appartient à une autre définition.
 - Sont exécutés : fixed/indefinite duration, expiration, reset/no refresh, reset-only-below-max, no-reset-at-max, extension bornée et nombre maximal d'extensions, replace/reject duplicate/same-name, exclusive groups, shared stacks, independent stack expirations, caps, gain/consume/consume-all/clear.
 - Les stacks indépendantes reçoivent chacune leur expiration; une consommation retire d'abord les expirations les plus anciennes.
-- Les opérations de trigger sur ressources exécutent gain/consume/set/set-max/consume-all/consume-up-to avec validation stricte et clamp. Le resolver pur d'action supporte désormais les transactions explicitement déclarées `before-action`/`after-action`, de façon atomique et auditée. Les `CombatAction.costs/gains` historiques ne sont pas automatiquement traduits : leur timing n'est pas structuré.
+- Les opérations de trigger sur ressources exécutent gain/consume/set/set-max/consume-all/consume-up-to avec validation stricte et clamp. Le resolver pur d'action supporte les transactions explicitement déclarées `before-action`/`after-action`, de façon atomique et auditée; un stage mélangeant gain et consommation est rejeté. Les `CombatAction.costs/gains` historiques ne sont pas automatiquement traduits : leur timing n'est pas structuré.
 - Les cooldowns supportent global, owner, source, action, target, action+target, source+target, element et custom. Une custom key représente explicitement un groupe partagé; les autres clés incluent le trigger source et évitent les collisions accidentelles.
 - `maxTriggers` possède un scope déclaré global, owner, target, owner-target ou instance.
 
@@ -29,7 +29,7 @@ Le moteur personnel compose la timeline déclarative, le State/Trigger Engine, l
 - Les statuses sont stockés sur leur target, ont durée/stacks, planifient uniquement une cadence explicitement déclarée, émettent une action via la queue, consomment leurs stacks et peuvent se transformer au maximum.
 - Une action dérivée transporte actor, triggering actor, source entity, damage owner et scaling owner. Personal V0.1 exige que le scaling owner soit le Resonator sélectionné.
 - `action-replacement` est résolu avant requirements/talent/Motion Value. `damage-type-replacement` produit le type effectif utilisé par selectors, bonus de type et Damage Engine. L'audit conserve les ids/types base et effectifs.
-- Les Motion Value modifiers V0.1 portent sur le total global de l'occurrence. L'addition conserve proportionnellement les groupes; aucun ciblage de hit group n'est modélisé ou accepté.
+- Les Motion Value modifiers peuvent porter sur le total global ou distribuer un total additif entre groupes via des poids explicites dont la somme vaut 1. Le resolver ne connaît aucun id de Resonator/action.
 - Un vrai hit calculé émet `damage-dealt`, qui peut déclencher une chaîne bornée. Un calcul agrégé sans hit timings n'en émet pas. Aucun `critical-hit` probabiliste n'est dérivé de l'espérance de Crit; un trigger Crit sans événement explicite produit `critical-hit-context-required`.
 - Tune Break/Rupture continuent d'utiliser les formules validées du Damage Engine. Fusion Burst reste `formula-not-supported`.
 
@@ -52,13 +52,13 @@ Le moteur personnel compose la timeline déclarative, le State/Trigger Engine, l
 
 - Team DPS, buffs d'équipiers, propagation Outro, quickswap et rotation à trois acteurs.
 - Formule de dégâts Fusion Burst.
-- Interpolation de rank ou talent; seules les tables exactes sont acceptées.
+- Interpolation de rank ou talent; les tables sparse exactes Lv1–10 sont acceptées et un niveau absent reste unsupported.
 - Parsing de descriptions historiques ou cadence déduite du texte.
 - Dépendances entre runtime stats effectives dans un même snapshot et résolution de graphes cycliques.
 - Application automatique des `CombatAction.costs/gains`, marks génériques, registries déclaratifs et shield operations. Les conteneurs d'état existent, mais ces opérations sont modeled-only.
 - `CooldownDefinition.maxTriggers`; le runtime utilise actuellement `TriggerDefinition.maxTriggers` et son scope.
 - `ActiveEffectInstance.startTimeSeconds/endTimeSeconds`; le State Engine utilise `activatedAt/expiresAt` à la place.
-- Motion Value ciblant un groupe/hit particulier.
+- Ciblage d'un hit individuel à l'intérieur d'un groupe; le ciblage pondéré de groupes entiers est supporté.
 - Scaling depuis un owner autre que le Resonator sélectionné.
 - Génération probabiliste de `critical-hit` depuis l'expected Crit Rate; un tel événement doit être fourni explicitement par un scénario déterministe.
 - Multi-target damage aggregation avancée. L'état des targets est déjà indexé et isolé, mais l'API principale reste mono-cible.
