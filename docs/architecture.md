@@ -13,7 +13,7 @@
 
 **Il est interdit de recalculer ces statistiques depuis l'arme, le Main Echo ou le Sonata, ou de leur ajouter automatiquement une deuxième fois les mêmes valeurs.**
 
-Les effets temporaires ou conditionnels ne font pas partie de `finalStats`. Ils appartiendront au futur moteur de combat, qui est explicitement hors périmètre de la Character Box.
+Les effets temporaires ou conditionnels ne font pas partie de `finalStats`. Le Temporal Engine ne lit ni ne modifie ces statistiques : il positionne uniquement des actions et des fenêtres dans le temps. Un futur moteur de combat pourra consommer ces informations sans recalculer les statistiques permanentes.
 
 ## Persistance
 
@@ -27,4 +27,6 @@ Une entrée réelle doit utiliser un niveau de confiance explicite (`verified-ga
 
 Les actions, ressources, états, effets et rotations de référence décrivent les faits nécessaires à un futur moteur, mais ne les exécutent pas. Les multiplicateurs conservent leurs hits et leur catégorie réelle de dégâts; les effets distinguent notamment `damage-bonus` de `damage-amplification`, ainsi que durée, fin anticipée, reset et portée d'ICD.
 
-Une rotation n'est pas une timeline simulée. Sa durée totale peut provenir d'un calcul communautaire tandis que les durées d'action, recoveries, timings de hits et fenêtres de cancel restent explicitement `unknown`. La convention de référence est `no-quickswap`.
+Une rotation déclarative reste la source de vérité éditoriale. Le Temporal Engine peut désormais en construire une projection temporelle déterministe séparée, sans dégâts ni DPS. Les recoveries, timings de hits et fenêtres de cancel restent explicitement inconnus tant qu'ils ne sont pas mesurés. La convention de référence est `no-quickswap`.
+
+Voir [`docs/temporal-engine.md`](./temporal-engine.md) pour les profils fallback V0.1, la calibration et les limites du système.
