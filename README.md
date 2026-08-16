@@ -15,7 +15,12 @@ Le Team Builder et le calculateur de DPS ne font pas partie de cette étape. Les
 npm install        # installe les dépendances verrouillées par package-lock.json
 npm run dev        # démarre le serveur de développement
 npm run build      # crée le build de production
+npm run build:cloudflare # crée le Worker Cloudflare avec OpenNext
 npm run start      # sert le build de production
+npm run preview    # construit puis prévisualise le Worker localement
+npm run deploy     # construit puis déploie le Worker (authentification requise)
+npm run upload     # construit puis téléverse une version du Worker
+npm run cf-typegen # régénère les types des bindings Cloudflare
 npm run lint       # exécute ESLint
 npm run typecheck  # vérifie les types TypeScript sans générer de fichiers
 npm test           # exécute les tests Vitest une fois
@@ -23,6 +28,27 @@ npm run test:watch # exécute Vitest en mode interactif
 ```
 
 Ouvrez [http://localhost:3000](http://localhost:3000) après avoir lancé le serveur de développement.
+
+## Déploiement sur Cloudflare Workers
+
+Le build Cloudflare utilise l'adaptateur officiel OpenNext pour Workers. Le développement
+local habituel reste inchangé avec `npm run dev`. `npm run preview` exécute quant à lui le
+résultat adapté dans le runtime Workers local de Wrangler.
+
+Pour connecter ce dépôt depuis le dashboard Cloudflare :
+
+1. Ouvrez **Workers & Pages**, puis **Create application** et **Import a repository**.
+2. Autorisez GitHub et sélectionnez ce dépôt.
+3. Utilisez `npm run build:cloudflare` comme commande de build et
+   `npx wrangler deploy` comme commande de déploiement. Le répertoire racine doit rester
+   `/` et aucune variable d'environnement n'est nécessaire actuellement.
+4. Enregistrez et lancez le premier build. Cloudflare publiera le Worker à l'adresse
+   `https://wuwa-dps-calculator.<votre-sous-domaine>.workers.dev`, visible dans les
+   paramètres du Worker. Un domaine personnalisé peut ensuite être ajouté dans
+   **Settings > Domains & Routes**.
+
+La configuration ne déclare ni base de données, ni R2, ni service externe. Si des données
+ISR sont ajoutées plus tard, un cache persistant pourra être configuré séparément.
 
 ## Stack
 
