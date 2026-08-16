@@ -44,7 +44,7 @@ export function bindTeamActorRuntime(input: TeamRuntimeBindingInput): BoundTeamA
     ...(input.resonator.combat?.actions ?? []),
     ...(input.mainEcho?.action ? [input.mainEcho.action] : []),
     ...(input.actions ?? []),
-    ...(input.coordinatedResponses ?? []).map((response) => response.action),
+    ...(input.coordinatedResponses ?? input.resonator.combat?.coordinatedResponses ?? []).map((response) => response.action),
   ];
   const definitions = [
     ...(input.resonator.combat?.effects ?? []).flatMap((effect) => effect.structuredEffect ? [effect.structuredEffect] : []),
@@ -62,7 +62,7 @@ export function bindTeamActorRuntime(input: TeamRuntimeBindingInput): BoundTeamA
     introActionIds: actions.filter((action) => action.talent === "introSkill").map((action) => action.id),
     effects,
     outroEffects: effects.filter(({ definition }) => definition.triggers?.some((trigger) => trigger.event === "outro")),
-    coordinatedResponses: (input.coordinatedResponses ?? []).map((definition) => ({
+    coordinatedResponses: (input.coordinatedResponses ?? input.resonator.combat?.coordinatedResponses ?? []).map((definition) => ({
       definition,
       ownerActorId: input.actorId,
       sourceEntityId: definition.ownerId,

@@ -1,4 +1,5 @@
 import type { EffectDefinition } from "./effect-models";
+import type { CoordinatedResponseDefinition } from "./coordinated-response-engine";
 
 export const elements = [
   "aero",
@@ -169,10 +170,13 @@ export interface ResonatorCombatData {
   /** Legacy capability marker retained for Lv10-only data sets such as Aemeath. */
   level10Only: boolean;
   forms: readonly string[];
+  /** Verified initial runtime form; capability arrays are never current state. */
+  defaultForm?: string;
   modes: readonly string[];
   resources: readonly CombatResource[];
   actions: readonly CombatAction[];
   effects: readonly CombatEffect[];
+  coordinatedResponses?: readonly CoordinatedResponseDefinition[];
   rotations: readonly CombatRotation[];
   unknowns: readonly string[];
   source: SourceMetadata;

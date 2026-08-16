@@ -139,6 +139,7 @@ export const aemeath: Resonator = {
   combat: {
     level10Only: true,
     forms: ["Aemeath", "Mech"],
+    defaultForm: "Aemeath",
     modes: ["tune-rupture", "fusion-burst"],
     resources: [
       { id: "synchronization-rate", name: "Synchronization Rate", cap: 200, semantic: "character-resource", notes: ["Intro +40; Overdrive +30; Heavy Charged II sous Instant Response + Unbound restaure 200.", "Gains individuels des Basics, Mid-air, Dodge Counters et Sync Strikes: inconnus."] },
