@@ -171,7 +171,7 @@ export function CharacterBoxApp() {
               <h2 className="text-xl font-semibold">Votre Box est vide</h2>
               <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
                 Ajoutez un premier Resonator pour créer un build indépendant
-                depuis sa fixture de départ.
+                depuis son preset de départ.
               </p>
               <button
                 onClick={() => setPickerOpen(true)}
@@ -337,7 +337,7 @@ function Picker({
   return (
     <ModalShell
       title="Ajouter un Resonator"
-      subtitle="Catalogue technique local · les entrées actuelles sont des fixtures, pas des données WuWa vérifiées."
+      subtitle="Catalogue local · les données réelles restent distinguées des fixtures techniques."
       onClose={onClose}
     >
       <div className="grid gap-3 border-b border-[var(--line)] p-5 sm:grid-cols-[1fr_13rem]">
@@ -423,6 +423,7 @@ function BuildEditor({
   onReset: () => void;
 }) {
   const resonator = resonators.find((item) => item.id === build.resonatorId)!;
+  const preset = presets.find((item) => item.id === build.sourcePresetId);
   const compatibleWeapons = weapons.filter(
     (weapon) => weapon.type === resonator.weaponType,
   );
@@ -460,10 +461,16 @@ function BuildEditor({
     >
       <div className="space-y-6 p-5 sm:p-7">
         <aside className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm leading-6 text-amber-100">
-          <b>Fixture technique :</b> les valeurs actuelles ne sont pas une
-          recommandation de build. Les statistiques finales sont saisies
-          directement et ne sont jamais recalculées depuis l’arme, le Sonata ou
-          le Main Echo.
+          <b>
+            {resonator.source.kind === "technical-fixture"
+              ? "Fixture technique :"
+              : `${preset?.label ?? "Preset recommandé"} :`}
+          </b>{" "}
+          {resonator.source.kind === "technical-fixture"
+            ? "ces valeurs ne sont pas une recommandation de build. "
+            : "les statistiques initiales correspondent aux seuils inférieurs de recommandations communautaires. "}
+          Les statistiques finales sont saisies directement et ne sont jamais
+          recalculées depuis l’arme, le Sonata, le Main Echo ou l’arbre.
         </aside>
         <EditorSection title="Progression">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -656,6 +663,15 @@ function BuildEditor({
               </select>,
             )}
           </div>
+          {preset && (
+            <p className="mt-4 text-xs leading-5 text-[var(--muted)]">
+              Recommandation du preset :{" "}
+              {sonatas.find((item) => item.id === preset.sonataId)?.name ?? "—"}
+              {" · "}
+              {mainEchoes.find((item) => item.id === preset.mainEchoId)?.name ??
+                "—"}
+            </p>
+          )}
         </EditorSection>
         <div className="flex flex-col-reverse gap-3 border-t border-[var(--line)] pt-6 sm:flex-row sm:justify-between">
           <button
