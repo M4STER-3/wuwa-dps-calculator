@@ -191,6 +191,13 @@ export interface TuneDamageResult {
   total: DamageAmounts;
 }
 
+export type TuneBreakResult = TuneDamageResult & { formula: "tune-break-v0.2" };
+export type TuneRuptureResult = TuneDamageResult & { formula: "tune-rupture-v0.2" };
+export type PersonalDamageResult =
+  | StandardDamageResult
+  | TuneDamageResult
+  | UnsupportedDamageResult;
+
 export function rupturousTrailTuneAmp(stacks: number): number {
   if (!Number.isInteger(stacks) || stacks < 0) {
     throw new DamageCalculationError("Les stacks Rupturous Trail doivent être un entier positif.");

@@ -142,6 +142,8 @@ export interface EffectDefinition {
     metadata?: SourceMetadata;
   };
   target: EffectTargetScope;
+  /** Runtime activation is explicit; missing policy is never interpreted as active. */
+  activationPolicy?: "initially-active" | "triggered" | "manual-only";
   rules: readonly EffectRuleDefinition[];
   /** Legacy documentation-only activation metadata; structured lifecycle/triggers are executed instead. */
   activation?: { description: string; durationSeconds?: number };

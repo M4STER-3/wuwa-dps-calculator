@@ -60,3 +60,7 @@ Combat Simulation V0.1 n'appelle pas encore le Universal Effect Engine. Son DPS 
 La nouvelle API `simulatePersonalCombat` préserve Combat Simulation V0.1 et compose les moteurs via un Combat Context universel, un State/Trigger Engine et une Event Queue déterministe. Elle applique les stats runtime depuis une base exacte distincte du panneau, résout effets et Motion Values sans muter les Game Data, puis délègue toutes les formules au Damage Engine. Les dégâts externes ne sont jamais comptés; seules les actions émises dont l'owner est personnel le sont.
 
 Voir [`docs/personal-combat-engine.md`](./personal-combat-engine.md) pour les expressions, predicates, lifecycle, ICD, ressources, statuses, ordering, ownership, snapshot policies, couverture et limites Personal/Team.
+
+### Personal DPS Lab
+
+`src/domain/personal-dps-lab.ts` constitue la frontière `UserBuild + Catalog → ResolvedPersonalLoadout`. La résolution est strictement par identifiant, sans fallback d'équipement; elle expose les actions, effets personnels, équipement exact et base ATK/HP/DEF exacte quand le niveau est connu. La route `/personal-dps` garde la Character Box comme source de vérité, travaille sur une copie sandbox non persistée et délègue tous les calculs WuWa au domaine. Voir [`docs/personal-dps-lab.md`](./personal-dps-lab.md).

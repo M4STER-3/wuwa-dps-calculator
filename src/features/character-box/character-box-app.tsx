@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   mainEchoes,
@@ -158,12 +159,10 @@ export function CharacterBoxApp() {
               sauvegardés sur cet appareil.
             </p>
           </div>
-          <button
-            onClick={() => setPickerOpen(true)}
-            className="rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#07110f] hover:bg-white"
-          >
-            + Ajouter un personnage
-          </button>
+          <div className="flex flex-wrap gap-3"><Link href="/personal-dps" className="rounded-xl border border-[var(--line)] px-5 py-3 text-sm font-bold text-[var(--accent)]">Personal DPS Lab</Link><button
+              onClick={() => setPickerOpen(true)}
+              className="rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#07110f] hover:bg-white"
+            >+ Ajouter un personnage</button></div>
         </header>
 
         {box.builds.length === 0 ? (
