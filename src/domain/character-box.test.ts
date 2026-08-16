@@ -11,24 +11,29 @@ import {
   updateBuild,
 } from "./character-box";
 
-const createBuild = (index = 0) =>
-  createBuildFromPreset(presets[index], {
+const aemeathPreset = presets.find((preset) => preset.resonatorId === "aemeath")!;
+const fixturePreset = presets.find(
+  (preset) => preset.source.kind === "technical-fixture",
+)!;
+
+const createBuild = (preset = aemeathPreset, index = 0) =>
+  createBuildFromPreset(preset, {
     id: `build-${index}`,
     now: "2026-08-15T00:00:00.000Z",
   });
 
 describe("Character Box", () => {
   it("crée une copie indépendante depuis un preset", () => {
-    const preset = presets[0];
+    const preset = aemeathPreset;
     const build = createBuild();
     build.skillLevels.basicAttack = 8;
     build.weapon.level = 90;
     build.finalStats.attack = 2400;
-    build.finalStats.elementalDamageBonus.aero = 30;
-    expect(preset.skillLevels.basicAttack).toBe(1);
-    expect(preset.weapon.level).toBe(1);
-    expect(preset.finalStats.attack).toBe(0);
-    expect(preset.finalStats.elementalDamageBonus.aero).toBe(0);
+    build.finalStats.elementalDamageBonus.fusion = 55;
+    expect(preset.skillLevels.basicAttack).toBe(10);
+    expect(preset.weapon.level).toBe(90);
+    expect(preset.finalStats.attack).toBe(2000);
+    expect(preset.finalStats.elementalDamageBonus.fusion).toBe(40);
   });
 
   it("empêche deux builds du même Resonator", () => {
@@ -40,8 +45,8 @@ describe("Character Box", () => {
   });
 
   it("met à jour et supprime un build sans toucher aux autres", () => {
-    const first = createBuild(0);
-    const second = createBuild(1);
+    const first = createBuild(aemeathPreset, 0);
+    const second = createBuild(fixturePreset, 1);
     const box = addBuild(addBuild(emptyCharacterBox(), first), second);
     const updated = { ...first, characterLevel: 90 };
     const afterUpdate = updateBuild(box, updated);
@@ -55,13 +60,13 @@ describe("Character Box", () => {
       characterLevel: 90,
       finalStats: { ...createBuild().finalStats, attack: 2500 },
     };
-    const reset = resetBuild(edited, presets[0], "2026-08-16T00:00:00.000Z");
-    expect(reset.characterLevel).toBe(1);
-    expect(reset.finalStats.attack).toBe(0);
+    const reset = resetBuild(edited, aemeathPreset, "2026-08-16T00:00:00.000Z");
+    expect(reset.characterLevel).toBe(90);
+    expect(reset.finalStats.attack).toBe(2000);
     expect(reset.createdAt).toBe(edited.createdAt);
     expect(reset.updatedAt).toBe("2026-08-16T00:00:00.000Z");
     reset.finalStats.attack = 1;
-    expect(presets[0].finalStats.attack).toBe(0);
+    expect(aemeathPreset.finalStats.attack).toBe(2000);
   });
 
   it("valide uniquement les Sequences S0 à S6", () => {
@@ -69,6 +74,13 @@ describe("Character Box", () => {
       expect(isSequence(value)).toBe(true);
     for (const value of [-1, 7, 1.5, "1", Number.NaN])
       expect(isSequence(value)).toBe(false);
+  });
+
+  it("conserve toutes les Sequences S0 à S6 dans la persistance", () => {
+    for (let sequence = 0; sequence <= 6; sequence += 1) {
+      const build = { ...createBuild(), sequence: sequence as 0 | 1 | 2 | 3 | 4 | 5 | 6 };
+      expect(parseCharacterBox(JSON.stringify({ schemaVersion: 1, builds: [build] })).builds[0].sequence).toBe(sequence);
+    }
   });
 
   it("sérialise et restaure une Box valide", () => {

@@ -2,7 +2,7 @@
 
 ## Séparation des données
 
-- `src/data/catalog.ts` contient les **Game Data** statiques et les presets éditoriaux. Les entrées actuelles sont toutes marquées `technical-fixture` : elles prouvent le fonctionnement sans prétendre être des données Wuthering Waves vérifiées.
+- `src/data/catalog.ts` assemble les **Game Data** statiques et les presets éditoriaux. Les données vérifiées d’un personnage peuvent vivre dans un module dédié, comme `src/data/aemeath.ts`; les entrées de démonstration restantes restent marquées `technical-fixture`.
 - `RecommendedBuildPreset` est une recommandation immutable. `createBuildFromPreset` en copie chaque objet imbriqué modifiable.
 - `UserBuild` contient uniquement les choix du joueur et les références vers les entités statiques. La Box persistée ne duplique pas les armes, Sonata ou Main Echo complets.
 - `src/storage/` isole `localStorage` du domaine. Un stockage cloud pourra plus tard implémenter le même contrat sans modifier les opérations de Box.
@@ -21,4 +21,10 @@ La clé `wuwa-character-box:v1` contient un `CharacterBox` versionné. Les donn�
 
 ## Ajouter des données vérifiées
 
-Une entrée réelle doit remplacer `technical-fixture` par `verified-game-data` ou `editorial-recommendation` et renseigner, lorsque disponibles, la source, l'URL, la version du jeu et la date de vérification. Un preset ne doit jamais être présenté comme recommandé tant que ses valeurs n'ont pas été sourcées et relues.
+Une entrée réelle doit utiliser un niveau de confiance explicite (`verified-game-data`, `multi-source-verified`, `community-recommendation`, `community-calculation`, `disputed` ou `unknown`) et renseigner, lorsque disponibles, la source, l'URL, la version du jeu et la date de vérification. Un preset ne doit jamais être présenté comme recommandé tant que ses valeurs n'ont pas été sourcées et relues.
+
+## Données de combat déclaratives
+
+Les actions, ressources, états, effets et rotations de référence décrivent les faits nécessaires à un futur moteur, mais ne les exécutent pas. Les multiplicateurs conservent leurs hits et leur catégorie réelle de dégâts; les effets distinguent notamment `damage-bonus` de `damage-amplification`, ainsi que durée, fin anticipée, reset et portée d'ICD.
+
+Une rotation n'est pas une timeline simulée. Sa durée totale peut provenir d'un calcul communautaire tandis que les durées d'action, recoveries, timings de hits et fenêtres de cancel restent explicitement `unknown`. La convention de référence est `no-quickswap`.

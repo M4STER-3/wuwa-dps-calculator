@@ -1,3 +1,10 @@
+import {
+  aemeath,
+  aemeathPreset,
+  everbrightPolestar,
+  sigillum,
+  trailblazingStar,
+} from "./aemeath";
 import type {
   MainEcho,
   RecommendedBuildPreset,
@@ -22,16 +29,7 @@ const skillNames = {
 } as const;
 
 export const resonators: readonly Resonator[] = [
-  {
-    id: "fixture-aero-sword",
-    name: "Resonator démo · Aero",
-    element: "aero",
-    weaponType: "sword",
-    rarity: 5,
-    skillNames,
-    resonanceChain: [],
-    source: fixtureSource,
-  },
+  aemeath,
   {
     id: "fixture-fusion-pistols",
     name: "Resonator démo · Fusion",
@@ -45,13 +43,7 @@ export const resonators: readonly Resonator[] = [
 ];
 
 export const weapons: readonly Weapon[] = [
-  {
-    id: "fixture-sword",
-    name: "Épée de démonstration",
-    type: "sword",
-    rarity: 4,
-    source: fixtureSource,
-  },
+  everbrightPolestar,
   {
     id: "fixture-pistols",
     name: "Pistolets de démonstration",
@@ -62,10 +54,12 @@ export const weapons: readonly Weapon[] = [
 ];
 
 export const sonatas: readonly Sonata[] = [
+  trailblazingStar,
   { id: "fixture-sonata", name: "Sonata à renseigner", source: fixtureSource },
 ];
 
 export const mainEchoes: readonly MainEcho[] = [
+  sigillum,
   {
     id: "fixture-main-echo",
     name: "Main Echo à renseigner",
@@ -100,32 +94,34 @@ const emptyFinalStats = () => ({
   },
 });
 
-export const presets: readonly RecommendedBuildPreset[] = resonators.map(
-  (resonator) => ({
-    id: `preset-${resonator.id}`,
-    resonatorId: resonator.id,
-    label: "Fixture technique (non recommandée)",
-    characterLevel: 1,
-    sequence: 0,
-    skillLevels: {
-      basicAttack: 1,
-      resonanceSkill: 1,
-      forteCircuit: 1,
-      resonanceLiberation: 1,
-      introSkill: 1,
-    },
-    weapon: {
-      weaponId:
-        resonator.weaponType === "sword" ? "fixture-sword" : "fixture-pistols",
-      level: 1,
-      rank: 1,
-    },
-    finalStats: emptyFinalStats(),
-    sonataId: "fixture-sonata",
-    mainEchoId: "fixture-main-echo",
-    notes: [
-      "Remplacez cette fixture par un preset sourcé avant de la présenter comme recommandation.",
-    ],
-    source: fixtureSource,
-  }),
-);
+const fixtureResonator = resonators.find(
+  (resonator) => resonator.source.kind === "technical-fixture",
+)!;
+
+const fixturePreset: RecommendedBuildPreset = {
+  id: `preset-${fixtureResonator.id}`,
+  resonatorId: fixtureResonator.id,
+  label: "Fixture technique (non recommandée)",
+  characterLevel: 1,
+  sequence: 0,
+  skillLevels: {
+    basicAttack: 1,
+    resonanceSkill: 1,
+    forteCircuit: 1,
+    resonanceLiberation: 1,
+    introSkill: 1,
+  },
+  weapon: { weaponId: "fixture-pistols", level: 1, rank: 1 },
+  finalStats: emptyFinalStats(),
+  sonataId: "fixture-sonata",
+  mainEchoId: "fixture-main-echo",
+  notes: [
+    "Remplacez cette fixture par un preset sourcé avant de la présenter comme recommandation.",
+  ],
+  source: fixtureSource,
+};
+
+export const presets: readonly RecommendedBuildPreset[] = [
+  aemeathPreset,
+  fixturePreset,
+];
