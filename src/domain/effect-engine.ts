@@ -4,6 +4,7 @@ import type {
   EffectTargetScope, FixedCritOverrideModifier, ModifierKind, StackingPolicy,
 } from "./effect-models";
 import type { Element } from "./models";
+import { evaluatePredicate, type CombatContext } from "./combat-context";
 
 export interface EffectResolutionContext {
   actorId: string;
@@ -14,6 +15,7 @@ export interface EffectResolutionContext {
   resonanceMode?: string;
   actionId?: string;
   actionCategories?: readonly string[];
+  combatContext?: CombatContext;
 }
 
 export type EffectDiagnosticCode =
@@ -75,6 +77,23 @@ export function resolveActiveEffects(instances: readonly ActiveEffectInstance[],
         audit.push({ ...base, status, reason: selectorResult.reason, contributions: [] });
         if (selectorResult.diagnostic) diagnostics.push({ ...selectorResult.diagnostic, instanceId: instance.id, ruleId: rule.id });
         continue;
+      }
+      if (rule.predicates?.length) {
+        if (!context.combatContext) {
+          audit.push({ ...base, status: "unsupported", reason: "missing-context:predicate", contributions: [] });
+          diagnostics.push({ code: "missing-context", message: "Combat Context required by predicates is missing.", instanceId: instance.id, ruleId: rule.id });
+          continue;
+        }
+        const predicateResults = rule.predicates.map((predicate) => evaluatePredicate(predicate, context.combatContext!));
+        if (predicateResults.some((result) => result.status === "unsupported")) {
+          audit.push({ ...base, status: "unsupported", reason: "predicate-unsupported", contributions: [] });
+          diagnostics.push({ code: "missing-context", message: "A rule predicate could not be resolved.", instanceId: instance.id, ruleId: rule.id });
+          continue;
+        }
+        if (predicateResults.some((result) => result.status === "ignored")) {
+          audit.push({ ...base, status: "ignored", reason: "predicate-false", contributions: [] });
+          continue;
+        }
       }
       const index = audit.length;
       const contributions: ResolvedContribution[] = [];

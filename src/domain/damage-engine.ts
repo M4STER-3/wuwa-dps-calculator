@@ -124,7 +124,7 @@ export class DamageCalculationError extends Error {
 }
 
 export type TuneEnemyClass = "1C" | "3C" | "4C";
-export type AemeathResonanceMode = "tune-rupture" | "fusion-burst";
+export type ResonanceMode = string;
 
 export const TUNE_ENEMY_BASE: Readonly<Record<TuneEnemyClass, number>> = {
   "1C": 716,
@@ -155,11 +155,6 @@ export interface TuneCritOverride {
   critDamagePercent: number;
 }
 
-export const AEMEATH_S6_TUNE_RUPTURE_CRIT: TuneCritOverride = {
-  critRatePercent: 80,
-  critDamagePercent: 275,
-};
-
 export interface TuneRuptureRequest {
   action: CombatAction;
   finalStats: FinalStats;
@@ -170,7 +165,8 @@ export interface TuneRuptureRequest {
   modifiers?: TuneDamageModifiers;
   additionalTuneAmpPercent?: number;
   critOverride?: TuneCritOverride;
-  context?: { resonatorId: string; resonanceMode: AemeathResonanceMode };
+  /** Optional data-owned mode gate. The generic formula knows no Resonator ids. */
+  context?: { resonanceMode: ResonanceMode; requiredResonanceMode?: ResonanceMode };
 }
 
 export interface TuneDamageResult {
@@ -283,8 +279,8 @@ export function calculateTuneBreakDamage(
 export function calculateTuneRuptureDamage(
   request: TuneRuptureRequest,
 ): TuneDamageResult | UnsupportedDamageResult {
-  if (request.context?.resonatorId === "aemeath" && request.context.resonanceMode !== "tune-rupture") {
-    return unsupported(request.action, "invalid-resonance-mode", "Aemeath doit être en mode tune-rupture pour cette instance.");
+  if (request.context?.requiredResonanceMode !== undefined && request.context.resonanceMode !== request.context.requiredResonanceMode) {
+    return unsupported(request.action, "invalid-resonance-mode", "The declared resonance mode does not permit this formula instance.");
   }
   if (request.action.scaling !== "tuneAmp" || request.action.multipliers.length === 0) {
     return unsupported(request.action, "missing-motion-values", "L'action ne possède aucun Tune AMP calculable.");

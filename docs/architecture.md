@@ -54,3 +54,9 @@ La couche `src/domain/combat-simulation.ts` relie désormais la projection du Te
 Voir [`docs/combat-simulation.md`](./combat-simulation.md) pour les statuts, le contrat de `supportedDamage` / `supportedDps`, la référence Aemeath S0 et les mécaniques non émises.
 
 Combat Simulation V0.1 n'appelle pas encore le Universal Effect Engine. Son DPS partiel de référence reste inchangé; le branchement via un Combat Context est une étape ultérieure.
+
+### Universal Personal Combat Engine
+
+La nouvelle API `simulatePersonalCombat` préserve Combat Simulation V0.1 et compose les moteurs via un Combat Context universel, un State/Trigger Engine et une Event Queue déterministe. Elle applique les stats runtime depuis une base exacte distincte du panneau, résout effets et Motion Values sans muter les Game Data, puis délègue toutes les formules au Damage Engine. Les dégâts externes ne sont jamais comptés; seules les actions émises dont l'owner est personnel le sont.
+
+Voir [`docs/personal-combat-engine.md`](./personal-combat-engine.md) pour les expressions, predicates, lifecycle, ICD, ressources, statuses, ordering, ownership, snapshot policies, couverture et limites Personal/Team.

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { aemeath, aemeathPreset } from "@/data/aemeath";
 import {
-  AEMEATH_S6_TUNE_RUPTURE_CRIT,
   calculateTuneBreakDamage,
   calculateTuneRuptureDamage,
   rupturousTrailTuneAmp,
@@ -30,7 +29,7 @@ describe("Damage Engine V0.2 — Tune Break / Tune Rupture", () => {
     };
     const starburst = supported(calculateTuneRuptureDamage({
       ...common, action: action("starburst"), element: "fusion",
-      context: { resonatorId: "aemeath", resonanceMode: "tune-rupture" },
+      context: { resonanceMode: "tune-rupture", requiredResonanceMode: "tune-rupture" },
     }));
     const seraphic = supported(calculateTuneRuptureDamage({
       ...common, action: action("seraphic-bonus"), element: "fusion",
@@ -71,14 +70,14 @@ describe("Damage Engine V0.2 — Tune Break / Tune Rupture", () => {
   it("n'utilise pas le Crit normal à S0 et applique seulement l'override S6", () => {
     const request = { action: action("starburst"), finalStats: { ...aemeathPreset.finalStats, critRate: 100, critDamage: 999 }, attackerLevel: 90, enemyClass: "4C" as const, element: "fusion" as const, target: target90 };
     expect(supported(calculateTuneRuptureDamage(request)).expectedCritMultiplier).toBe(1);
-    expect(supported(calculateTuneRuptureDamage({ ...request, critOverride: AEMEATH_S6_TUNE_RUPTURE_CRIT })).expectedCritMultiplier).toBeCloseTo(2.4, 12);
+    expect(supported(calculateTuneRuptureDamage({ ...request, critOverride: { critRatePercent: 80, critDamagePercent: 275 } })).expectedCritMultiplier).toBeCloseTo(2.4, 12);
   });
 
   it("refuse Tune Rupture pour Aemeath en mode fusion-burst", () => {
     expect(calculateTuneRuptureDamage({
       action: action("starburst"), finalStats: aemeathPreset.finalStats,
       attackerLevel: 90, enemyClass: "4C", element: "fusion", target: target90,
-      context: { resonatorId: "aemeath", resonanceMode: "fusion-burst" },
+      context: { resonanceMode: "fusion-burst", requiredResonanceMode: "tune-rupture" },
     })).toMatchObject({ status: "unsupported", reason: "invalid-resonance-mode" });
   });
 

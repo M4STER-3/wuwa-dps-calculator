@@ -1,12 +1,12 @@
 import {
   calculateActionDamage,
-  type AemeathResonanceMode,
   type DamageAmounts,
   type DamageTarget,
   type ScalingAttribute,
   type StandardDamageResult,
   type TuneEnemyClass,
 } from "./damage-engine";
+type ResonanceMode = "tune-rupture" | "fusion-burst";
 import type { CombatAction, Resonator, UserBuild } from "./models";
 import type {
   TemporalConfidence,
@@ -44,7 +44,7 @@ export interface UnmodeledMechanic {
   id: string;
   state: "not-simulated" | "not-emitted";
   formulaSupport: "available" | "not-available" | "not-applicable";
-  mode?: AemeathResonanceMode;
+  mode?: ResonanceMode;
   description: string;
 }
 
@@ -68,7 +68,7 @@ export interface CombatStepResult {
 export interface CombatSimulationRequest {
   resonator: Resonator;
   build: UserBuild;
-  resonanceMode: AemeathResonanceMode;
+  resonanceMode: ResonanceMode;
   timeline: TemporalTimeline;
   target: DamageTarget & { tuneEnemyClass?: TuneEnemyClass };
   /** Character integration policy; Aemeath V0.1 supplies `attack`. */
@@ -80,7 +80,7 @@ export interface CombatSimulationResult {
   version: "combat-simulation-v0.1";
   resonator: { id: string; name: string; element: Resonator["element"] };
   build: { id: string; level: number; sequence: UserBuild["sequence"] };
-  resonanceMode: AemeathResonanceMode;
+  resonanceMode: ResonanceMode;
   rotationId: string;
   rotationDurationSeconds: number;
   temporalConfidence: TemporalConfidence;
@@ -112,7 +112,7 @@ function stepBase(entry: TimelineEntry) {
   };
 }
 
-function mechanics(mode: AemeathResonanceMode): UnmodeledMechanic[] {
+function mechanics(mode: ResonanceMode): UnmodeledMechanic[] {
   const common: UnmodeledMechanic[] = [
     { id: "resource-legality", state: "not-simulated", formulaSupport: "not-applicable", description: "La légalité des ressources, états, coûts et formes n'est pas validée." },
     { id: "real-hit-timings", state: "not-simulated", formulaSupport: "not-applicable", description: "Les timestamps réels des hits sont inconnus et ne sont pas inventés." },
