@@ -1,0 +1,9 @@
+import{describe,expect,it}from"vitest";import{CombatEventQueue,compareCombatEvents,schedulePeriodicStatus,validateSnapshot}from"./event-engine";import type{CombatEvent}from"./state-engine";import type{StatusDefinition}from"./effect-models";
+const event=(id:string,timestamp:number,kind:CombatEvent["kind"]="action-hit"):CombatEvent=>({id,timestamp,kind,ownerId:"a",actorId:"a",targetId:"t"});
+describe("Event Engine V0.1",()=>{
+ it("ordonne timestamp, priorité puis id de manière stable",()=>{const xs=[event("b",1,"action-hit"),event("z",0,"action-end"),event("a",1,"action-start")].sort(compareCombatEvents);expect(xs.map(x=>x.id)).toEqual(["z","a","b"]);});
+ it("insère les follow-ups immédiats et différés",()=>{const q=new CombatEventQueue();q.enqueue(event("root",1,"action-start"));const result=q.drain(e=>e.id==="root"?[{...event("immediate",1),originEventId:e.id,depth:1},{...event("delayed",2),originEventId:e.id,depth:1}]:[]);expect(result.processed.map(x=>x.id)).toEqual(["root","immediate","delayed"]);});
+ it("planifie un status périodique à cadence explicite",()=>{const status:StatusDefinition={id:"dot",label:"DoT",maxStacks:3,periodic:{intervalSeconds:1,maxTicks:3,emittedAction:{actionId:"tick",attribution:"status",snapshot:{stats:"trigger",stacks:"tick"}}}};expect(schedulePeriodicStatus(status,event("apply",2,"status-applied")).events.map(x=>x.timestamp)).toEqual([3,4,5]);});
+ it("protège limite, profondeur et cycles",()=>{const q=new CombatEventQueue({maxProcessedEvents:2,maxChainDepth:1});q.enqueue(event("r",0));const r=q.drain(e=>[{...event(`${e.id}x`,e.timestamp),originEventId:e.originEventId??e.id,depth:(e.depth??0)+1}]);expect(r.partial).toBe(true);expect(r.diagnostics.some(x=>["chain-depth-reached","event-limit-reached"].includes(x.code))).toBe(true);});
+ it("exige une snapshot policy connue",()=>expect(validateSnapshot({stats:"unknown",stacks:"tick"})?.message).toBe("snapshot-policy-required"));
+});
