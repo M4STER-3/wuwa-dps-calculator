@@ -13,7 +13,13 @@
 
 **Il est interdit de recalculer ces statistiques depuis l'arme, le Main Echo ou le Sonata, ou de leur ajouter automatiquement une deuxième fois les mêmes valeurs.**
 
+### Temporal Engine
+
 Les effets temporaires ou conditionnels ne font pas partie de `finalStats`. Le Temporal Engine ne lit ni ne modifie ces statistiques : il positionne uniquement des actions et des fenêtres dans le temps. Un futur moteur de combat pourra consommer ces informations sans recalculer les statistiques permanentes.
+
+### Damage Engine V0.1
+
+Le Damage Engine suit la même frontière : pour un scaling ATK, HP ou DEF, il lit directement la valeur correspondante dans `UserBuild.finalStats`. Il ne reconstruit jamais le panneau depuis le personnage, l'arme, les Echoes, le Sonata ou les Minor Fortes. Les modificateurs temporaires lui sont fournis explicitement par un contexte séparé et ne sont pas activés automatiquement depuis l'équipement ou la timeline.
 
 ## Persistance
 
@@ -30,3 +36,5 @@ Les actions, ressources, états, effets et rotations de référence décrivent l
 Une rotation déclarative reste la source de vérité éditoriale. Le Temporal Engine peut désormais en construire une projection temporelle déterministe séparée, sans dégâts ni DPS. Les recoveries, timings de hits et fenêtres de cancel restent explicitement inconnus tant qu'ils ne sont pas mesurés. La convention de référence est `no-quickswap`.
 
 Voir [`docs/temporal-engine.md`](./temporal-engine.md) pour les profils fallback V0.1, la calibration et les limites du système.
+
+Voir [`docs/damage-engine.md`](./damage-engine.md) pour la formule d'une action individuelle, les groupes multiplicatifs et les limites du Damage Engine V0.1.
