@@ -91,4 +91,20 @@ describe("Character Box", () => {
       parseCharacterBox(JSON.stringify({ schemaVersion: 99, builds: [] })),
     ).toEqual(emptyCharacterBox());
   });
+
+  it("refuse les niveaux d'aptitude hors de la plage 1 à 10", () => {
+    for (const level of [0, 11, 1.5]) {
+      const build = createBuild();
+      build.skillLevels.forteCircuit = level;
+      expect(() => addBuild(emptyCharacterBox(), build)).toThrow(/invalides/);
+      expect(() =>
+        updateBuild({ schemaVersion: 1, builds: [createBuild()] }, build),
+      ).toThrow(/invalides/);
+      expect(
+        parseCharacterBox(
+          JSON.stringify({ schemaVersion: 1, builds: [build] }),
+        ),
+      ).toEqual(emptyCharacterBox());
+    }
+  });
 });

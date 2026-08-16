@@ -24,7 +24,7 @@ export function createBuildFromPreset(
   preset: RecommendedBuildPreset,
   options: { id: string; now: string },
 ): UserBuild {
-  return {
+  const build: UserBuild = {
     id: options.id,
     resonatorId: preset.resonatorId,
     sourcePresetId: preset.id,
@@ -42,9 +42,12 @@ export function createBuildFromPreset(
     createdAt: options.now,
     updatedAt: options.now,
   };
+  assertValidBuild(build);
+  return build;
 }
 
 export function addBuild(box: CharacterBox, build: UserBuild): CharacterBox {
+  assertValidBuild(build);
   if (
     box.builds.some((candidate) => candidate.resonatorId === build.resonatorId)
   ) {
@@ -54,6 +57,7 @@ export function addBuild(box: CharacterBox, build: UserBuild): CharacterBox {
 }
 
 export function updateBuild(box: CharacterBox, build: UserBuild): CharacterBox {
+  assertValidBuild(build);
   return {
     ...box,
     builds: box.builds.map((candidate) =>
@@ -141,6 +145,12 @@ export function isValidBuild(build: unknown): build is UserBuild {
   return (
     typeof value.createdAt === "string" && typeof value.updatedAt === "string"
   );
+}
+
+export function assertValidBuild(build: unknown): asserts build is UserBuild {
+  if (!isValidBuild(build)) {
+    throw new Error("Le build contient des valeurs invalides.");
+  }
 }
 
 export function parseCharacterBox(serialized: string | null): CharacterBox {

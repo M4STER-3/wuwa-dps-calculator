@@ -1,4 +1,4 @@
-import { parseCharacterBox } from "@/domain/character-box";
+import { isValidBuild, parseCharacterBox } from "@/domain/character-box";
 import type { CharacterBox } from "@/domain/models";
 
 export interface CharacterBoxStorage {
@@ -40,6 +40,13 @@ export function createBrowserCharacterBoxStorage(): CharacterBoxStorage {
     load: () =>
       parseCharacterBox(window.localStorage.getItem(CHARACTER_BOX_STORAGE_KEY)),
     save: (box) => {
+      if (
+        box.schemaVersion !== 1 ||
+        !Array.isArray(box.builds) ||
+        !box.builds.every(isValidBuild)
+      ) {
+        throw new Error("Impossible de persister une Character Box invalide.");
+      }
       window.localStorage.setItem(
         CHARACTER_BOX_STORAGE_KEY,
         JSON.stringify(box),

@@ -169,7 +169,7 @@ export interface Resonator {
     energyRegen?: number;
   }>;
   minorFortes?: readonly string[];
-  portrait?: { src: string; alt: string; attribution?: string };
+  portrait?: { src: `/${string}`; alt: string; attribution?: string };
   skillNames: Readonly<Record<SkillType, string>>;
   resonanceChain: ReadonlyArray<{
     sequence: Exclude<Sequence, 0>;
