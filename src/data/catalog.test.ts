@@ -58,6 +58,28 @@ describe("cohérence du catalogue", () => {
     expect(aemeathPreset.finalStats.attack).toBe(2000);
   });
 
+  it("n'expose qu'un équipement réel vérifié pour Aemeath", () => {
+    expect(
+      weapons
+        .filter(
+          (entry) =>
+            entry.type === aemeath.weaponType &&
+            entry.source.kind !== "technical-fixture",
+        )
+        .map((entry) => entry.name),
+    ).toEqual(["Everbright Polestar"]);
+    expect(
+      sonatas
+        .filter((entry) => entry.source.kind !== "technical-fixture")
+        .map((entry) => entry.id),
+    ).toEqual(["trailblazing-star"]);
+    expect(
+      mainEchoes
+        .filter((entry) => entry.source.kind !== "technical-fixture")
+        .map((entry) => entry.name),
+    ).toEqual(["Sigillum"]);
+  });
+
   it("documente le kit Lv10 et les inconnues temporelles sans timeline DPS", () => {
     expect(aemeath.combat?.level10Only).toBe(true);
     expect(aemeath.combat?.actions.find((entry) => entry.id === "finale")?.multipliers).toEqual([{ percent: 1789.29, hits: 1 }]);
