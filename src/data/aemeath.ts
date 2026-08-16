@@ -89,7 +89,7 @@ const structured = (
   rules: EffectDefinition["rules"],
   activation?: EffectDefinition["activation"],
 ): EffectDefinition => ({
-  id, label, target, rules, activation,
+  id, label, target, rules, activation, activationPolicy: activation ? "manual-only" : undefined,
   source: { id: sourceId, type: sourceType, label, metadata: aemeathGameSource },
 });
 const aemeathEffects: readonly CombatEffect[] = [
@@ -197,7 +197,8 @@ export const trailblazingStar: Sonata = {
   id: "trailblazing-star", name: "Trailblazing Star (5-piece)",
   effectDescription: "2-piece: +10 % Fusion DMG. 5-piece: après Fusion Burst ou Tune Rupture - Shifting, +20 % Crit Rate et +20 % Fusion DMG pendant 8 s.",
   effects: [
-    effect({ id: "trailblazing-2pc", name: "Trailblazing Star 2-piece", sourceId: "trailblazing-star", trigger: "2 pièces équipées", target: "self", effect: "+10 % Fusion DMG.", value: 10, valueType: "damage-bonus" }),
+    effect({ id: "trailblazing-2pc", name: "Trailblazing Star 2-piece", sourceId: "trailblazing-star", trigger: "2 pièces équipées", target: "self", effect: "+10 % Fusion DMG.", value: 10, valueType: "damage-bonus",
+      structuredEffect: structured("trailblazing-2pc", "Trailblazing Star 2-piece", "trailblazing-star", "sonata", "self", [{ id: "fusion-damage", label: "+10% Fusion DMG", accounting: "already-in-final-stats", selectors: [{ kind: "element", anyOf: ["fusion"] }], modifiers: [{ kind: "elemental-damage-bonus", value: 10, stacking: "additive" }] }]) }),
     effect({ id: "trailblazing-5pc", name: "Trailblazing Star 5-piece", sourceId: "trailblazing-star", trigger: "Applique Fusion Burst ou Tune Rupture - Shifting", target: "self", effect: "+20 % Crit Rate et +20 % Fusion DMG.", durationSeconds: 8,
       structuredEffect: structured("trailblazing-5pc", "Trailblazing Star 5-piece", "trailblazing-star", "sonata", "self", [
         { id: "crit-rate", label: "+20% Crit Rate", accounting: "runtime", modifiers: [{ kind: "crit-rate-bonus", value: 20, stacking: "additive" }] },
