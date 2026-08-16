@@ -51,7 +51,7 @@ export function resolveUniversalActionPipeline(input: UniversalActionPipelineInp
   const motionResult = applyMotionValueModifiers(action.multipliers, motion);
   if (motionResult.status === "unsupported") return {status:"unsupported",code:motionResult.reason,message:`Motion Value modifiers are unsupported for ${action.id}.`};
   action = { ...action, multipliers: motionResult.groups };
-  const damageEffects=input.effects.map(instance=>({...instance,definition:{...instance.definition,rules:instance.definition.rules.map(rule=>({...rule,modifiers:rule.modifiers.filter(modifier=>!["runtime-stat","motion-value","action-replacement","damage-type-replacement"].includes(modifier.kind))}))}}));
+  const damageEffects=input.effects.map(instance=>({...instance,definition:{...instance.definition,rules:instance.definition.rules.filter(rule=>(rule.requiredSequence??0)<=input.sequence).map(rule=>({...rule,modifiers:rule.modifiers.filter(modifier=>!["runtime-stat","motion-value","action-replacement","damage-type-replacement"].includes(modifier.kind))}))}}));
   const effects = resolveActiveEffects(damageEffects,{actorId:input.context.actorId,targetId:input.context.targetId,teamMemberIds:input.teamMemberIds,element:input.context.element,damageType,actionId:action.id,combatContext:{...context,effectiveStats:stats.stats as unknown as Readonly<Record<string,number>>}});
   if (effects.diagnostics.length) return {status:"unsupported",code:effects.diagnostics[0].code,message:effects.diagnostics[0].message};
   if (effects.overrides.fixedCrit) {
