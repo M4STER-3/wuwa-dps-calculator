@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { lstat, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { generateGameDatabaseV1 } from "./lib/game-database-generator.mjs";
+import { generateReviewedGameDatabaseV1 } from "./lib/reviewed-game-database-generator.mjs";
 
 const REPO_ROOT = path.resolve(process.cwd());
 const INPUT_PATH = path.join(REPO_ROOT, ".tmp", "wuwa-game-data-normalized", "normalized-source.json");
@@ -118,13 +118,15 @@ async function writeAtomic(filePath, value, maxBytes, label) {
 async function main() {
   assertNoArguments();
   const snapshot = await readInput();
-  const { database, report } = generateGameDatabaseV1(snapshot);
+  const { database, report } = generateReviewedGameDatabaseV1(snapshot);
   const databaseBytes = await writeAtomic(DATABASE_PATH, database, MAX_DATABASE_BYTES, "GameDatabase output");
   const reportBytes = await writeAtomic(REPORT_PATH, report, MAX_REPORT_BYTES, "generation report");
   console.log(`WUWA_GAME_DATABASE_V1_GENERATION=${JSON.stringify({
     databaseBytes,
     reportBytes,
     counts: database.manifest.counts,
+    generatedCharacterStatProgressions: report.generatedCharacterStatProgressions,
+    generatedWeaponStatProgressions: report.generatedWeaponStatProgressions,
     skippedPhantomSkinRows: report.skippedPhantomSkinRows,
     skippedNoncanonicalEchoRows: report.skippedNoncanonicalEchoRows,
     unresolved: report.unresolved,
