@@ -53,6 +53,7 @@ jobs:
       - name: Validate game-data importer syntax
         run: |
           node --check scripts/lib/encore-client.mjs
+          node --check scripts/lib/encore-field-inventory.mjs
           node --check scripts/import-wuwa-game-data.mjs
           node --check scripts/test-fixtures/mock-encore-data-fetch.mjs
           node --check scripts/test-wuwa-game-data-import-security.mjs
