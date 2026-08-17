@@ -81,6 +81,8 @@ export interface WeaponCatalogEntry extends GameEntityIdentity {
     attack?: NumericStatProgression;
     secondaryStat?: {
       stat: string;
+      /** Encore weapon secondary-stat growth values are reviewed percentage points. */
+      unit: "percentage-points";
       progression: NumericStatProgression;
     };
   };
