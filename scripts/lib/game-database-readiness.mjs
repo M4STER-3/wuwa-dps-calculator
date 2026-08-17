@@ -3,7 +3,9 @@ const CHARACTER_ELEMENTS = new Set(["Aero", "Glacio", "Electro", "Fusion", "Havo
 const WEAPON_TYPES = new Set(["Broadblade", "Gauntlets", "Pistols", "Rectifier", "Sword"]);
 const VERIFIED_WEAPON_HALF_INDEXES = new Set([20.5, 40.5, 50.5, 60.5, 70.5, 80.5]);
 const MAX_DEPTH = 32;
-const MAX_NODES = 250_000;
+// Current Encore Release measured 278,038 normalized JSON nodes on 2026-08-17.
+// Keep bounded headroom without accepting unreviewed multi-million-node amplification.
+const MAX_NODES = 500_000;
 const MAX_ARRAY = 50_000;
 const MAX_KEYS = 20_000;
 const MAX_STRING = 2 * 1024 * 1024;
