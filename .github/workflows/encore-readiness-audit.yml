@@ -65,6 +65,39 @@ jobs:
       - name: Normalize imported Release data
         run: npm run game-data:normalize
 
+      - name: Measure normalized JSON node count
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+
+          const root = JSON.parse(await readFile('.tmp/wuwa-game-data-normalized/normalized-source.json', 'utf8'));
+          const stack = [root];
+          let nodes = 0;
+          const absoluteAuditCeiling = 5_000_000;
+          while (stack.length > 0) {
+            const value = stack.pop();
+            nodes += 1;
+            if (nodes > absoluteAuditCeiling) throw new Error(`Normalized JSON exceeded audit ceiling ${absoluteAuditCeiling}`);
+            if (value === null || typeof value !== 'object') continue;
+            if (Array.isArray(value)) {
+              for (let index = value.length - 1; index >= 0; index -= 1) stack.push(value[index]);
+            } else {
+              for (const child of Object.values(value)) stack.push(child);
+            }
+          }
+          console.log(`WUWA_NORMALIZED_JSON_NODE_COUNT=${nodes}`);
+          NODE
+
+      - name: Temporarily raise readiness cap for measurement run only
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'const MAX_NODES = 250_000;' scripts/lib/game-database-readiness.mjs
+          sed -i 's/const MAX_NODES = 250_000;/const MAX_NODES = 1_500_000;/' scripts/lib/game-database-readiness.mjs
+          grep -Fq 'const MAX_NODES = 1_500_000;' scripts/lib/game-database-readiness.mjs
+
       - name: Generate GameDatabase readiness report
         run: npm run game-data:readiness
 
