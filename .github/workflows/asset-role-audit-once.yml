@@ -1,0 +1,89 @@
+name: Asset role audit once
+
+on:
+  push:
+    branches:
+      - audit/asset-role-dry-run-20260817
+
+permissions:
+  contents: read
+
+concurrency:
+  group: asset-role-audit-once
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Inspect Encore asset roles without image downloads
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify npm registry signatures and provenance
+        run: npm audit signatures
+
+      - name: Run asset synchronization attack tests
+        run: npm run assets:test-security
+
+      - name: Inspect live Release asset roles without downloading images
+        shell: bash
+        run: |
+          set -euo pipefail
+          log_file="${RUNNER_TEMP}/wuwa-asset-role-audit.log"
+          npm run assets:sync:dry >"${log_file}" 2>&1
+
+          ASSET_ROLE_LOG="${log_file}" node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          const file = process.env.ASSET_ROLE_LOG;
+          if (!file) throw new Error('Missing asset-role log path');
+          const text = await readFile(file, 'utf8');
+          const roleCounts = new Map();
+          const entityIds = new Map([
+            ['characters', new Set()],
+            ['weapons', new Set()],
+            ['echoes', new Set()],
+          ]);
+          let total = 0;
+          for (const line of text.split(/\r?\n/)) {
+            const match = /^\[dry-run\] (characters|weapons|echoes):([^\s]+) ([a-z0-9._-]+)$/.exec(line);
+            if (!match) continue;
+            const [, category, sourceId, assetKey] = match;
+            total += 1;
+            entityIds.get(category).add(sourceId);
+            const key = `${category}:${assetKey}`;
+            roleCounts.set(key, (roleCounts.get(key) ?? 0) + 1);
+          }
+          if (total === 0) throw new Error('Dry-run produced no parsable asset roles');
+          const forbidden = [...roleCounts.keys()].filter((key) =>
+            /(?:^|[._:-])(?:ad|ads|advert|advertisement|advertising|sponsor|sponsored|tracking|tracker|pixel|promo|promotion)(?:[._:-]|$)/i.test(key),
+          );
+          if (forbidden.length > 0) {
+            throw new Error(`Forbidden advertising/tracking asset roles reached dry-run output: ${forbidden.join(', ')}`);
+          }
+          const roles = [...roleCounts.entries()]
+            .sort((left, right) => left[0].localeCompare(right[0]))
+            .map(([key, count]) => ({ key, count }));
+          const summary = {
+            totalAssets: total,
+            entitiesWithAssets: Object.fromEntries(
+              [...entityIds.entries()].map(([category, ids]) => [category, ids.size]),
+            ),
+            uniqueRoleCount: roles.length,
+            roles,
+          };
+          console.log(`ASSET_ROLE_AUDIT=${JSON.stringify(summary)}`);
+          NODE
