@@ -89,9 +89,10 @@ export function loadoutFromDraftSlots(slots: readonly DraftEchoSlot[]): UserEcho
     };
   });
 
+  const explicitMainEchoId = slots[0]?.echoId || undefined;
   const candidate: UserEchoLoadoutV1 = {
     echoes,
-    ...(equipped[0] ? { mainEchoId: equipped[0].echoId } : {}),
+    ...(explicitMainEchoId ? { mainEchoId: explicitMainEchoId } : {}),
   };
 
   if (!isUserEchoLoadoutV1(candidate)) {
