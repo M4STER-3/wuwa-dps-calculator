@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { SiteShell } from "@/components/site-shell";
 import "./globals.css";
-import "./background-system.css";
 import "./site-shell.css";
+import "./background-system.css";
 import "./site-shell-focus.css";
 
 export const metadata: Metadata = {
