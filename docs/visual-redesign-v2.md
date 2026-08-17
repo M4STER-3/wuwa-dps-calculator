@@ -1,6 +1,6 @@
 # WUWA LAB visual redesign V2
 
-Status: **Step 2 / 15 — responsive background behaviour implemented, awaiting visual validation**
+Status: **Step 3 / 15 — interactive artwork navigation implemented; Steps 2–3 awaiting visual validation**
 
 The visual redesign V2 is tracked independently from calculator functionality. It starts at 0% and reaches 100% after all 15 visual steps are completed and validated.
 
@@ -21,26 +21,32 @@ The artwork must not be recoloured, redrawn, filtered or baked together with lat
 
 ## Responsive background contract — Step 2
 
-The responsive layer must preserve the approved image geometry rather than stretching the artwork.
+The responsive layer preserves the approved image geometry rather than stretching the artwork.
 
-- Landscape / desktop: fill the viewport with the 16:9 artwork using `cover`, anchored to the left so the navigation artwork remains stable.
-- Portrait / mobile: preserve the exact 16:9 artwork at viewport height and allow horizontal scrolling instead of compressing the image.
+- Landscape / desktop: the 16:9 artwork covers the viewport while the left navigation edge stays fixed.
+- Portrait / mobile: the exact 16:9 artwork stays at viewport height and may pan horizontally instead of being compressed.
 - The source PNG is never edited for responsive behaviour.
-- No navigation reflow is introduced yet; mobile navigation behaviour belongs to later steps.
-- The reusable presentation component is `src/components/v2/global-background-stage.tsx`.
-- `/visual-test/background` remains the dedicated visual test route.
+- `/visual-test/background` remains the dedicated background test route.
 
-## Navigation model
+Step 3 refines the implementation into an explicit 16:9 artboard plane so interaction coordinates and the raster artwork always scale together.
 
-The left artwork column becomes the main navigation surface for:
+## Interactive artwork navigation — Step 3
 
-1. Home
-2. Character Box
-3. Personal DPS
-4. Team DPS
-5. Game Data
+The five navigation hit targets are transparent overlays measured directly against the approved 3840 × 2160 source. They include each icon plus its adjacent empty label frame and are expressed as percentages of the 16:9 artboard, not viewport guesses.
+
+Routes:
+
+1. Home → `/`
+2. Character Box → `/character-box`
+3. Personal DPS → `/personal-dps`
+4. Team DPS → `/team-dps`
+5. Game Data → `/data`
 
 Echoes are not a top-level navigation destination. The Echo loadout/editor is integrated into Character Box while its existing persistence and exact resolver validation are preserved.
+
+Step 3 intentionally adds no decorative hover/active treatment; those visible states belong to Step 4. The links already expose accessible labels and native keyboard semantics.
+
+Test route: `/visual-test/navigation`.
 
 ## 15-step roadmap
 
@@ -48,7 +54,7 @@ Each completed step is worth 1/15 of the V2 visual redesign.
 
 - [x] **01 — Install approved global background.** Store and verify the immutable 4K local source plus a clean visual-test route.
 - [ ] **02 — Responsive background behaviour.** Preserve the artwork composition across target desktop/tablet/mobile viewports without distortion. **Implemented; awaiting visual approval.**
-- [ ] **03 — Interactive left navigation.** Map the five artwork slots to the final top-level routes.
+- [ ] **03 — Interactive left navigation.** Map the five artwork slots to the final top-level routes. **Implemented; awaiting visual approval.**
 - [ ] **04 — Navigation states.** Add hover, active, focus and labels as independent UI overlays without editing the background.
 - [ ] **05 — Retire legacy shell styling.** Remove conflicting old header/sidebar/content framing and let the approved background become the real site frame. **Checkpoint.**
 - [ ] **06 — Rebuild shared interface language.** Controls, typography, dividers and content surfaces designed to sit naturally on the approved artwork.
@@ -64,7 +70,7 @@ Each completed step is worth 1/15 of the V2 visual redesign.
 
 ## Test / approval workflow
 
-Every step is implemented on its own branch / pull request. A Cloudflare non-production branch build can be used for visual inspection before merge whenever requested. Corrections stay on that step branch until approved.
+Every testable step uses a short Cloudflare branch alias (`v2-step-XX`) so preview links stay stable and human-readable. Corrections remain isolated until visual approval.
 
 ## Architecture boundary
 
@@ -79,4 +85,4 @@ The redesign remains presentation work unless a step explicitly introduces a saf
 
 ---
 
-**V2 visual redesign: 6.67% validated; Step 2 awaiting visual approval.**
+**V2 visual redesign: 6.67% validated; Steps 2–3 implemented and awaiting visual approval.**
