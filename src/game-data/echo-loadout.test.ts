@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EchoCatalogEntry, GameDatabaseV1, SonataSetCatalogEntry } from "./schema";
-import type { EchoLoadoutV1 } from "./echo-loadout";
+import type { EchoLoadoutCatalogV1, EchoLoadoutV1 } from "./echo-loadout";
 import { resolveEchoLoadoutV1 } from "./echo-loadout";
 
 const importedAt = "2026-08-17T00:00:00.000Z";
@@ -35,6 +35,11 @@ const echo = (id: number, cost: 1 | 3 | 4): EchoCatalogEntry => ({
 const database: Pick<GameDatabaseV1, "echoes" | "sonataSets"> = {
   echoes: [echo(4001, 4), echo(3001, 3), echo(3002, 3), echo(1001, 1), echo(1002, 1), echo(4002, 4)],
   sonataSets: [sonata],
+};
+
+const lightweightCatalog: EchoLoadoutCatalogV1 = {
+  echoes: database.echoes.map(({ id, cost, sonataSetIds }) => ({ id, cost, sonataSetIds })),
+  sonataSets: database.sonataSets.map(({ id }) => ({ id })),
 };
 
 function validLoadout(): EchoLoadoutV1 {
@@ -122,6 +127,12 @@ describe("resolveEchoLoadoutV1", () => {
     expect(resolved.contributions.percentagePoints.energyRegen).toBeCloseTo(12.4);
     expect(resolved.contributions.percentagePoints.elementalDamageBonus.fusion).toBe(30);
     expect(resolved.contributions.percentagePoints.damageTypeBonus.resonanceSkill).toBeCloseTo(11.6);
+  });
+
+  it("produces the same resolution from the lightweight browser catalog surface", () => {
+    expect(resolveEchoLoadoutV1(lightweightCatalog, validLoadout())).toEqual(
+      resolveEchoLoadoutV1(database, validLoadout()),
+    );
   });
 
   it("rejects impossible cost, main-stat, Sonata and roll combinations", () => {

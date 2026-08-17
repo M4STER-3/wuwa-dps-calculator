@@ -6,7 +6,6 @@ import type {
   EchoStatRollDefinition,
   EchoStatTableCatalog,
   EchoStatTarget,
-  GameDatabaseV1,
 } from "./schema";
 import { reviewedEchoStatTableV1 } from "./echo-stats-v1";
 
@@ -28,6 +27,22 @@ export interface EchoLoadoutV1 {
   echoes: readonly EquippedEchoV1[];
   /** Canonical Echo id occupying the active Echo Skill slot. */
   mainEchoId?: string;
+}
+
+/**
+ * Minimum reviewed catalog surface required to validate and resolve an Echo loadout.
+ * The promoted GameDatabase and the browser-safe lightweight projection both satisfy
+ * this contract without changing resolver behavior or duplicating gameplay rules.
+ */
+export interface EchoLoadoutCatalogV1 {
+  readonly echoes: readonly {
+    readonly id: string;
+    readonly cost: EchoCost;
+    readonly sonataSetIds: readonly string[];
+  }[];
+  readonly sonataSets: readonly {
+    readonly id: string;
+  }[];
 }
 
 export interface EchoPermanentStatContributions {
@@ -174,7 +189,7 @@ function indexSubstats(table: EchoStatTableCatalog) {
 }
 
 export function resolveEchoLoadoutV1(
-  database: Pick<GameDatabaseV1, "echoes" | "sonataSets">,
+  database: EchoLoadoutCatalogV1,
   loadout: EchoLoadoutV1,
   table: EchoStatTableCatalog = reviewedEchoStatTableV1,
 ): ResolvedEchoLoadoutV1 {
