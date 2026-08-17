@@ -1,0 +1,56 @@
+.root {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  background: #090806;
+  pointer-events: none;
+  user-select: none;
+}
+
+.image {
+  object-fit: cover;
+  object-position: center center;
+}
+
+/*
+ * Exact or wider-than-16:9 desktop canvases keep the composition centred.
+ * No stretching is ever used: the source is always cover-cropped proportionally.
+ */
+@media (min-aspect-ratio: 16 / 9) {
+  .image {
+    object-position: center top;
+  }
+}
+
+/*
+ * Narrow landscape and tablet canvases protect the left ink/navigation region.
+ * Any unavoidable crop is pushed to the far-right parchment edge.
+ */
+@media (max-aspect-ratio: 16 / 9) and (min-width: 720px) {
+  .image {
+    object-position: left center;
+  }
+}
+
+/*
+ * Portrait/mobile cannot show the complete 16:9 composition without either
+ * distortion or large letterboxing. Keep the ink/parchment transition visible
+ * while reserving most of the viewport for future content; the dedicated
+ * mobile navigation added later is not baked into the background artwork.
+ */
+@media (max-width: 719px) {
+  .image {
+    object-position: 24% center;
+  }
+}
+
+@media (forced-colors: active) {
+  .root {
+    background: Canvas;
+  }
+
+  .image {
+    visibility: hidden;
+  }
+}
