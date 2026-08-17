@@ -1,0 +1,162 @@
+name: Base Echo selection audit
+
+on:
+  push:
+    branches:
+      - "audit/echo-cost-release-20260817"
+    paths:
+      - ".github/echo-base-selection.trigger"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Verify Phantom rows are non-canonical skins
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies and validate importer
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm audit signatures
+          npm audit --audit-level=high
+          npm run game-data:test-security
+
+      - name: Import current Encore Release into ephemeral runner storage
+        run: npm run game-data:import
+
+      - name: Measure base versus Phantom skin rows
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/echo-base-selection-audit
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { readFile, writeFile } from 'node:fs/promises';
+          import path from 'node:path';
+
+          const root = 'data/sources/encore/release';
+          const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
+          const entities = manifest?.resources?.echoes?.entities;
+          if (manifest?.sourceProvider !== 'encore' || manifest?.dataset !== 'Release' || !Array.isArray(entities)) {
+            throw new Error('Unexpected source boundary.');
+          }
+          const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+          const counts = () => Object.create(null);
+          const add = (target, value) => { const key = String(value); target[key] = (target[key] ?? 0) + 1; };
+          const addCross = (target, outer, inner) => {
+            const key = String(outer);
+            target[key] ??= counts();
+            add(target[key], inner);
+          };
+          const sort = (target) => Object.fromEntries(
+            Object.entries(target)
+              .sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true }))
+              .map(([key, value]) => [key, value && typeof value === 'object'
+                ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true })))
+                : value]),
+          );
+
+          let quality5Phantom1 = 0;
+          let phantomSkinRows = 0;
+          let baseRows = 0;
+          let baseDuplicateNames = 0;
+          const baseNameHashes = new Set();
+          const phantomRandGroups = counts();
+          const baseRandGroups = counts();
+          const baseRarity = counts();
+          const baseRandToRarity = counts();
+          const baseIntensity = counts();
+          const baseRandToIntensity = counts();
+          const baseSourceIds = new Set();
+          const baseItemIds = new Set();
+          let invalidBaseRandGroup = 0;
+          let invalidBaseId = 0;
+
+          for (const entity of entities) {
+            const bytes = await readFile(path.join(root, 'echoes', 'details', entity.detailFile));
+            if (bytes.length <= 0 || bytes.length > 8 * 1024 * 1024 || sha256(bytes) !== entity.detailSha256) {
+              throw new Error(`Echo ${entity.sourceId} integrity failed.`);
+            }
+            const detail = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+            if (String(detail.MonsterId) !== entity.sourceId) throw new Error(`Echo ${entity.sourceId} ID mismatch.`);
+            if (detail.PhantomType !== 1 || detail.QualityId !== 5) continue;
+            quality5Phantom1 += 1;
+
+            if (typeof detail.MonsterName !== 'string' || detail.MonsterName.length === 0 || detail.MonsterName.length > 500) {
+              throw new Error(`Echo ${entity.sourceId} name is invalid.`);
+            }
+            const isPhantomSkin = /^Phantom(?::|\s)/i.test(detail.MonsterName.trim());
+            if (isPhantomSkin) {
+              phantomSkinRows += 1;
+              add(phantomRandGroups, detail.MainProp?.RandGroupId ?? '<missing>');
+              continue;
+            }
+
+            baseRows += 1;
+            if (![501, 502, 503].includes(detail.MainProp?.RandGroupId)) invalidBaseRandGroup += 1;
+            add(baseRandGroups, detail.MainProp?.RandGroupId ?? '<missing>');
+            add(baseRarity, detail.Rarity ?? '<missing>');
+            addCross(baseRandToRarity, detail.MainProp?.RandGroupId ?? '<missing>', detail.Rarity ?? '<missing>');
+            const intensity = detail.Handbook?.Intensity === undefined
+              ? '<missing>'
+              : detail.Handbook.Intensity === '' ? '<empty>' : String(detail.Handbook.Intensity);
+            if (intensity.length > 120 || /[\u0000-\u001f\u007f-\u009f]/.test(intensity)) throw new Error('Unsafe intensity label.');
+            add(baseIntensity, intensity);
+            addCross(baseRandToIntensity, detail.MainProp?.RandGroupId ?? '<missing>', intensity);
+
+            if (!/^\d+$/.test(String(entity.sourceId)) || baseSourceIds.has(entity.sourceId)) invalidBaseId += 1;
+            baseSourceIds.add(entity.sourceId);
+            const itemId = String(detail.ItemId ?? '');
+            if (!/^\d+$/.test(itemId) || baseItemIds.has(itemId)) invalidBaseId += 1;
+            baseItemIds.add(itemId);
+            const nameHash = createHash('sha256').update(detail.MonsterName.trim(), 'utf8').digest('hex');
+            if (baseNameHashes.has(nameHash)) baseDuplicateNames += 1;
+            baseNameHashes.add(nameHash);
+          }
+
+          const summary = {
+            rawEchoCount: entities.length,
+            quality5PhantomType1Rows: quality5Phantom1,
+            phantomSkinRows,
+            baseRows,
+            baseUniqueSourceIds: baseSourceIds.size,
+            baseUniqueItemIds: baseItemIds.size,
+            baseDuplicateNames,
+            invalidBaseId,
+            invalidBaseRandGroup,
+            phantomSkinRandGroups: sort(phantomRandGroups),
+            baseRandGroups: sort(baseRandGroups),
+            baseRarity: sort(baseRarity),
+            baseRandGroupToRarity: sort(baseRandToRarity),
+            baseHandbookIntensity: sort(baseIntensity),
+            baseRandGroupToIntensity: sort(baseRandToIntensity),
+          };
+          const serialized = `${JSON.stringify(summary, null, 2)}\n`;
+          if (Buffer.byteLength(serialized) > 128 * 1024) throw new Error('Summary too large.');
+          if (/https?:\/\/|MonsterName|sourceUrl|<script/i.test(serialized)) throw new Error('Summary leaked raw data.');
+          await writeFile('.tmp/echo-base-selection-audit/summary.json', serialized, 'utf8');
+          console.log(`WUWA_ECHO_BASE_SELECTION_AUDIT=${JSON.stringify(summary)}`);
+          NODE
+
+      - name: Upload summary only
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: echo-base-selection-summary
+          path: .tmp/echo-base-selection-audit/summary.json
+          if-no-files-found: error
+          retention-days: 3
