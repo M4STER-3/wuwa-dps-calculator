@@ -1,0 +1,98 @@
+name: GameDatabase promotion
+
+on:
+  push:
+    branches:
+      - 'game-data-promotion/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: game-database-promotion-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build sanitized GameDatabase from live Release
+    if: github.event.head_commit.message == 'trigger game-data promotion'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout promotion trigger without write credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Verify branch is exactly main plus the trigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_NAME}" != game-data-promotion/* ]]; then
+            exit 1
+          fi
+          git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
+          main_sha="$(git rev-parse refs/remotes/origin/main)"
+          parent_sha="$(git rev-parse HEAD^)"
+          if [[ "${parent_sha}" != "${main_sha}" ]]; then
+            exit 1
+          fi
+          mapfile -t changed < <(git diff --name-only "${main_sha}" HEAD)
+          if [[ "${#changed[@]}" -ne 1 || "${changed[0]}" != '.game-data-promotion-trigger' ]]; then
+            exit 1
+          fi
+          if [[ "$(cat .game-data-promotion-trigger)" != 'release' ]]; then
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify dependencies and untrusted-data boundaries
+        run: |
+          set -euo pipefail
+          npm audit signatures
+          npm audit --audit-level=high
+          npm run game-data:test-security
+          npm run game-data:test-normalizer-security
+          npm run game-data:test-hardening-security
+          npm run game-data:test-readiness-security
+          npm run game-data:test-promotion-security
+
+      - name: Import current Encore Release into ephemeral storage
+        run: npm run game-data:import
+
+      - name: Build reviewed GameDatabase V1
+        run: npm run game-data:build
+
+      - name: Independently verify generated database
+        run: node scripts/verify-generated-game-database.mjs --generated
+
+      - name: Stage only sanitized database and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/game-database-promotion-artifact
+          cp .tmp/wuwa-game-database-v1/game-database-v1.json .tmp/game-database-promotion-artifact/game-database-v1.json
+          sha256sum .tmp/game-database-promotion-artifact/game-database-v1.json | awk '{print $1}' > .tmp/game-database-promotion-artifact/game-database-v1.sha256
+          mapfile -t files < <(find .tmp/game-database-promotion-artifact -type f -printf '%f\n' | sort)
+          expected=('game-database-v1.json' 'game-database-v1.sha256')
+          [[ "${files[*]}" == "${expected[*]}" ]]
+
+      - name: Upload sanitized promotion artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: game-database-promotion
+          path: .tmp/game-database-promotion-artifact
+          if-no-files-found: error
+          retention-days: 3
+          include-hidden-files: false
