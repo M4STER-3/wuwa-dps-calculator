@@ -42,13 +42,42 @@ function lists(pathname) {
 
 function detail(pathname) {
   if (pathname === "/api/en/character/1") {
-    return jsonResponse({ Id: 1, Name: "Security Fixture Character", Nested: { Value: 123 } });
+    return jsonResponse({
+      Id: 1,
+      Name: "Security Fixture Character",
+      Description: "A safe character description used to map textual Encore fields.",
+      Skills: [
+        {
+          Name: "Basic Attack",
+          Description: "Perform a sequence of attacks and deal damage.",
+          Multiplier: 123.45,
+        },
+      ],
+      Nested: { Value: 123, Enabled: true },
+      ExternalGuide: "https://evil.example/tracker?user=123",
+      HtmlSnippet: "<b>formatted source text</b>",
+      ScriptSnippet: "<script>alert('never execute')</script>",
+    });
   }
   if (pathname === "/api/en/weapon/2") {
-    return jsonResponse({ Id: 2, Name: "Security Fixture Weapon", Stats: [{ Level: 90, Value: 500 }] });
+    return jsonResponse({
+      Id: 2,
+      Name: "Security Fixture Weapon",
+      Passive: {
+        Name: "Fixture Passive",
+        Description: "Increase a stat after a reviewed condition.",
+      },
+      Stats: [{ Level: 90, Value: 500 }],
+    });
   }
   if (pathname === "/api/en/echo/3") {
-    return jsonResponse({ Id: 3, Name: "Security Fixture Echo", Cost: 4 });
+    return jsonResponse({
+      Id: 3,
+      Name: "Security Fixture Echo",
+      Cost: 4,
+      SkillDescription: "Transform into the fixture Echo and deal damage.",
+      Sonata: [{ Id: 99, Name: "Fixture Sonata" }],
+    });
   }
   return null;
 }
