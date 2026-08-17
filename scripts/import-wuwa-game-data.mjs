@@ -24,6 +24,7 @@ import {
 const REPO_ROOT = path.resolve(process.cwd());
 const RAW_ROOT = path.join(REPO_ROOT, "data", "sources", "encore", "release");
 const TEMP_ROOT = path.join(REPO_ROOT, ".tmp", "wuwa-game-data-import");
+const AUDIT_OUTPUT_ROOT = path.join(REPO_ROOT, ".tmp", "wuwa-game-data-audit");
 const MAX_ENTITIES_PER_RESOURCE = 1000;
 const MAX_SCHEMA_PATHS = 5000;
 const MAX_SCHEMA_DEPTH = 8;
@@ -201,6 +202,22 @@ function buildDiff(previousManifest, nextResources) {
   return { blockedByRemovals: blocked, resources: diff };
 }
 
+async function writeAuditOutputs(manifest, schemaReport) {
+  await assertNoSymlinkComponents(AUDIT_OUTPUT_ROOT, REPO_ROOT);
+  await rm(AUDIT_OUTPUT_ROOT, { recursive: true, force: true });
+  await mkdir(AUDIT_OUTPUT_ROOT, { recursive: true, mode: 0o755 });
+  await writeFile(
+    path.join(AUDIT_OUTPUT_ROOT, "manifest.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+    { flag: "wx", mode: 0o644 },
+  );
+  await writeFile(
+    path.join(AUDIT_OUTPUT_ROOT, "schema-report.json"),
+    `${JSON.stringify(schemaReport, null, 2)}\n`,
+    { flag: "wx", mode: 0o644 },
+  );
+}
+
 async function promoteSnapshot(stageRoot) {
   await assertNoSymlinkComponents(path.join(REPO_ROOT, "data"), REPO_ROOT);
   await assertNoSymlinkComponents(path.dirname(RAW_ROOT), REPO_ROOT);
@@ -340,6 +357,7 @@ async function main() {
       counts: Object.fromEntries(Object.entries(resources).map(([key, value]) => [key, value.count])),
       diff,
       schemaPathCount: schemaReport.paths.length,
+      auditReportPath: auditOnly ? relativeRepoPath(AUDIT_OUTPUT_ROOT) : null,
       promoted: !auditOnly && !diff.blockedByRemovals,
     };
     console.log(`WUWA_GAME_DATA_IMPORT_REPORT=${JSON.stringify(summary)}`);
@@ -348,7 +366,10 @@ async function main() {
       throw new Error("Encore import blocked: one or more previously known entities disappeared from the source");
     }
 
-    if (auditOnly) return;
+    if (auditOnly) {
+      await writeAuditOutputs(manifest, schemaReport);
+      return;
+    }
     await promoteSnapshot(stageRoot);
   } finally {
     await rm(runRoot, { recursive: true, force: true }).catch(() => {});
