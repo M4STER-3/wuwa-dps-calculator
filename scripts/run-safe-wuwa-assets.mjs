@@ -9,7 +9,7 @@ const PUBLIC_ROOT = path.join(REPO_ROOT, "public");
 const OUTPUT_ROOT = path.join(PUBLIC_ROOT, "assets", "wuwa");
 const OBJECTS_ROOT = path.join(OUTPUT_ROOT, "objects");
 const MANIFEST_PATH = path.join(OUTPUT_ROOT, "manifest.json");
-const SYNC_SCRIPT = fileURLToPath(new URL("./sync-wuwa-assets.mjs", import.meta.url));
+const SYNC_SCRIPT = fileURLToPath(new URL("./sync-wuwa-assets-v2.mjs", import.meta.url));
 const ALLOWED_ARGS = new Set(["--dry-run", "--force"]);
 
 function assertAllowedArguments(args) {
