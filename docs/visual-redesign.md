@@ -1,251 +1,82 @@
-# WUWA LAB visual redesign
+# WUWA LAB visual redesign V2
 
-Status: **Step 7 / 20 — illustrated card system defined**
+Status: **Step 1 / 15 — global background asset checkpoint in progress**
 
-This document is the visual source of truth for the WUWA LAB redesign. Visual-redesign progress is tracked separately from calculator functionality: it starts at 0% and reaches 100% only after all 20 visual steps are complete.
+The visual redesign is tracked separately from calculator functionality. This V2 roadmap restarts visual progress at **0%** and reaches **100% only after all 15 steps are visually validated**.
 
-## 1. Locked art direction
+The calculator architecture, combat engines, persistence, exact Echo resolver, GameDatabase, promoted local assets, and security boundaries are preserved. This roadmap replaces only the presentation layer.
 
-WUWA LAB should feel like a premium Wuthering Waves theorycraft companion rather than a generic SaaS dashboard or RGB gaming tool.
+## 1. Locked visual source of truth
 
-The supplied visual reference establishes this direction:
+The user-approved global background is the supplied WUWA LAB parchment/ink image with:
 
-- **Primary surfaces:** warm ivory / parchment-like content surfaces.
-- **Contrast surfaces:** deep charcoal / ink-black navigation, selected states and image-led cards.
-- **Accents:** restrained antique gold / warm beige. Gameplay colours are reserved for actual gameplay meaning.
-- **Borders:** thin, precise, slightly warm neutral lines.
-- **Shape language:** editorial and slightly irregular rather than box-driven. Use partial frames, restrained cut corners, layered planes, overlap and directional separators before adding another complete rectangle.
-- **Texture:** subtle paper / grain / ink treatment may add atmosphere but never reduce data readability.
-- **Typography:** editorial display hierarchy plus compact technical UI/data typography.
-- **Density:** information-rich but ordered, closer to a technical field guide than a spacious SaaS dashboard.
-- **Illustration:** Resonator, weapon and Echo imagery becomes part of navigation and recognition, not decoration only.
-- **Motion:** restrained and functional. No RGB glow, animated grain or attention-seeking motion.
+- a dark ink-painted navigation region on the left;
+- five gold icon + empty-label navigation rows;
+- warm ivory/parchment content field;
+- irregular black ink transition between navigation and content;
+- restrained gold line work and decorative motifs;
+- no independent Echo navigation item;
+- no generated CSS recreation of the parchment/ink artwork.
 
-This is a visual direction, not a request to reproduce the official Wuthering Waves UI or the reference image pixel-for-pixel.
+The background image itself is treated as an immutable visual asset. UI states, text, buttons and interactions must be layered **above** it rather than baked into or painted over the source image.
 
-### Shape-composition rule
+## 2. Navigation information architecture
 
-A section should not automatically become a bordered rectangle. Prefer, in order:
+The five navigation rows map to:
 
-1. alignment and spacing;
-2. typography and contrast;
-3. a directional rule or partial frame;
-4. overlapping paper/ink planes;
-5. a restrained cut-corner container only when a real boundary is useful.
+1. Accueil
+2. Character Box
+3. DPS personnel
+4. DPS équipe
+5. Données
 
-Avoid repeated nested rectangles, equal-width dashboard grids, large generic rounded cards, and perfect geometric repetition when the content can remain clear with a more editorial composition. Decorative asymmetry must stay subtle enough that technical values still scan quickly.
+Echoes are **not** a standalone primary navigation section. Echo management belongs inside Character Box.
 
-## 2. Legacy styling to remove progressively
+## 3. Asset rules
 
-The old full-screen dark teal/cyan dashboard presentation is legacy styling during the migration. New redesign work must not treat it as the target.
+- The approved global background is a local project asset.
+- Do not recolour, regenerate, crop destructively or paint over the source file.
+- Responsive behaviour is implemented by layout/CSS around the asset.
+- Resonator, weapon and Echo identity imagery remains sourced from the verified local WUWA asset pipeline.
+- Gameplay imagery is resolved by stable promoted IDs, never by fuzzy display-name matching.
+- RAW imported data remains unavailable to browser UI.
 
-The redesign should progressively remove or strongly reduce:
+## 4. Test / merge rule
 
-- full-screen black/blue as the default content surface;
-- cyan as the dominant brand colour;
-- large generic rounded SaaS panels;
-- repeated complete rectangular frames around every content group;
-- excessive pill badges;
-- oversized empty spacing around technical data;
-- controls visually dominating the content;
-- text-only equipment selection when useful local imagery is available;
-- decorative glow as a hierarchy mechanism.
+Every visual step is developed on a dedicated branch and PR so the user can test the Cloudflare non-production preview before the next step.
 
-Legacy CSS can remain temporarily where a feature has not reached its dedicated redesign step. It must not be globally remapped in a way that breaks contrast.
+A visual step is not considered validated merely because CI is green. If the user wants to inspect it, the PR stays unmerged until visual approval.
 
-## 3. Product principles
+## 5. Fifteen-step roadmap
 
-1. **Data readability comes first.**
-2. **Game imagery should improve recognition and navigation.**
-3. **Permanent and runtime state must remain visually understandable.**
-4. **Dense does not mean cluttered: alignment, type and separators should do more work than giant containers.**
-5. **Composition should do more work than boxes: use layering, overlap, partial lines and asymmetric balance before complete frames.**
-6. **Character Box, Echoes, Personal DPS, Team DPS and Game Data must share one visual grammar.**
-7. **Mobile is a reflow of the same product, not a separate visual system.**
-8. **Only local verified gameplay imagery is used in the future image pipeline.**
+Each completed and visually validated step represents **6.67%** of the V2 visual redesign (the final step closes the remaining rounding difference to 100%).
 
-## 4. Page-level targets
+- [ ] **01 — Exact global background asset.** Add the approved source image unchanged as a local asset and provide a clean full-screen validation route.
+- [ ] **02 — Responsive background behaviour.** Define desktop/tablet/mobile sizing, anchoring and fallback without distorting the source artwork.
+- [ ] **03 — Interactive left navigation.** Overlay the five real routes on the five image navigation rows: Home, Character Box, Personal DPS, Team DPS, Data.
+- [ ] **04 — Navigation states.** Add hover, active, focus and labels above the immutable background without repainting it.
+- [ ] **05 — Remove the legacy shell.** Retire the old generated header/sidebar/footer and conflicting dark/cyan shell presentation. **Checkpoint.**
+- [ ] **06 — V2 content primitives.** Rework fields, buttons, tabs, separators and panels to fit parchment/ink/gold with less box-driven geometry.
+- [ ] **07 — Safe gameplay-image projection.** Expose the minimal stable-ID → local-image surface for Resonators, weapons and Echoes.
+- [ ] **08 — Resonator imagery system.** Validate real local portraits/artwork, crops, fallbacks and selected states across a representative sample.
+- [ ] **09 — Character Box reconstruction.** Build the central Resonator/build composition on the approved background. **Checkpoint.**
+- [ ] **10 — Weapon imagery and selection.** Add real local weapon art, compact metadata and visual selection.
+- [ ] **11 — Echoes inside Character Box.** Integrate the existing exact five-Echo editor, real Echo imagery, Main Echo, cost, Sonata and exact substats inside Character Box.
+- [ ] **12 — Personal and Team DPS reconstruction.** Recompose build identity, results, breakdowns and rotation/timeline on the V2 visual system. **Checkpoint.**
+- [ ] **13 — Game Data reconstruction.** Build the illustrated Resonator / weapon / Echo / Sonata catalogue with filters and details.
+- [ ] **14 — Home reconstruction.** Build the final WUWA LAB landing composition and reuse verified local imagery where useful.
+- [ ] **15 — Final visual QA and production validation.** Desktop/tablet/mobile, zoom, accessibility, image loading/fallback, performance, full CI and Cloudflare production-bundle verification.
 
-### Home
-Editorial WUWA LAB hero, restrained character artwork, compact database counters and strong dark module navigation.
+## 6. Architecture boundary
 
-### Character Box
-Compact Resonator gallery, selected-character presentation, weapon, permanent stats and build summary in one structured editorial composition. The page should avoid a wall of equally weighted panels: selected character artwork and build identity must create a clear dominant plane.
+The redesign must not silently alter combat semantics.
 
-### Echo editor
-Five coherent image-led Echo cards with Main Echo, cost, Sonata, main stats and substats readable without a wall of selects. The loadout should read as one composition rather than five unrelated form boxes.
-
-### Personal DPS
-Build identity and result lead visually: DPS, duration, total damage, breakdown and rotation timeline. Diagnostics and sandbox controls become secondary.
-
-### Team DPS
-Three character identities, team result, rotation timeline, buffs and per-character contribution form the main hierarchy.
-
-### Game Data
-Illustrated compendium/catalogue with compact filters and detailed information after selection.
-
-## 5. Image integration boundary
-
-Real game imagery is intentionally **not wired in Steps 1–7**. Browser-safe integration begins at Step 8 after the visual foundations and illustrated-card contract exist.
-
-Image sequence:
-
-- **Step 8:** safe stable-ID → local asset UI projection;
-- **Step 9:** first cross-category rendering proof for Resonators, weapons and Echoes;
-- **Step 11:** Resonator portraits/artwork in Character Box;
-- **Step 12:** weapon imagery and visual selection;
-- **Step 15:** Echo imagery in the five-slot editor;
-- **Steps 17–19:** reuse imagery in Home, DPS and Game Data.
-
-Image rules:
-
-- resolve by stable promoted IDs;
-- use local files from the existing GameAssetRegistry or a derived safe projection;
-- never infer associations from display names;
-- never expose RAW imported data to the browser;
-- provide deterministic missing-image fallbacks;
-- optimise thumbnail and large-artwork use separately where practical.
-
-Generated decorative imagery is optional, not required for the redesign. Shape language, layering, colour and layout must work in CSS/components first. If original generated decorative assets are introduced later, they should be limited to WUWA LAB-specific ornamentation/background motifs, while actual Resonator, weapon and Echo identity imagery remains sourced from the verified local game-asset pipeline.
-
-## 6. Foundation contracts
-
-### Design tokens — Step 2
-
-The `--wuwa-*` namespace defines:
-
-- canvas / paper / raised paper / muted paper surfaces;
-- ink / soft ink / raised ink surfaces;
-- primary, muted and faint ink text plus on-ink text;
-- antique-gold accent levels;
-- warm line levels;
-- muted semantic success / warning / danger / info states;
-- keyboard focus colour;
-- restrained radii and shadows;
-- spacing, page-width and control-height scales.
-
-New redesign components consume these tokens directly. Legacy `--background`, `--panel`, `--accent` and similar variables remain compatibility aliases only for unmigrated features.
-
-### Typography — Step 3
-
-`src/app/typography.css` defines three roles:
-
-- display serif for editorial titles and very large result numbers;
-- native/system sans-serif for UI, body copy and controls;
-- stable sans-serif data role with tabular/lining numerals.
-
-No external font dependency or hosted font request is introduced.
-
-### Shared UI primitives — Step 4
-
-`src/components/ui/wuwa-ui.tsx` and `src/app/ui-primitives.css` provide reusable presentation-only building blocks:
-
-- paper/ink panels and cards;
-- primary, secondary, ghost and destructive buttons;
-- compact semantic badges;
-- tabs;
-- labelled inputs/selects;
-- stat rows;
-- dividers;
-- supplementary keyboard-accessible tooltips;
-- editorial section headers.
-
-They contain no game, persistence, remote-data or combat logic.
-
-These primitives are building blocks, not a mandate to wrap every section in a panel. Later feature pages should prefer the shape-composition rule above.
-
-### Global shell — Step 5 checkpoint
-
-The previous horizontal SaaS header was replaced with the first fully migrated product frame:
-
-- persistent desktop ink navigation rail;
-- numbered, route-aware navigation with restrained gold active state;
-- compact warm-paper workspace context bar;
-- native responsive mobile menu;
-- warm-paper footer;
-- warm keyboard focus treatment.
-
-Unmigrated feature pages intentionally remain dark inside this new shell until their own page steps. See `docs/site-shell.md`.
-
-### Background / texture system — Step 6
-
-`src/app/background-system.css` provides static, reusable paper and ink background roles built entirely with CSS gradients.
-
-It introduces:
-
-- warm paper canvas lighting;
-- very fine paper fibre treatment;
-- restrained ink grain and warm illumination;
-- a thin editorial-rule utility;
-- shell application for context bar, footer, desktop rail and mobile header;
-- a subtle transition into still-legacy dark content.
-
-There are no raster texture assets, data-URI textures, remote resources, animated grain, JavaScript texture generation or fixed blur layers.
-
-Texture is decorative only. `prefers-contrast: more` and `forced-colors: active` remove it. See `docs/background-system.md`.
-
-### Illustrated card system — Step 7
-
-`src/components/ui/wuwa-illustrated-card.tsx` and `src/app/illustrated-card.css` define the image-led presentation contract before real game assets are exposed to browser UI.
-
-The system provides:
-
-- explicit `resonator`, `weapon`, and `echo` kinds;
-- `gallery`, `standard`, and `feature` densities;
-- deterministic CSS-only R/W/E fallbacks;
-- subtle cut-corner silhouettes instead of generic rounded rectangles;
-- partial artwork frames rather than complete nested boxes;
-- slightly overlapping information planes;
-- layered feature composition rather than rigid equal columns;
-- native selectable button semantics with `aria-pressed`;
-- explicit unavailable state;
-- reduced-motion, high-contrast, and forced-colours fallbacks.
-
-Step 7 still has no access to GameAssetRegistry or external URLs. See `docs/illustrated-cards.md`.
-
-## 7. Twenty-step redesign roadmap
-
-Each completed step represents **5%** of the visual redesign.
-
-- [x] **01 — Lock art direction.** Establish reference language, non-goals and product principles.
-- [x] **02 — Design tokens.** Define colour, surface, border, radius, shadow and spacing tokens.
-- [x] **03 — Typography system.** Define heading, body, stat, label and numeric hierarchy.
-- [x] **04 — Shared UI primitives.** Build panels, cards, buttons, tabs, fields, badges, stat rows, dividers and tooltips.
-- [x] **05 — Global shell.** Rebuild navigation, page frame and footer. **Checkpoint passed.**
-- [x] **06 — Background / texture system.** Implement restrained paper, grain and decorative treatment with accessibility/performance constraints.
-- [x] **07 — Illustrated card system.** Create reusable image-led cards for Resonators, weapons and Echoes with the less-boxed editorial shape language.
-- [ ] **08 — Safe UI asset projection.** Expose only local stable-ID image mappings required by browser UI.
-- [ ] **09 — Asset presentation proof.** Validate crop, fallback, sizing and loading on a small cross-category sample. **Checkpoint.**
-- [ ] **10 — Character Box layout.** Recompose the page before final imagery polish.
-- [ ] **11 — Character imagery.** Integrate real local Resonator portraits/artwork into Character Box.
-- [ ] **12 — Weapon imagery.** Integrate real local weapon imagery and visual selection.
-- [ ] **13 — Character Box final visual pass.** Finish density, states, filters, build summary and responsive behaviour. **Checkpoint.**
-- [ ] **14 — Echo editor layout.** Recompose the five-slot loadout around image-led cards and compact controls.
-- [ ] **15 — Echo imagery.** Integrate real local Echo imagery while preserving exact resolver validation.
-- [ ] **16 — Visual Echo picker.** Replace the giant selection flow with a searchable/filterable image catalogue. **Checkpoint.**
-- [ ] **17 — Home redesign.** Build the final WUWA LAB landing composition using the established system.
-- [ ] **18 — Personal / Team DPS redesign.** Recompose result hierarchy, timelines, breakdowns and controls. **Checkpoint.**
-- [ ] **19 — Game Data redesign.** Build the unified illustrated catalogue for Resonators, weapons, Echoes and Sonata.
-- [ ] **20 — Final visual QA.** Desktop/tablet/mobile, accessibility, loading/error states, image performance, consistency and production build verification.
-
-## 8. Checkpoint rule
-
-Steps 5, 9, 13, 16 and 18 are explicit visual checkpoints. If the direction looks wrong at a checkpoint, fix the shared language before carrying it into additional pages.
-
-The Step 9 checkpoint must explicitly assess whether the result remains too geometric/box-driven once real imagery is present. If so, shape, overlap and framing must be corrected there before Character Box layout work begins.
-
-## 9. Architecture boundary during the redesign
-
-The redesign is presentation work unless a step explicitly requires a safe UI projection. It must not silently change combat semantics.
-
-In particular:
-
-- `UserBuild.finalStats` remains the sole permanent-stat source consumed by runtime engines;
-- Damage / State / Temporal engines must never rebuild permanent stats from weapon, Echo or Sonata data;
-- unsupported or incomplete calculations remain visibly distinguishable from verified results;
-- external descriptions remain inert data and are never interpreted as executable logic;
-- visual/image work must not bypass the established data and asset security boundaries.
+- `UserBuild.finalStats` remains the sole permanent-stat source consumed by runtime engines.
+- Damage / State / Temporal engines must never rebuild permanent stats from weapon, Echo or Sonata data.
+- Unsupported or incomplete calculations remain visibly distinguishable from verified results.
+- External descriptions remain inert data and are never interpreted as executable logic.
+- Existing Character Box and Echo persistence must survive presentation migrations.
 
 ---
 
-**Visual redesign progress after Step 7: 35%.**
+**V2 visual progress: 0% until Step 1 is visually validated.**
