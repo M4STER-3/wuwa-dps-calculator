@@ -1,0 +1,92 @@
+# Encore Game Data Importer V1
+
+The importer treats Encore as an untrusted data source. It does not execute remote content and it does not normalize descriptive data into combat rules.
+
+## Scope
+
+V1 acquires the current Encore `Release` dataset for:
+
+- characters: list + one detail request per source ID;
+- weapons: list + one detail request per source ID;
+- Echoes: list + one detail request per source ID.
+
+The current Encore API documentation exposes these resources under `https://api-v2.encore.moe/api/{lang}`. The importer fixes the language to `en` and the dataset to `Release`.
+
+Sonata sets and detailed stat/progression normalization are deliberately not guessed in this first network step. Their real source shapes will be derived from the schema audit produced by the live audit workflow before normalized mappings are implemented.
+
+## Commands
+
+```bash
+npm run game-data:test-security
+npm run game-data:import:audit
+npm run game-data:import
+```
+
+`game-data:test-security` uses a mocked transport and never contacts Encore.
+
+`game-data:import:audit` contacts Encore but never promotes RAW data into `data/`. It leaves only two non-RAW audit files in the ignored `.tmp/wuwa-game-data-audit/` directory:
+
+- `manifest.json` — request hashes, sizes, source IDs, counts and diff metadata;
+- `schema-report.json` — observed JSON paths and value types, without copying arbitrary source values into logs.
+
+`game-data:import` performs the same acquisition and validation and promotes the fully validated snapshot to `data/sources/encore/release/` only after the complete run succeeds.
+
+## Network boundary
+
+The network client is intentionally narrow:
+
+- exact origin: `https://api-v2.encore.moe`;
+- exact API family: `/api/en/character`, `/weapon`, `/echo` and their ID detail routes;
+- HTTPS only;
+- query string contains only `v=Release`;
+- GET only;
+- `Accept: application/json`;
+- redirects disabled;
+- URL credentials, custom ports and fragments are not accepted;
+- response content type must be `application/json`;
+- per-response and total-transfer byte budgets are enforced while streaming;
+- requests have a timeout.
+
+An URL found inside an Encore payload is data only. It is never passed back into `fetch()`. This prevents advertisements, tracking links, download links or compromised payload fields from choosing a new network destination.
+
+## JSON quarantine and validation
+
+Downloaded bytes remain in a temporary ignored quarantine directory until the whole run succeeds.
+
+Before a payload is accepted it must be:
+
+- valid UTF-8;
+- valid JSON;
+- within depth/node/array/object/string/key limits;
+- free of dangerous object keys such as `__proto__`, `prototype` and `constructor`;
+- part of an expected list collection;
+- composed of entities with bounded, stable source IDs;
+- free of duplicate source IDs within a resource family.
+
+The importer stores only `.json` files. Remote data cannot select output paths; detail filenames are derived from SHA-256 of the validated source ID.
+
+## Last-known-good policy
+
+The importer is fail-closed.
+
+A failed list request, failed detail request, invalid payload, duplicate ID, unsafe key, exceeded resource budget or filesystem safety error prevents promotion.
+
+Before replacing an existing snapshot, the importer compares source IDs with the previous manifest. If any previously known character, weapon or Echo disappears, the run is blocked and the previous snapshot remains authoritative. There is no automatic removal flag in V1.
+
+Promotion uses a staged directory and a recoverable directory swap so an incomplete network run cannot progressively overwrite the current RAW snapshot.
+
+## Schema discovery before normalization
+
+`schema-report.json` records observed JSON paths and value types up to a bounded depth. This is the source for the next implementation step:
+
+`RAW snapshot -> reviewed field mapping -> normalized generated Game Database`
+
+The mapping must be explicit. Unknown fields can remain in RAW data, but only reviewed allowlisted fields may enter generated catalog entries. Descriptions never become executable `CombatEffect` rules automatically.
+
+## GitHub live audit
+
+`.github/workflows/encore-import-audit.yml` is manual-only (`workflow_dispatch`). It has read-only repository permissions, no deployment secrets, no write permission to `main`, installs locked dependencies with lifecycle scripts disabled, verifies npm signatures/provenance, runs the mock attack tests, then performs `game-data:import:audit`.
+
+Only the audit manifest and schema report are uploaded as a short-lived GitHub artifact. RAW payloads are not uploaded by this workflow.
+
+The purpose of this first live run is to inspect the real Release schema safely before implementing the normalizer for characters, weapons, Echoes, Sonata sets and stat progression.
