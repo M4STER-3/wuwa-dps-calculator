@@ -17,6 +17,15 @@ export type WuwaPanelTone =
   | "ink"
   | "ink-soft";
 
+function surfaceClasses(tone: WuwaPanelTone, compact: boolean, className?: string) {
+  return classes(
+    "wuwa-panel",
+    `wuwa-panel--${tone}`,
+    compact && "wuwa-panel--compact",
+    className,
+  );
+}
+
 export function WuwaPanel({
   tone = "paper",
   compact = false,
@@ -28,12 +37,24 @@ export function WuwaPanel({
 }) {
   return (
     <section
-      className={classes(
-        "wuwa-panel",
-        `wuwa-panel--${tone}`,
-        compact && "wuwa-panel--compact",
-        className,
-      )}
+      className={surfaceClasses(tone, compact, className)}
+      {...props}
+    />
+  );
+}
+
+export function WuwaCard({
+  tone = "paper-raised",
+  compact = false,
+  className,
+  ...props
+}: ComponentPropsWithoutRef<"article"> & {
+  tone?: WuwaPanelTone;
+  compact?: boolean;
+}) {
+  return (
+    <article
+      className={surfaceClasses(tone, compact, classes("wuwa-card", className))}
       {...props}
     />
   );
