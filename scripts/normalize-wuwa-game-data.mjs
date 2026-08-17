@@ -11,6 +11,7 @@ const OUTPUT_ROOT = path.join(REPO_ROOT, ".tmp", "wuwa-game-data-normalized");
 const OUTPUT_PATH = path.join(OUTPUT_ROOT, "normalized-source.json");
 const MAX_MANIFEST_BYTES = 4 * 1024 * 1024;
 const MAX_DETAIL_BYTES = 8 * 1024 * 1024;
+const MAX_NORMALIZED_OUTPUT_BYTES = 32 * 1024 * 1024;
 const MAX_JSON_DEPTH = 32;
 const MAX_JSON_NODES = 200_000;
 const MAX_ARRAY_LENGTH = 10_000;
@@ -362,6 +363,10 @@ async function writeOutputAtomic(value) {
 
   const tempPath = `${OUTPUT_PATH}.${randomUUID()}.tmp`;
   const serialized = `${JSON.stringify(value, null, 2)}\n`;
+  const bytes = Buffer.byteLength(serialized);
+  if (bytes > MAX_NORMALIZED_OUTPUT_BYTES) {
+    fail(`Normalized output exceeds ${MAX_NORMALIZED_OUTPUT_BYTES} bytes`);
+  }
   try {
     await writeFile(tempPath, serialized, { flag: "wx", mode: 0o644 });
     await rename(tempPath, OUTPUT_PATH);
@@ -369,7 +374,7 @@ async function writeOutputAtomic(value) {
     await rm(tempPath, { force: true }).catch(() => {});
     throw error;
   }
-  return Buffer.byteLength(serialized);
+  return bytes;
 }
 
 async function main() {
