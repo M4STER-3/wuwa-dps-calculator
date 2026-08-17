@@ -98,6 +98,8 @@ async function testSafeNormalization() {
     assert.equal(weapon.passive.name, "Fixture Passive");
     assert.equal(weapon.passive.descriptionTemplate, "Increase ATK by {0} after a reviewed condition.");
     assert.deepEqual(weapon.passive.rankParameterSets.map((set) => set[0]), ["10%", "12.5%", "15%", "17.5%", "20%"]);
+    assert.equal(weapon.properties[0].sourceGrowthValues[1].sourceLevelIndex, 20.5);
+    assert.equal(weapon.properties[1].sourceGrowthValues[1].sourceLevelIndex, 40.5);
     assert.equal(weapon.breaches.at(-1).levelLimit, 90);
 
     const echo = normalized.echoes[0];
@@ -126,6 +128,11 @@ async function testSafeNormalization() {
     assert.ok(normalized.diagnostics.some((entry) => entry.code === "source-growth-index-not-game-level"));
     assert.ok(normalized.diagnostics.some((entry) => entry.code === "sonata-source-lore-raw-only"));
     assert.ok(normalized.diagnostics.some((entry) => entry.code === "source-skill-name-missing"));
+    assert.ok(
+      normalized.diagnostics.some(
+        (entry) => entry.code === "weapon-source-growth-half-index-preserved",
+      ),
+    );
 
     const before = await readFile(
       path.join(cwd, ".tmp", "wuwa-game-data-normalized", "normalized-source.json"),
@@ -159,6 +166,15 @@ async function testAllowlistedRemoteUrlFailsClosed() {
   });
 }
 
+async function testUnreviewedFractionalGrowthFailsClosed() {
+  await withTempDirectory(async (cwd) => {
+    await importFixture(cwd, "unreviewed-fractional-growth");
+    const result = await runNode([NORMALIZER], { cwd });
+    assert.equal(result.code, 1);
+    assert.match(`${result.stdout}\n${result.stderr}`, /unreviewed fractional source level 21\.25/i);
+  });
+}
+
 async function testNormalizerRejectsArguments() {
   await withTempDirectory(async (cwd) => {
     const result = await runNode([NORMALIZER, "--input=/tmp/evil"], { cwd });
@@ -189,6 +205,7 @@ async function main() {
   await testSafeNormalization();
   await testAllowlistedScriptLikeTextFailsClosed();
   await testAllowlistedRemoteUrlFailsClosed();
+  await testUnreviewedFractionalGrowthFailsClosed();
   await testNormalizerRejectsArguments();
   await testRawSymlinkRejected();
   console.log("Encore game-data normalizer security tests passed.");
