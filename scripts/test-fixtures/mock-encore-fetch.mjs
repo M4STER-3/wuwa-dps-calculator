@@ -18,6 +18,13 @@ function jsonResponse(value) {
 }
 
 function imageResponse(url) {
+  if (testCase === "optional-404" && url.pathname.includes("character-detail")) {
+    return new Response("not found", { status: 404 });
+  }
+  if (testCase === "required-404" && url.pathname === "/character.png") {
+    return new Response("not found", { status: 404 });
+  }
+
   const bytes =
     (testCase === "bad-image" && url.pathname.includes("character")) ||
     url.pathname.includes("advertisement")
@@ -72,9 +79,7 @@ function echoList() {
 }
 
 globalThis.fetch = async (input) => {
-  const raw = typeof input === "string" || input instanceof URL
-    ? String(input)
-    : input?.url;
+  const raw = typeof input === "string" || input instanceof URL ? String(input) : input?.url;
   const url = new URL(raw);
 
   if (url.hostname === "api-v2.encore.moe") {

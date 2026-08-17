@@ -44,8 +44,14 @@ jobs:
         run: |
           node --check scripts/run-safe-wuwa-assets.mjs
           node --check scripts/sync-wuwa-assets.mjs
+          node --check scripts/sync-wuwa-assets-v2.mjs
+          node --check scripts/lib/wuwa-asset-sync-policy.mjs
           node --check scripts/test-fixtures/mock-encore-fetch.mjs
+          node --check scripts/test-wuwa-asset-sync-policy.mjs
           node --check scripts/test-wuwa-assets-security.mjs
+
+      - name: Test asset synchronization policy
+        run: node scripts/test-wuwa-asset-sync-policy.mjs
 
       - name: Test asset synchronization security
         run: npm run assets:test-security

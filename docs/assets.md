@@ -8,6 +8,8 @@ The asset sync is intentionally separate from UI/domain integration.
 - `npm run assets:sync` downloads accepted images and writes `public/assets/wuwa/manifest.json`.
 - `npm run assets:sync -- --force` re-fetches remote assets, while still deduplicating identical file content locally.
 
+The safe wrapper routes these commands through `scripts/sync-wuwa-assets-v2.mjs`. The previous synchronizer remains in the repository temporarily as a comparison reference until V2 has completed its live binary validation; normal npm commands do not call it.
+
 ## Stable association model
 
 Assets are keyed by the source entity ID, not by display name. This prevents a rename, localization change, or filename normalization from breaking future associations.
@@ -30,7 +32,7 @@ The manifest uses schema version 2 and maps each logical asset to a content-addr
         "entityKey": "characters:1102",
         "name": "Example",
         "assets": {
-          "roleheadicon": {
+          "list-roleheadicon": {
             "path": "/assets/wuwa/objects/<sha256>.webp",
             "sourceUrl": "https://...",
             "contentType": "image/webp",
@@ -78,6 +80,7 @@ The registry treats even the local manifest as untrusted structured input. It fa
 - categories are exactly characters, weapons and echoes;
 - storage strategy is SHA-256 content-addressed under `/assets/wuwa/objects`;
 - category/entity/asset counts remain within the same bounded model as the sync;
+- no entity contains more than **96** asset records;
 - source IDs are bounded and reject dangerous object keys;
 - `entityKey` exactly matches `category:sourceId`;
 - asset keys use the synchronizer's normalized safe character set;
@@ -100,9 +103,60 @@ This means:
 - if an existing content-addressed file is present, its actual SHA-256 is rechecked before reuse;
 - `--force` may re-fetch a URL, but identical bytes still resolve to the same physical object;
 - after a fully successful synchronization, unreferenced content-addressed objects are removed;
-- if any asset fails during synchronization, the previous successful manifest is kept instead of replacing it with a partial manifest.
+- if a blocking asset fails during synchronization, the previous successful manifest is kept instead of replacing it with a partial manifest;
+- newly-created objects from a failed run are cleaned up unless the previous manifest already referenced them.
 
 So future refreshes do not create duplicate files merely because a source URL, API field, or logical association changes.
+
+## Required roles versus optional missing files
+
+A live Release role-coverage audit established three universal roles:
+
+- characters: `list-roleheadicon` — 60/60;
+- weapons: `list-icon` — 120/120;
+- Echoes: `list-icon` — 287/287 source entries.
+
+These roles are **required**. A missing required role or a 404 while downloading it fails the whole synchronization.
+
+The first real binary audit also showed that Encore can reference optional detail images whose image-host object no longer exists. Two examples returned HTTP 404:
+
+- `characters:1110 / detail-roleportrait`;
+- `echoes:6000098 / detail-skill-battleviewicon`.
+
+V2 treats only an HTTP 404 on a **non-required image role** as an absent optional asset. That association is omitted from the new manifest and counted in `security.optionalMissingHttp404`.
+
+This is deliberately narrow. The following remain blocking:
+
+- a 404 on a required universal role;
+- HTTP 5xx or another non-404 HTTP error;
+- timeout or other unexpected network failure;
+- wrong MIME type;
+- wrong binary signature;
+- oversized data;
+- untrusted URL/host;
+- invalid SHA-256 or local object corruption.
+
+The policy lives in `scripts/lib/wuwa-asset-sync-policy.mjs` and has standalone tests so the optional-missing exception cannot silently expand.
+
+## Live image-field capacity audit
+
+The old 32-image-per-entity traversal cap was intentionally conservative, but a live read-only Release audit showed that it excluded normal character detail data.
+
+Observed **detail** candidate counts were:
+
+- characters: min 31, median 37, p90 44, p95 49, p99 64, max **68**; 56/60 characters exceeded 32;
+- weapons: 0 detail image candidates for all 120 entries;
+- Echoes: exactly 6 detail image candidates for all 287 source entries;
+- denied advertisement/tracking candidate count: **0**.
+
+V2 therefore uses a **96-image-per-entity** cap. This is not an unlimited relaxation: it covers the current maximum of 68 with review margin while preserving a fail-closed ceiling for unexpected source amplification.
+
+The total run limits remain:
+
+- at most 10,000 logical assets;
+- at most 1 GiB of remote bytes across the full synchronization;
+- at most 8 MiB per individual image;
+- at most 8 MiB per JSON response.
 
 ## Current scope
 
@@ -133,11 +187,13 @@ The downloader is intentionally fail-closed:
 - JSON responses are capped at 8 MiB;
 - requests time out after 15 seconds;
 - category size, nested payload depth, visited nodes, and image count per entity are bounded;
+- remote JSON is also validated for dangerous object keys, depth, nodes, collection size, key size and string size;
 - output paths are normalized and verified to remain under the WuWa asset root;
 - files are written atomically through a temporary file before rename;
 - content-addressed files are verified by SHA-256 before reuse;
 - downloaded content is never executed;
 - SHA-256 and byte size are recorded in the manifest;
+- required semantic roles are checked before and after materialization;
 - a partial/failed synchronization does not replace the last successful manifest;
 - only Encore's `Release` dataset is used, never Beta.
 
