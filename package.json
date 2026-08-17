@@ -13,6 +13,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "assets:sync": "node scripts/run-safe-wuwa-assets.mjs",
     "assets:sync:dry": "node scripts/run-safe-wuwa-assets.mjs --dry-run",
+    "assets:test-security": "node scripts/test-wuwa-assets-security.mjs",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run --passWithNoTests",
