@@ -6,47 +6,58 @@
   background: #070705;
 }
 
+/*
+ * The canvas is the 16:9 artwork plane itself. It is deliberately larger than
+ * the viewport whenever cover-cropping is required, so every UI overlay placed
+ * inside `.content` stays locked to the exact same coordinates as the PNG.
+ */
 .canvas {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: calc(100dvh * 16 / 9);
+  height: 100dvh;
   overflow: hidden;
+  transform: translateY(-50%);
   background-color: #070705;
   background-image: url("/assets/ui/wuwa-lab-global-background-4k.png");
   background-repeat: no-repeat;
-  background-position: left center;
-  background-size: cover;
+  background-position: left top;
+  background-size: 100% 100%;
 }
 
 .content {
-  position: relative;
+  position: absolute;
   z-index: 1;
-  width: 100%;
-  min-height: 100%;
+  inset: 0;
 }
 
 /*
- * Landscape / desktop:
- * - the source is never stretched;
- * - `cover` keeps the entire viewport painted;
- * - left anchoring protects the ink/navigation column;
- * - when cropping is unavoidable, it happens on the far-right parchment side.
+ * On wide landscape displays, width is the cover-driving dimension. The 16:9
+ * artboard remains centred vertically; only top/bottom artwork can be cropped.
  */
-@media (orientation: landscape) {
+@media (orientation: landscape) and (min-aspect-ratio: 16 / 9) {
   .canvas {
-    background-position: left center;
-    background-size: cover;
+    width: 100vw;
+    height: calc(100vw * 9 / 16);
   }
 }
 
 /*
- * Portrait / mobile:
- * the approved artwork remains a literal 16:9 canvas at viewport height.
- * Rather than compressing it to a portrait ratio, the viewport may pan
- * horizontally. This preserves the source geometry exactly until the later
- * dedicated mobile-navigation/layout step reflows the product UI.
+ * On narrower landscape displays, the default height-driven artboard applies.
+ * The left edge remains fixed, so unavoidable crop is pushed to the far-right
+ * parchment side and the artwork navigation column remains stable.
+ */
+@media (orientation: landscape) and (max-aspect-ratio: 16 / 9) {
+  .canvas {
+    width: calc(100dvh * 16 / 9);
+    height: 100dvh;
+  }
+}
+
+/*
+ * Portrait/mobile preserves the literal 16:9 artwork at viewport height and
+ * permits horizontal panning instead of compressing or distorting the source.
  */
 @media (orientation: portrait) {
   .viewport {
@@ -57,16 +68,29 @@
   }
 
   .canvas {
+    position: relative;
+    top: 0;
     width: calc(100dvh * 16 / 9);
     min-width: calc(100dvh * 16 / 9);
     height: 100dvh;
     min-height: 100dvh;
-    background-position: left center;
-    background-size: auto 100%;
+    transform: none;
   }
 }
 
 @supports not (height: 100dvh) {
+  .canvas {
+    width: calc(100vh * 16 / 9);
+    height: 100vh;
+  }
+
+  @media (orientation: landscape) and (min-aspect-ratio: 16 / 9) {
+    .canvas {
+      width: 100vw;
+      height: calc(100vw * 9 / 16);
+    }
+  }
+
   @media (orientation: portrait) {
     .canvas {
       width: calc(100vh * 16 / 9);
