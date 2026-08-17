@@ -1,0 +1,157 @@
+name: Asset field count audit once
+
+on:
+  push:
+    branches:
+      - audit/asset-field-counts-20260817
+
+permissions:
+  contents: read
+
+concurrency:
+  group: asset-field-count-audit-once
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Count live Encore image fields without downloading images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify npm registry signatures and provenance
+        run: npm audit signatures
+
+      - name: Run importer attack tests
+        run: npm run game-data:test-security
+
+      - name: Import live Release into ephemeral workspace
+        run: npm run game-data:import
+
+      - name: Measure reviewed image-field candidates
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import path from 'node:path';
+
+          const MAX_TRAVERSAL_DEPTH = 12;
+          const MAX_TRAVERSAL_NODES = 20_000;
+          const FORBIDDEN_REMOTE_IMAGE_PATH_PATTERN =
+            /(?:^|[._-])(?:ad|ads|advert|advertisement|advertising|sponsor|sponsored|tracking|tracker|pixel|promo|promotion)(?:[._-]|$)/i;
+
+          function trustedEncoreUrl(value) {
+            if (typeof value !== 'string' || value.length === 0 || value.length > 4096) return null;
+            let url;
+            try { url = new URL(value); } catch { return null; }
+            const host = url.hostname.toLowerCase();
+            if (
+              url.protocol !== 'https:' ||
+              url.username || url.password || url.port || url.hash ||
+              (host !== 'encore.moe' && !host.endsWith('.encore.moe'))
+            ) return null;
+            return url;
+          }
+
+          function imageLikeWithoutDeny(fieldPath, key, value) {
+            const url = trustedEncoreUrl(value);
+            if (!url) return false;
+            const lowerKey = key.toLowerCase();
+            const pathname = url.pathname.toLowerCase();
+            return (
+              /(?:icon|image|picture|portrait|head|avatar|sprite|art|logo|texture|bg|background)/i.test(lowerKey) ||
+              /\.(?:png|jpe?g|webp)$/i.test(pathname)
+            );
+          }
+
+          function collect(value) {
+            const accepted = new Set();
+            const denied = new Set();
+            const stack = [{ value, prefix: 'detail', depth: 0 }];
+            let visited = 0;
+            while (stack.length) {
+              const current = stack.pop();
+              if (!current || current.value === null || typeof current.value !== 'object') continue;
+              if (current.depth > MAX_TRAVERSAL_DEPTH) throw new Error('Traversal depth exceeded');
+              visited += 1;
+              if (visited > MAX_TRAVERSAL_NODES) throw new Error('Traversal nodes exceeded');
+              if (Array.isArray(current.value)) {
+                for (let index = current.value.length - 1; index >= 0; index -= 1) {
+                  stack.push({ value: current.value[index], prefix: `${current.prefix}.${index}`, depth: current.depth + 1 });
+                }
+                continue;
+              }
+              for (const [key, child] of Object.entries(current.value)) {
+                const fieldPath = `${current.prefix}.${key}`;
+                if (imageLikeWithoutDeny(fieldPath, key, child)) {
+                  if (FORBIDDEN_REMOTE_IMAGE_PATH_PATTERN.test(fieldPath)) denied.add(fieldPath);
+                  else accepted.add(fieldPath);
+                } else if (child && typeof child === 'object') {
+                  stack.push({ value: child, prefix: fieldPath, depth: current.depth + 1 });
+                }
+              }
+            }
+            return { accepted: accepted.size, denied: denied.size };
+          }
+
+          function percentile(sorted, p) {
+            if (sorted.length === 0) return 0;
+            const index = Math.min(sorted.length - 1, Math.ceil(sorted.length * p) - 1);
+            return sorted[index];
+          }
+
+          const root = path.join(process.cwd(), 'data', 'sources', 'encore', 'release');
+          const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
+          const summary = {};
+          let grandAccepted = 0;
+          let grandDenied = 0;
+
+          for (const category of ['characters', 'weapons', 'echoes']) {
+            const counts = [];
+            const deniedCounts = [];
+            const maxEntities = [];
+            for (const entity of manifest.resources[category].entities) {
+              const detail = JSON.parse(
+                await readFile(path.join(root, category, 'details', entity.detailFile), 'utf8'),
+              );
+              const result = collect(detail);
+              counts.push(result.accepted);
+              deniedCounts.push(result.denied);
+              grandAccepted += result.accepted;
+              grandDenied += result.denied;
+              maxEntities.push({ sourceId: String(entity.sourceId), accepted: result.accepted, denied: result.denied });
+            }
+            counts.sort((a, b) => a - b);
+            deniedCounts.sort((a, b) => a - b);
+            maxEntities.sort((a, b) => b.accepted - a.accepted || a.sourceId.localeCompare(b.sourceId));
+            summary[category] = {
+              entities: counts.length,
+              min: counts[0] ?? 0,
+              median: percentile(counts, 0.5),
+              p90: percentile(counts, 0.9),
+              p95: percentile(counts, 0.95),
+              p99: percentile(counts, 0.99),
+              max: counts.at(-1) ?? 0,
+              entitiesAbove32: counts.filter((count) => count > 32).length,
+              entitiesAbove64: counts.filter((count) => count > 64).length,
+              entitiesAbove128: counts.filter((count) => count > 128).length,
+              deniedCandidateTotal: deniedCounts.reduce((sum, value) => sum + value, 0),
+              topFive: maxEntities.slice(0, 5),
+            };
+          }
+
+          console.log(`ASSET_FIELD_COUNT_AUDIT=${JSON.stringify({ summary, grandAccepted, grandDenied })}`);
+          NODE
