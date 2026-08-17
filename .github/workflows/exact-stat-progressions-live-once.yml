@@ -1,0 +1,184 @@
+name: Exact stat progressions live audit once
+
+on:
+  push:
+    branches:
+      - 'audit/exact-stat-progressions-live-20260817'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exact-stat-progressions-live-once
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Verify exact Release stat progressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact audit head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Re-run hostile-input data boundaries
+        run: |
+          set -euo pipefail
+          npm audit signatures
+          npm audit --audit-level=high
+          npm run game-data:test-security
+          npm run game-data:test-normalizer-security
+          npm run game-data:test-hardening-security
+          npm run game-data:test-readiness-security
+          npm run game-data:test-promotion-security
+
+      - name: Import current Encore Release into ephemeral storage
+        run: npm run game-data:import
+
+      - name: Build reviewed GameDatabase V1
+        run: npm run game-data:build
+
+      - name: Run independent generated-database verifier
+        run: node scripts/verify-generated-game-database.mjs --generated
+
+      - name: Verify all exact stat progressions and sentinel values
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/exact-stat-progressions-live-audit
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { readFile, writeFile } from 'node:fs/promises';
+
+          const databaseBytes = await readFile('.tmp/wuwa-game-database-v1/game-database-v1.json');
+          const database = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(databaseBytes));
+          const readiness = JSON.parse(await readFile('.tmp/wuwa-game-data-readiness/readiness.json', 'utf8'));
+          const generation = JSON.parse(await readFile('.tmp/wuwa-game-database-v1/generation-report.json', 'utf8'));
+          const boundaries = new Set([20, 40, 50, 60, 70, 80]);
+
+          const checkProgression = (progression, label) => {
+            if (!progression || progression.interpolation !== 'none' || !Array.isArray(progression.points) || progression.points.length !== 96) {
+              throw new Error(`${label} is not an exact 96-point non-interpolating progression`);
+            }
+            const counts = new Map();
+            for (const [index, point] of progression.points.entries()) {
+              if (!point || !Number.isInteger(point.level) || point.level < 1 || point.level > 90 || typeof point.value !== 'number' || !Number.isFinite(point.value) || point.value < 0) {
+                throw new Error(`${label}[${index}] is invalid`);
+              }
+              counts.set(point.level, (counts.get(point.level) ?? 0) + 1);
+            }
+            for (let level = 1; level <= 90; level += 1) {
+              const expected = boundaries.has(level) ? 2 : 1;
+              if (counts.get(level) !== expected) throw new Error(`${label} level ${level} count drifted`);
+              const atLevel = progression.points.filter((point) => point.level === level);
+              if (boundaries.has(level)) {
+                if (atLevel[0]?.ascended !== false || atLevel[1]?.ascended !== true) {
+                  throw new Error(`${label} level ${level} lost pre/post ascension ordering`);
+                }
+              } else if (atLevel[0]?.ascended !== undefined) {
+                throw new Error(`${label} level ${level} unexpectedly carries ascended state`);
+              }
+            }
+          };
+
+          if (readiness?.readiness?.characters?.statProgressionReady !== database.characters.length) throw new Error('Character readiness is incomplete');
+          if (readiness?.readiness?.weapons?.statProgressionReady !== database.weapons.length) throw new Error('Weapon readiness is incomplete');
+          const blockerCodes = new Set((readiness?.blockers ?? []).map((entry) => entry?.code));
+          if (blockerCodes.has('character-growth-level-map-unresolved') || blockerCodes.has('weapon-growth-level-map-unresolved')) {
+            throw new Error('Historical growth blockers were not resolved');
+          }
+          if (generation?.generatedCharacterStatProgressions !== database.characters.length) throw new Error('Character generation count mismatch');
+          if (generation?.generatedWeaponStatProgressions !== database.weapons.length) throw new Error('Weapon generation count mismatch');
+
+          for (const [index, character] of database.characters.entries()) {
+            checkProgression(character?.stats?.hp, `characters[${index}].stats.hp`);
+            checkProgression(character?.stats?.attack, `characters[${index}].stats.attack`);
+            checkProgression(character?.stats?.defense, `characters[${index}].stats.defense`);
+          }
+          for (const [index, weapon] of database.weapons.entries()) {
+            checkProgression(weapon?.baseStats?.attack, `weapons[${index}].baseStats.attack`);
+            if (weapon?.baseStats?.secondaryStat?.unit !== 'percentage-points') throw new Error(`weapons[${index}] secondary unit drifted`);
+            checkProgression(weapon?.baseStats?.secondaryStat?.progression, `weapons[${index}].baseStats.secondaryStat.progression`);
+          }
+
+          const level90 = (progression) => {
+            const matches = progression.points.filter((point) => point.level === 90);
+            if (matches.length !== 1) throw new Error('Expected exactly one level 90 point');
+            return matches[0].value;
+          };
+          const lingyang = database.characters.find((entry) => entry?.externalIds?.encore === '1104');
+          if (!lingyang) throw new Error('Lingyang sentinel source ID 1104 missing');
+          const lingyang90 = {
+            hp: level90(lingyang.stats.hp),
+            attack: level90(lingyang.stats.attack),
+            defense: level90(lingyang.stats.defense),
+          };
+          if (lingyang90.hp !== 10387.5 || lingyang90.attack !== 437.5 || lingyang90.defense !== 1209.9978) {
+            throw new Error(`Lingyang level 90 sentinel mismatch: ${JSON.stringify(lingyang90)}`);
+          }
+
+          const razor = database.weapons.find((entry) => entry?.externalIds?.encore === '21010015');
+          if (!razor) throw new Error('Lustrous Razor sentinel source ID 21010015 missing');
+          const razor90 = {
+            attack: level90(razor.baseStats.attack),
+            secondaryStat: razor.baseStats.secondaryStat.stat,
+            secondaryValue: level90(razor.baseStats.secondaryStat.progression),
+          };
+          if (razor90.attack !== 587.5 || razor90.secondaryStat !== 'ATK' || razor90.secondaryValue !== 36.45) {
+            throw new Error(`Lustrous Razor level 90 sentinel mismatch: ${JSON.stringify(razor90)}`);
+          }
+
+          const summary = {
+            counts: database.manifest.counts,
+            databaseBytes: databaseBytes.length,
+            databaseSha256: createHash('sha256').update(databaseBytes).digest('hex'),
+            readiness: {
+              characters: readiness.readiness.characters.statProgressionReady,
+              weapons: readiness.readiness.weapons.statProgressionReady,
+              blockerCodes: [...blockerCodes].sort(),
+            },
+            generation: {
+              characterProgressions: generation.generatedCharacterStatProgressions,
+              weaponProgressions: generation.generatedWeaponStatProgressions,
+              unresolved: generation.unresolved,
+            },
+            sentinels: {
+              character1104Level90: lingyang90,
+              weapon21010015Level90: razor90,
+            },
+            checks: {
+              allCharacterCoreProgressionsExact96: true,
+              allWeaponProgressionsExact96: true,
+              ascensionOrderingExact: true,
+              noInterpolation: true,
+              secondaryUnitExplicit: true,
+            },
+          };
+          const serialized = `${JSON.stringify(summary, null, 2)}\n`;
+          if (Buffer.byteLength(serialized) > 128 * 1024) throw new Error('Summary unexpectedly large');
+          await writeFile('.tmp/exact-stat-progressions-live-audit/summary.json', serialized, { flag: 'wx' });
+          console.log(`WUWA_EXACT_STAT_PROGRESSIONS_LIVE_AUDIT=${JSON.stringify(summary)}`);
+          NODE
+
+      - name: Upload summary only
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: exact-stat-progressions-live-audit
+          path: .tmp/exact-stat-progressions-live-audit/summary.json
+          if-no-files-found: error
+          retention-days: 1
+          include-hidden-files: false
