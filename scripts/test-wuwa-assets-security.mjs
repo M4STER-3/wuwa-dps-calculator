@@ -72,6 +72,11 @@ async function testSafeSync() {
     const characterAssets = manifest.entities.characters["1"].assets;
     assert.ok(characterAssets["list-roleheadicon"]);
     assert.ok(characterAssets["detail-roleportrait"]);
+    assert.equal(
+      Object.keys(characterAssets).some((key) => /advert|sponsor|tracking|promo/i.test(key)),
+      false,
+      "promotional/tracking fields must not enter the asset manifest",
+    );
     assert.ok(manifest.entities.weapons["2"].assets["list-icon"]);
     assert.ok(manifest.entities.echoes["3"].assets["list-icon"]);
 
