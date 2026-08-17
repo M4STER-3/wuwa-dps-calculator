@@ -44,9 +44,49 @@ The manifest uses schema version 2 and maps each logical asset to a content-addr
 }
 ```
 
-Future domain integration should add an explicit source-ID mapping to the relevant resonator, weapon, or echo and resolve images through this manifest. Do not use display names as the primary join key.
-
 The asset key is derived from the API field path. This allows one entity to keep several distinct image roles without overwriting them.
+
+## Runtime Asset Registry V1
+
+`src/game-data/asset-registry.ts` is the reviewed boundary between the synchronization manifest and application code.
+
+The join is explicit:
+
+`category + Encore source ID -> local manifest entity -> explicit asset role -> local SHA-256 object path`
+
+The registry deliberately does **not** join by display name and does not expose manifest display names to consumers.
+
+It also validates but then removes `sourceUrl` from its runtime-facing records. Application/UI code receives only:
+
+- the normalized asset role key;
+- the local `/assets/wuwa/objects/<sha256>.<ext>` path;
+- image MIME type;
+- byte size;
+- SHA-256 digest.
+
+This means application code cannot accidentally switch from a local object back to a remote Encore URL merely by using the registry API.
+
+The registry has no automatic notion of a "primary" image. A caller that wants a portrait/icon must provide a reviewed ordered list of exact asset role keys to `firstMatching(...)`. This avoids choosing an image because its display name or remote URL happens to look suitable.
+
+### Runtime manifest validation
+
+The registry treats even the local manifest as untrusted structured input. It fails closed unless:
+
+- schema version is exactly 2;
+- source is `Encore.moe` and source API is exactly `https://api-v2.encore.moe/api/en`;
+- game version is `Release`;
+- categories are exactly characters, weapons and echoes;
+- storage strategy is SHA-256 content-addressed under `/assets/wuwa/objects`;
+- category/entity/asset counts remain within the same bounded model as the sync;
+- source IDs are bounded and reject dangerous object keys;
+- `entityKey` exactly matches `category:sourceId`;
+- asset keys use the synchronizer's normalized safe character set;
+- only PNG/JPEG/WebP records are accepted;
+- byte size is positive and no greater than 8 MiB;
+- the local object path is exactly derived from the recorded SHA-256 and MIME type;
+- the manifest `sourceUrl` remains an HTTPS Encore-domain URL before it is discarded from the returned runtime record.
+
+Tests cover external URLs, path/hash mismatch, MIME/extension mismatch, dangerous object keys, bad entity IDs/keys, unexpected categories, oversized records and content-addressed deduplication.
 
 ## Duplicate prevention and updates
 
@@ -74,6 +114,8 @@ For now the synchronizer reads only the Encore.moe `Release` collections for:
 
 These three categories may also query their detail endpoint by stable ID so image variants absent from the list response can still be discovered. No other asset category is synchronized at this stage.
 
+The registry integration is additive: it does not yet select UI portraits/icons and it does not modify Character Box, the Game Catalog, combat engines or `finalStats`.
+
 ## Safety boundaries
 
 The downloader is intentionally fail-closed:
@@ -99,4 +141,4 @@ The downloader is intentionally fail-closed:
 - a partial/failed synchronization does not replace the last successful manifest;
 - only Encore's `Release` dataset is used, never Beta.
 
-If Encore changes its image delivery to another host, the synchronizer will reject it until that host is explicitly reviewed and allowlisted.
+If Encore changes its image delivery to another host, the synchronizer and runtime registry will reject it until that host is explicitly reviewed and allowlisted.
