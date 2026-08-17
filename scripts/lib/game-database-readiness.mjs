@@ -2,6 +2,8 @@ const DANGEROUS_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 const CHARACTER_ELEMENTS = new Set(["Aero", "Glacio", "Electro", "Fusion", "Havoc", "Spectro"]);
 const WEAPON_TYPES = new Set(["Broadblade", "Gauntlets", "Pistols", "Rectifier", "Sword"]);
 const VERIFIED_WEAPON_HALF_INDEXES = new Set([20.5, 40.5, 50.5, 60.5, 70.5, 80.5]);
+const ECHO_CATALOG_STATES = new Set(["base", "phantom-skin", "noncanonical"]);
+const ECHO_COST_BY_MAIN_PROP_GROUP = new Map([[501, 4], [502, 3], [503, 1]]);
 const MAX_DEPTH = 32;
 // Current Encore Release measured 278,038 normalized JSON nodes on 2026-08-17.
 // Keep bounded headroom without accepting unreviewed multi-million-node amplification.
@@ -56,9 +58,15 @@ function validateTree(root) {
 }
 
 function safeId(value, label) {
-  if (typeof value !== "string" || value.length === 0 || value.length > 128) fail(`${label} is not a bounded source ID`);
+  if (typeof value !== "string" || value.length === 0 || value.length > 160) fail(`${label} is not a bounded source ID`);
   if (DANGEROUS_KEYS.has(value) || /[\u0000-\u001f\u007f-\u009f]/.test(value)) fail(`${label} is unsafe`);
   return value;
+}
+
+function numericSourceId(value, label) {
+  const id = safeId(String(value ?? ""), label);
+  if (!/^\d{1,30}$/.test(id)) fail(`${label} must be numeric`);
+  return id;
 }
 
 function boundedName(value, label) {
@@ -189,7 +197,7 @@ export function analyzeGameDatabaseReadiness(snapshot) {
     let unnamedOnCharacter = 0;
     for (const [skillIndex, rawSkill] of skills.entries()) {
       const skill = requireRecord(rawSkill, `characters[${index}].skills[${skillIndex}]`);
-      safeId(skill.sourceSkillId, `characters[${index}].skills[${skillIndex}].sourceSkillId`);
+      safeId(String(skill.sourceSkillId), `characters[${index}].skills[${skillIndex}].sourceSkillId`);
       if (skill.name === undefined) unnamedOnCharacter += 1;
       else boundedName(skill.name, `characters[${index}].skills[${skillIndex}].name`);
       if (typeof skill.type !== "string" || skill.type.trim().length === 0 || skill.type.length > 120) {
@@ -229,31 +237,78 @@ export function analyzeGameDatabaseReadiness(snapshot) {
   }
 
   let echoesWithCost = 0;
+  let baseEchoes = 0;
+  let baseEchoesWithCost = 0;
+  let phantomSkinRows = 0;
+  let noncanonicalRows = 0;
+  let classifiedRows = 0;
   let echoesWithSonataRefs = 0;
   let totalEchoSonataRefs = 0;
+  const echoSonataRefs = [];
   for (const [index, raw] of echoes.entries()) {
     const echo = requireRecord(raw, `echoes[${index}]`);
     boundedName(echo.name, `echoes[${index}].name`);
+    const state = echo.catalogState;
+    if (state !== undefined) {
+      if (!ECHO_CATALOG_STATES.has(state)) fail(`echoes[${index}].catalogState is unknown`);
+      classifiedRows += 1;
+    }
     if (echo.cost !== undefined) {
       if (![1, 3, 4].includes(echo.cost)) fail(`echoes[${index}].cost is not 1, 3, or 4`);
       echoesWithCost += 1;
     }
+
+    if (state === "base") {
+      baseEchoes += 1;
+      const sourceItemId = numericSourceId(echo.sourceItemId, `echoes[${index}].sourceItemId`);
+      if (!sourceItemId) fail(`echoes[${index}].sourceItemId is required for a base Echo`);
+      const randGroup = finiteInteger(
+        echo.sourceMainPropRandGroupId,
+        `echoes[${index}].sourceMainPropRandGroupId`,
+        1,
+        100_000,
+      );
+      const expectedCost = ECHO_COST_BY_MAIN_PROP_GROUP.get(randGroup);
+      if (expectedCost === undefined) fail(`echoes[${index}] uses unreviewed base RandGroupId ${randGroup}`);
+      if (echo.cost !== undefined) {
+        if (echo.cost !== expectedCost) fail(`echoes[${index}].cost contradicts reviewed RandGroupId ${randGroup}`);
+        baseEchoesWithCost += 1;
+      }
+    } else if (state === "phantom-skin") {
+      phantomSkinRows += 1;
+      if (echo.cost !== undefined) fail(`echoes[${index}] Phantom skin row must not carry canonical cost`);
+    } else if (state === "noncanonical") {
+      noncanonicalRows += 1;
+      if (echo.cost !== undefined) fail(`echoes[${index}] noncanonical row must not carry canonical cost`);
+    }
+
     const refs = echo.sourceSonataGroupIds === undefined
       ? []
       : requireArray(echo.sourceSonataGroupIds, `echoes[${index}].sourceSonataGroupIds`, 20);
     if (refs.length > 0) echoesWithSonataRefs += 1;
     totalEchoSonataRefs += refs.length;
+    const normalizedRefs = [];
     for (const [refIndex, value] of refs.entries()) {
       finiteInteger(value, `echoes[${index}].sourceSonataGroupIds[${refIndex}]`, 1, 10_000);
+      normalizedRefs.push(String(value));
     }
+    echoSonataRefs.push({ index, refs: normalizedRefs });
+  }
+
+  const fullyClassified = classifiedRows === echoes.length && echoes.length > 0;
+  if (classifiedRows > 0 && !fullyClassified) {
+    fail(`Echo catalog classification is partial: ${classifiedRows}/${echoes.length} rows`);
   }
 
   let sonataWithStableSourceId = 0;
+  const stableSonataIds = new Set();
   for (const [index, raw] of sonataSets.entries()) {
     const sonata = requireRecord(raw, `sonataSets[${index}]`);
     boundedName(sonata.name, `sonataSets[${index}].name`);
     if (sonata.sourceId !== undefined) {
-      safeId(String(sonata.sourceId), `sonataSets[${index}].sourceId`);
+      const sourceId = numericSourceId(sonata.sourceId, `sonataSets[${index}].sourceId`);
+      if (stableSonataIds.has(sourceId)) fail(`sonataSets duplicates stable source ID ${sourceId}`);
+      stableSonataIds.add(sourceId);
       sonataWithStableSourceId += 1;
     }
     const bonuses = requireArray(sonata.bonuses, `sonataSets[${index}].bonuses`, 10);
@@ -263,6 +318,16 @@ export function analyzeGameDatabaseReadiness(snapshot) {
       finiteInteger(bonus.pieces, `sonataSets[${index}].bonuses[${bonusIndex}].pieces`, 1, 10);
       if (typeof bonus.description !== "string" || bonus.description.trim().length === 0) {
         fail(`sonataSets[${index}].bonuses[${bonusIndex}].description is empty`);
+      }
+    }
+  }
+
+  if (sonataWithStableSourceId === sonataSets.length) {
+    for (const entry of echoSonataRefs) {
+      for (const sourceId of entry.refs) {
+        if (!stableSonataIds.has(sourceId)) {
+          fail(`echoes[${entry.index}] references unknown stable Sonata source ID ${sourceId}`);
+        }
       }
     }
   }
@@ -295,13 +360,27 @@ export function analyzeGameDatabaseReadiness(snapshot) {
       "Weapon source growth indexes, including reviewed half indexes, must not be reinterpreted as game levels without an explicit mapping.",
     ));
   }
-  if (echoesWithCost !== echoes.length) {
+
+  if (!fullyClassified) {
+    blockers.push(blocker(
+      "echo-catalog-state-unresolved",
+      echoes.length - classifiedRows,
+      echoes.length - classifiedRows,
+      "echo-canonical-catalog",
+      "Echo source rows have not all passed the reviewed base/Phantom/noncanonical classification stage.",
+    ));
+  }
+  const costTarget = fullyClassified ? baseEchoes : echoes.length;
+  const resolvedCostCount = fullyClassified ? baseEchoesWithCost : echoesWithCost;
+  if (resolvedCostCount !== costTarget) {
     blockers.push(blocker(
       "echo-cost-unresolved",
-      echoes.length - echoesWithCost,
-      echoes.length - echoesWithCost,
+      costTarget - resolvedCostCount,
+      costTarget - resolvedCostCount,
       "echo-canonical-catalog",
-      "GameDatabaseV1 requires Echo cost 1/3/4, but the normalized source does not yet provide a reviewed mapping for every Echo.",
+      fullyClassified
+        ? "Every base Echo requires reviewed cost 1/3/4 before canonical promotion. Phantom and noncanonical source rows are intentionally excluded from this requirement."
+        : "GameDatabaseV1 requires Echo cost 1/3/4, but the normalized source has not yet completed reviewed Echo classification and cost mapping.",
     ));
   }
   if (sonataWithStableSourceId !== sonataSets.length) {
@@ -310,7 +389,7 @@ export function analyzeGameDatabaseReadiness(snapshot) {
       sonataSets.length - sonataWithStableSourceId,
       sonataSets.length - sonataWithStableSourceId,
       "sonata-canonical-identity",
-      "Normalized Sonata definitions are currently merged by name; a stable reviewed source ID is required before canonical promotion.",
+      "A stable reviewed Sonata source ID is required before canonical promotion.",
     ));
   }
   if (totalEchoSonataRefs > 0 && sonataWithStableSourceId !== sonataSets.length) {
@@ -322,6 +401,10 @@ export function analyzeGameDatabaseReadiness(snapshot) {
       "Echo source Sonata group IDs cannot be converted to canonical Sonata IDs until the stable Sonata identity mapping is reviewed.",
     ));
   }
+
+  const canonicalEchoReady = fullyClassified &&
+    baseEchoesWithCost === baseEchoes &&
+    sonataWithStableSourceId === sonataSets.length;
 
   return Object.freeze({
     schemaVersion: 1,
@@ -344,10 +427,10 @@ export function analyzeGameDatabaseReadiness(snapshot) {
       }),
       echoes: Object.freeze({
         sourceIdentityReady: echoes.length,
-        costResolved: echoesWithCost,
-        canonicalCatalogReady: echoesWithCost === echoes.length && sonataWithStableSourceId === sonataSets.length
-          ? echoes.length
-          : 0,
+        classifiedSourceRows: classifiedRows,
+        baseCatalogEntries: fullyClassified ? baseEchoes : 0,
+        costResolved: resolvedCostCount,
+        canonicalCatalogReady: canonicalEchoReady ? baseEchoes : 0,
       }),
       sonataSets: Object.freeze({
         definitionReady: sonataSets.length,
@@ -363,6 +446,12 @@ export function analyzeGameDatabaseReadiness(snapshot) {
       weaponFractionalGrowthPoints,
       echoesWithSonataSourceRefs: echoesWithSonataRefs,
       totalEchoSonataSourceRefs: totalEchoSonataRefs,
+      echoCatalogClassification: Object.freeze({
+        classifiedRows,
+        baseRows: baseEchoes,
+        phantomSkinRows,
+        noncanonicalRows,
+      }),
     }),
     blockers: Object.freeze(blockers),
   });
