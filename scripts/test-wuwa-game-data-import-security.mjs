@@ -64,13 +64,54 @@ async function walkFiles(root) {
   return result;
 }
 
-async function testAuditOnlyLeavesRepositoryUntouched() {
+function fieldByPath(report, fieldPath) {
+  const field = report.fields.find((entry) => entry.path === fieldPath);
+  assert.ok(field, `Missing field inventory entry: ${fieldPath}`);
+  return field;
+}
+
+async function testAuditOnlyLeavesRepositoryUntouchedAndInventoriesFields() {
   await withTempDirectory(async (cwd) => {
     const result = await runImporter(cwd, "safe", ["--audit-only"]);
     assert.equal(result.signal, null);
     assert.equal(result.code, 0, `${result.stdout}\n${result.stderr}`);
     assert.match(result.stdout, /WUWA_GAME_DATA_IMPORT_REPORT=/);
     assert.equal(await exists(path.join(cwd, "data", "sources", "encore", "release")), false);
+
+    const auditRoot = path.join(cwd, ".tmp", "wuwa-game-data-audit");
+    const inventory = JSON.parse(await readFile(path.join(auditRoot, "field-inventory.json"), "utf8"));
+    assert.equal(inventory.schemaVersion, 1);
+    assert.equal(inventory.dataset, "Release");
+
+    const description = fieldByPath(inventory, "characters.detail.Description");
+    assert.deepEqual(description.string.samples, [
+      "A safe character description used to map textual Encore fields.",
+    ]);
+
+    const skillMultiplier = fieldByPath(inventory, "characters.detail.Skills[].Multiplier");
+    assert.equal(skillMultiplier.number.min, 123.45);
+    assert.equal(skillMultiplier.number.max, 123.45);
+
+    const enabled = fieldByPath(inventory, "characters.detail.Nested.Enabled");
+    assert.equal(enabled.boolean.trueCount, 1);
+
+    const externalGuide = fieldByPath(inventory, "characters.detail.ExternalGuide");
+    assert.deepEqual(externalGuide.string.samples, ["[url:https://evil.example]"]);
+    assert.equal(JSON.stringify(externalGuide).includes("user=123"), false);
+
+    const html = fieldByPath(inventory, "characters.detail.HtmlSnippet");
+    assert.equal(html.string.htmlLike, 1);
+    assert.deepEqual(html.string.samples, ["[omitted:html-like-content]"]);
+
+    const script = fieldByPath(inventory, "characters.detail.ScriptSnippet");
+    assert.equal(script.string.scriptLike, 1);
+    assert.deepEqual(script.string.samples, ["[omitted:script-like-content]"]);
+
+    const weaponPassive = fieldByPath(inventory, "weapons.detail.Passive.Description");
+    assert.deepEqual(weaponPassive.string.samples, ["Increase a stat after a reviewed condition."]);
+
+    const echoSkill = fieldByPath(inventory, "echoes.detail.SkillDescription");
+    assert.deepEqual(echoSkill.string.samples, ["Transform into the fixture Echo and deal damage."]);
   });
 }
 
@@ -81,8 +122,9 @@ async function testPromotionWritesJsonOnlyAndDoesNotFollowPayloadUrls() {
 
     const rawRoot = path.join(cwd, "data", "sources", "encore", "release");
     const files = await walkFiles(rawRoot);
-    assert.ok(files.length >= 8);
+    assert.ok(files.length >= 9);
     assert.ok(files.every((file) => file.endsWith(".json")), "RAW importer must only persist JSON files");
+    assert.equal(await exists(path.join(rawRoot, "field-inventory.json")), true);
 
     const manifest = JSON.parse(await readFile(path.join(rawRoot, "manifest.json"), "utf8"));
     assert.equal(manifest.dataset, "Release");
@@ -138,7 +180,7 @@ async function testUnknownArgumentFailsBeforeNetwork() {
 }
 
 async function main() {
-  await testAuditOnlyLeavesRepositoryUntouched();
+  await testAuditOnlyLeavesRepositoryUntouchedAndInventoriesFields();
   await testPromotionWritesJsonOnlyAndDoesNotFollowPayloadUrls();
   await testDangerousKeysAndContentTypesFailClosed();
   await testMissingEntityNeverDeletesLastKnownGoodSnapshot();
