@@ -47,11 +47,15 @@ Remote data must never be:
 - allowed to add dependencies;
 - allowed to modify application/runtime/CI/deployment code.
 
-The future game-data importer must use an explicit endpoint allowlist under the reviewed Encore API origin, HTTPS only, Release data only, disabled redirects, strict JSON content type, streaming size limits, timeouts, schema validation, semantic validation, dangerous-key rejection, atomic writes and a fail-closed update policy.
+The RAW game-data importer enforces an explicit character/weapon/Echo endpoint allowlist under `https://api-v2.encore.moe`, HTTPS only, English Release data only, disabled redirects, strict JSON content type, streaming response and total-transfer limits, timeouts, UTF-8/JSON validation, dangerous-key rejection, bounded collections/IDs and a fail-closed promotion policy.
 
-A raw download is quarantine input. It becomes generated game data only after validation and normalization.
+List and detail URLs are constructed exclusively by project code. URLs embedded inside an Encore response are never followed by the data importer. Payload strings therefore cannot redirect the importer toward advertisements, tracking endpoints, downloads or arbitrary hosts.
 
-Missing remote entities produce warnings/reviewable diffs; they are never automatically deleted from the last known-good database.
+A raw download remains quarantine input until every list and detail request in the run has succeeded. Only `.json` files can be promoted, and detail filenames are SHA-256-derived rather than source-controlled filesystem paths. Promotion uses a staged directory swap; a failure leaves the last known-good RAW snapshot authoritative.
+
+If a previously known character, weapon or Echo disappears from the source, promotion is blocked rather than deleting it automatically.
+
+The manual `Encore import audit` workflow has read-only repository permissions and no deployment secrets. It runs the mocked attack regressions before contacting Encore and uploads only the safe manifest/schema report, not RAW source payloads. Normalized field mappings are intentionally deferred until that real Release schema report has been reviewed.
 
 ## Assets
 
@@ -83,13 +87,13 @@ Assets remain content-addressed by SHA-256 and are resolved through a manifest r
 
 Security CI runs with read-only repository permissions by default. Third-party GitHub Actions are pinned to full commit SHAs. Checkout does not persist repository credentials.
 
-Dependency installation in validation CI uses the lockfile and disables lifecycle scripts. CI verifies npm registry signatures/provenance, audits all installed dependencies for high-severity advisories, validates asset-security script syntax and attack tests, runs lint/typecheck/application tests, builds Next.js, smoke-tests the production security headers, builds the OpenNext/Cloudflare Worker and validates a Wrangler dry-run deployment bundle.
+Dependency installation in validation CI uses the lockfile and disables lifecycle scripts. CI verifies npm registry signatures/provenance, audits all installed dependencies for high-severity advisories, validates both asset and game-data importer security scripts/attack tests, runs lint/typecheck/application tests, builds Next.js, smoke-tests the production security headers, builds the OpenNext/Cloudflare Worker and validates a Wrangler dry-run deployment bundle.
 
 Pull requests use GitHub Dependency Review when the repository exposes the dependency-graph comparison API. If that GitHub capability is unavailable, CI emits an explicit warning instead of pretending the review ran.
 
 Dependabot checks npm and GitHub Actions dependencies on a schedule, but updates are reviewable pull requests rather than automatic merges.
 
-Future automated Encore imports must run in a separate job/workflow with no deployment secrets and no write permission to `main`. Their output should become a reviewable pull request only after validation.
+Any future automated Encore update that writes repository content must remain separate from deployment credentials and must create reviewable changes rather than pushing directly to `main`.
 
 ## Future authentication
 

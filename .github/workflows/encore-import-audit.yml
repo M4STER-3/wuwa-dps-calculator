@@ -1,0 +1,58 @@
+name: Encore import audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: encore-import-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Audit Encore Release data
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify npm registry signatures and provenance
+        run: npm audit signatures
+
+      - name: Validate importer syntax
+        run: |
+          node --check scripts/lib/encore-client.mjs
+          node --check scripts/import-wuwa-game-data.mjs
+          node --check scripts/test-wuwa-game-data-import-security.mjs
+
+      - name: Run importer attack tests without external network
+        run: npm run game-data:test-security
+
+      - name: Audit live Encore Release data without promoting it
+        run: npm run game-data:import:audit
+
+      - name: Upload schema and manifest audit only
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: encore-release-audit
+          path: |
+            .tmp/wuwa-game-data-audit/manifest.json
+            .tmp/wuwa-game-data-audit/schema-report.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3

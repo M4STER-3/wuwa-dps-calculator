@@ -23,11 +23,17 @@ npm run upload     # construit puis téléverse une version du Worker
 npm run cf-typegen # régénère les types des bindings Cloudflare
 npm run assets:sync:dry # vérifie la synchronisation d'assets sans écrire les téléchargements
 npm run assets:sync # synchronise les assets via le wrapper de sécurité
+npm run assets:test-security # teste les scénarios hostiles du pipeline d'assets sans réseau
+npm run game-data:import:audit # audite Encore Release sans promouvoir les données RAW
+npm run game-data:import # récupère et promeut un snapshot RAW seulement si tout est valide
+npm run game-data:test-security # teste l'importeur Encore avec un transport simulé sans réseau
 npm run lint       # exécute ESLint
 npm run typecheck  # vérifie les types TypeScript sans générer de fichiers
 npm test           # exécute les tests Vitest une fois
 npm run test:watch # exécute Vitest en mode interactif
 ```
+
+L'importeur de données Encore est documenté dans [`docs/game-data-import.md`](docs/game-data-import.md). Le workflow GitHub `Encore import audit` est manuel et n'a pas le droit d'écrire dans le dépôt ; il sert à inspecter le schéma Release réel avant d'ajouter des mappings normalisés.
 
 Ouvrez [http://localhost:3000](http://localhost:3000) après avoir lancé le serveur de développement.
 
