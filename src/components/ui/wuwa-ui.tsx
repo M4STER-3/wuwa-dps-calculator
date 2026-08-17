@@ -153,30 +153,30 @@ export function WuwaField({
 }
 
 export function WuwaInput({
-  size = "md",
+  controlSize = "md",
   className,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { size?: WuwaControlSize }) {
+}: InputHTMLAttributes<HTMLInputElement> & { controlSize?: WuwaControlSize }) {
   return (
     <input
-      className={classes("wuwa-input", `wuwa-control--${size}`, className)}
+      className={classes("wuwa-input", `wuwa-control--${controlSize}`, className)}
       {...props}
     />
   );
 }
 
 export function WuwaSelect({
-  size = "md",
+  controlSize = "md",
   className,
   children,
   ...props
 }: SelectHTMLAttributes<HTMLSelectElement> & {
-  size?: WuwaControlSize;
+  controlSize?: WuwaControlSize;
   children: ReactNode;
 }) {
   return (
     <select
-      className={classes("wuwa-select", `wuwa-control--${size}`, className)}
+      className={classes("wuwa-select", `wuwa-control--${controlSize}`, className)}
       {...props}
     >
       {children}
