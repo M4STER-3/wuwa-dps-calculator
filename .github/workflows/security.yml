@@ -40,6 +40,16 @@ jobs:
       - name: Audit all dependencies
         run: npm audit --audit-level=high
 
+      - name: Validate asset security script syntax
+        run: |
+          node --check scripts/run-safe-wuwa-assets.mjs
+          node --check scripts/sync-wuwa-assets.mjs
+          node --check scripts/test-fixtures/mock-encore-fetch.mjs
+          node --check scripts/test-wuwa-assets-security.mjs
+
+      - name: Test asset synchronization security
+        run: npm run assets:test-security
+
       - name: Lint
         run: npm run lint
 
