@@ -38,7 +38,9 @@ npm run game-data:normalize
 
 `game-data:normalize` is an offline, fixed-path transformation. It reads only the validated RAW snapshot and writes a reviewed source-normalized preview to `.tmp/wuwa-game-data-normalized/normalized-source.json`. It has no network code and accepts no filesystem/URL arguments.
 
-`game-data:test-normalizer-security` first builds a mocked valid RAW snapshot, then proves that the normalizer strips source rich-text to inert plain text, removes unknown fields by rebuilding allowlisted shapes, rejects allowlisted script-like/URL-bearing text, rejects unsafe paths/symlinks and produces deterministic output.
+The normalized preview includes a SHA-256 provenance index for every character, weapon and Echo detail payload. This allows any normalized source entity to be traced back to the exact validated RAW bytes that produced it without copying remote URLs into browser-facing data.
+
+`game-data:test-normalizer-security` first builds a mocked valid RAW snapshot, then proves that the normalizer strips source rich-text to inert plain text, removes unknown fields by rebuilding allowlisted shapes, rejects allowlisted script-like/URL-bearing text, rejects unsafe paths/symlinks, preserves legitimate source entries with missing display names without inventing names, removes all temporary normalization sentinels, preserves SHA-256 provenance and produces deterministic output.
 
 ## Network boundary
 
@@ -100,6 +102,8 @@ The first live audit observed 60 characters, 120 weapons and 287 Echo entries. I
 
 The same audit also found many URL-like and rich-text-like source strings. Generated browser-facing text therefore always goes through the normalizer's inert plain-text boundary; source markup is not trusted presentation code.
 
+A follow-up live normalization probe found at least one legitimate source skill (`character 1305`, source skill `1002308`) whose `SkillName` is an empty string while its type is `Inherent Skill` and its description is populated. The source-normalized layer therefore preserves such entries without a `name` field and emits a data-quality diagnostic instead of deleting the information or inventing a display name.
+
 ## Reviewed normalizer mapping
 
 The V1 source normalizer currently maps only fields confirmed by the live audit.
@@ -108,9 +112,11 @@ Characters include:
 
 - source ID, name, element, weapon type, rarity and max level;
 - named source properties with base values and source growth points;
-- skill IDs, names, types, plain-text descriptions and source attribute/value arrays;
+- skill IDs, optional source display names, types, plain-text descriptions and source attribute/value arrays;
 - six Resonance Chain nodes with names and plain-text descriptions;
 - permanent property-node titles/descriptions from the source skill tree.
+
+A missing skill display name is not synthesized. The source ID, type and reviewed content remain available for the future canonical generator to classify explicitly.
 
 Weapons include:
 
@@ -127,7 +133,7 @@ Echoes include:
 - source Sonata group IDs;
 - Sonata set names and generic piece thresholds paired with inert effect descriptions.
 
-Repeated Sonata definitions are deduplicated by name and must agree on their piece/effect definitions. Conflicting definitions fail normalization rather than silently choosing one.
+Repeated Sonata definitions are deduplicated by name and must agree on their piece/effect definitions. Conflicting definitions fail normalization rather than silently choosing one. Echo-local Sonata lore/definition text remains RAW-only because the live source contains duplicated and occasionally mixed-language variants.
 
 ## Explicitly unresolved mappings
 
