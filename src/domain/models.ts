@@ -288,6 +288,8 @@ export interface UserBuild {
   skillLevels: Record<SkillType, number>;
   weapon: { weaponId: string; level: number; rank: number };
   finalStats: FinalStats;
+  /** Detailed persisted five-Echo equipment input; not a second permanent-stat source. */
+  echoLoadout?: import("./user-echo-loadout").UserEchoLoadoutV1;
   sonataId?: string;
   mainEchoId?: string;
   createdAt: string;
