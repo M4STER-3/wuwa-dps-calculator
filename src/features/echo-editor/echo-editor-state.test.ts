@@ -5,6 +5,7 @@ import type { UserEchoLoadoutV1 } from "@/domain/user-echo-loadout";
 import {
   clearBuildEchoLoadout,
   draftSlotsFromLoadout,
+  emptyEchoDraftSlots,
   loadoutFromDraftSlots,
   replaceBuildEchoLoadout,
 } from "./echo-editor-state";
@@ -50,6 +51,19 @@ describe("Echo editor persistence helpers", () => {
     expect(roundTrip.mainEchoId).toBe("echo:main");
     expect(roundTrip.echoes[0]?.substats[0]?.value).toBe(21);
     expect(roundTrip.echoes.map((echo) => echo.echoId)).toEqual(["echo:main", "echo:secondary"]);
+  });
+
+  it("does not invent a Main Echo when slot one is empty", () => {
+    const slots = emptyEchoDraftSlots();
+    slots[1] = {
+      echoId: "echo:secondary",
+      sonataSetId: "sonata:one",
+      primaryMainStatId: "echo-main-1-attack-percent",
+      substats: [],
+    };
+    const persisted = loadoutFromDraftSlots(slots);
+    expect(persisted.mainEchoId).toBeUndefined();
+    expect(persisted.echoes.map((echo) => echo.echoId)).toEqual(["echo:secondary"]);
   });
 
   it("rejects incomplete or malformed drafts before storage", () => {
