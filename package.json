@@ -31,7 +31,7 @@
     "game-data:test-promotion-security": "node scripts/test-generated-game-database-promotion-security.mjs",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
+    "test": "npm run game-data:test-echo-catalog-security && vitest run --passWithNoTests",
     "test:watch": "vitest"
   },
   "dependencies": {
