@@ -61,18 +61,21 @@ jobs:
       - name: Test independent asset verifier
         run: npm run assets:test-verifier
 
-      - name: Validate game-data importer, normalizer, and readiness syntax
+      - name: Validate game-data importer, normalizer, hardening, and readiness syntax
         run: |
           node --check scripts/lib/encore-client.mjs
           node --check scripts/lib/encore-field-inventory.mjs
           node --check scripts/lib/encore-normalizer.mjs
+          node --check scripts/lib/normalized-source-hardening.mjs
           node --check scripts/lib/game-database-readiness.mjs
           node --check scripts/import-wuwa-game-data.mjs
           node --check scripts/normalize-wuwa-game-data.mjs
+          node --check scripts/harden-wuwa-normalized-source.mjs
           node --check scripts/analyze-wuwa-game-data-readiness.mjs
           node --check scripts/test-fixtures/mock-encore-data-fetch.mjs
           node --check scripts/test-wuwa-game-data-import-security.mjs
           node --check scripts/test-wuwa-game-data-normalizer-security.mjs
+          node --check scripts/test-wuwa-normalized-source-hardening-security.mjs
           node --check scripts/test-wuwa-game-data-readiness-security.mjs
 
       - name: Test game-data importer security
@@ -80,6 +83,9 @@ jobs:
 
       - name: Test game-data normalizer security
         run: npm run game-data:test-normalizer-security
+
+      - name: Test normalized source hardening security
+        run: npm run game-data:test-hardening-security
 
       - name: Test GameDatabase readiness boundary
         run: npm run game-data:test-readiness-security
