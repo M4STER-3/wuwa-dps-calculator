@@ -20,6 +20,7 @@ const MAX_STRING_LENGTH = 2 * 1024 * 1024;
 const DANGEROUS_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 const RESOURCE_NAMES = ["characters", "weapons", "echoes"];
 const MISSING_SKILL_NAME_SENTINEL = "__WUWA_REVIEWED_SOURCE_NAME_MISSING__";
+const VERIFIED_WEAPON_FRACTIONAL_SOURCE_LEVELS = new Set([20.5, 40.5, 50.5, 60.5, 70.5, 80.5]);
 
 function fail(message) {
   throw new Error(message);
@@ -173,6 +174,12 @@ function prepareUnnamedCharacterSkills(characterDetails) {
     for (let index = 0; index < skills.length; index += 1) {
       const skill = skills[index];
       if (!skill || typeof skill !== "object" || Array.isArray(skill)) continue;
+      if (
+        typeof skill.SkillName === "string" &&
+        skill.SkillName.trim() === MISSING_SKILL_NAME_SENTINEL
+      ) {
+        fail(`character ${character.sourceId}.Skills[${index}] collides with internal missing-name sentinel`);
+      }
       if (typeof skill.SkillName !== "string" || skill.SkillName.trim().length > 0) continue;
 
       const sourceSkillId = normalizeSourceId(
@@ -207,6 +214,54 @@ function prepareUnnamedCharacterSkills(characterDetails) {
   );
 }
 
+function prepareFractionalWeaponGrowthIndexes(weaponDetails) {
+  const fractionalIndexes = [];
+  for (const weapon of weaponDetails) {
+    const properties = weapon.detail?.Properties;
+    if (!Array.isArray(properties)) continue;
+    for (let propertyIndex = 0; propertyIndex < properties.length; propertyIndex += 1) {
+      const growthValues = properties[propertyIndex]?.GrowthValues;
+      if (!Array.isArray(growthValues)) continue;
+      for (let growthIndex = 0; growthIndex < growthValues.length; growthIndex += 1) {
+        const growth = growthValues[growthIndex];
+        if (!growth || typeof growth !== "object" || Array.isArray(growth)) continue;
+        const hasLower = Object.prototype.hasOwnProperty.call(growth, "level");
+        const hasUpper = Object.prototype.hasOwnProperty.call(growth, "Level");
+        if (hasLower && hasUpper && growth.level !== growth.Level) {
+          fail(
+            `weapon ${weapon.sourceId}.Properties[${propertyIndex}].GrowthValues[${growthIndex}] has conflicting level/Level fields`,
+          );
+        }
+        const rawLevel = hasLower ? growth.level : growth.Level;
+        if (typeof rawLevel !== "number" || !Number.isFinite(rawLevel) || Number.isInteger(rawLevel)) {
+          continue;
+        }
+        if (
+          rawLevel < 0 ||
+          rawLevel > 10_000 ||
+          !Number.isInteger(rawLevel * 2) ||
+          !VERIFIED_WEAPON_FRACTIONAL_SOURCE_LEVELS.has(rawLevel)
+        ) {
+          fail(
+            `weapon ${weapon.sourceId}.Properties[${propertyIndex}].GrowthValues[${growthIndex}] has unreviewed fractional source level ${String(rawLevel)}`,
+          );
+        }
+        const temporarySourceLevelIndex = Math.floor(rawLevel);
+        if (hasLower) growth.level = temporarySourceLevelIndex;
+        else growth.Level = temporarySourceLevelIndex;
+        fractionalIndexes.push({
+          weaponSourceId: weapon.sourceId,
+          propertyIndex,
+          growthIndex,
+          exactSourceLevelIndex: rawLevel,
+          temporarySourceLevelIndex,
+        });
+      }
+    }
+  }
+  return fractionalIndexes;
+}
+
 function removeTemporarySkillNameSentinels(characters, unnamedSkills) {
   const unnamed = new Set(
     unnamedSkills.map((entry) => `${entry.characterSourceId}:${entry.sourceSkillId}`),
@@ -225,9 +280,35 @@ function removeTemporarySkillNameSentinels(characters, unnamedSkills) {
   }));
 }
 
+function restoreFractionalWeaponGrowthIndexes(weapons, fractionalIndexes) {
+  const bySourceId = new Map(weapons.map((weapon) => [weapon.sourceId, weapon]));
+  for (const entry of fractionalIndexes) {
+    const weapon = bySourceId.get(entry.weaponSourceId);
+    const growth = weapon?.properties?.[entry.propertyIndex]?.sourceGrowthValues?.[entry.growthIndex];
+    if (!growth) {
+      fail(
+        `Could not restore fractional source level for weapon ${entry.weaponSourceId} property ${entry.propertyIndex} growth ${entry.growthIndex}`,
+      );
+    }
+    if (growth.sourceLevelIndex !== entry.temporarySourceLevelIndex) {
+      fail(
+        `Fractional source-level restoration mismatch for weapon ${entry.weaponSourceId} property ${entry.propertyIndex} growth ${entry.growthIndex}`,
+      );
+    }
+    growth.sourceLevelIndex = entry.exactSourceLevelIndex;
+  }
+  return weapons;
+}
+
 function hardenNormalizedOutput(
   normalized,
-  { characterDetails, weaponDetails, echoDetails, unnamedSkills },
+  {
+    characterDetails,
+    weaponDetails,
+    echoDetails,
+    unnamedSkills,
+    fractionalWeaponGrowthIndexes,
+  },
 ) {
   const diagnostics = [
     ...normalized.diagnostics,
@@ -245,6 +326,13 @@ function hardenNormalizedOutput(
       message: `${unnamedSkills.length} source skill entr${unnamedSkills.length === 1 ? "y has" : "ies have"} no display name. Their source IDs, types and reviewed content are preserved without inventing names.`,
     });
   }
+  if (fractionalWeaponGrowthIndexes.length > 0) {
+    diagnostics.push({
+      code: "weapon-source-growth-half-index-preserved",
+      severity: "info",
+      message: `${fractionalWeaponGrowthIndexes.length} reviewed half-step weapon source growth indexes are preserved exactly as source metadata and are not interpreted as game levels.`,
+    });
+  }
 
   return {
     ...normalized,
@@ -254,6 +342,10 @@ function hardenNormalizedOutput(
       echoes: sourceHashIndex(echoDetails),
     },
     characters: removeTemporarySkillNameSentinels(normalized.characters, unnamedSkills),
+    weapons: restoreFractionalWeaponGrowthIndexes(
+      normalized.weapons,
+      fractionalWeaponGrowthIndexes,
+    ),
     sonataSets: normalized.sonataSets.map(({ sourceLore: _sourceLore, ...sonata }) => sonata),
     diagnostics,
   };
@@ -293,6 +385,7 @@ async function main() {
     loadResourceDetails(manifest, "echoes"),
   ]);
   const unnamedSkills = prepareUnnamedCharacterSkills(characterDetails);
+  const fractionalWeaponGrowthIndexes = prepareFractionalWeaponGrowthIndexes(weaponDetails);
 
   const normalized = hardenNormalizedOutput(
     normalizeEncoreSourceSnapshot({
@@ -301,7 +394,13 @@ async function main() {
       weaponDetails,
       echoDetails,
     }),
-    { characterDetails, weaponDetails, echoDetails, unnamedSkills },
+    {
+      characterDetails,
+      weaponDetails,
+      echoDetails,
+      unnamedSkills,
+      fractionalWeaponGrowthIndexes,
+    },
   );
   const bytes = await writeOutputAtomic(normalized);
   console.log(
