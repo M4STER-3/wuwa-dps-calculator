@@ -1,0 +1,33 @@
+.stage {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  background: #070705;
+}
+
+.imageFrame {
+  position: relative;
+  width: min(100vw, 3840px);
+  aspect-ratio: 16 / 9;
+  flex: none;
+}
+
+.image {
+  object-fit: contain;
+}
+
+@media (max-aspect-ratio: 16 / 9) {
+  .imageFrame {
+    width: auto;
+    height: min(100vh, 2160px);
+  }
+}
+
+@media (forced-colors: active) {
+  .stage {
+    background: Canvas;
+  }
+}
