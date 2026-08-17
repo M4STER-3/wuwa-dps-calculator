@@ -4,21 +4,25 @@ The asset sync is intentionally separate from UI/domain integration.
 
 ## Commands
 
-- `npm run assets:sync:dry` inspects Encore.moe Release data and reports what would be downloaded.
+- `npm run assets:sync:dry` inspects Encore.moe Release data and reports what would be downloaded or deduplicated.
 - `npm run assets:sync` downloads accepted images and writes `public/assets/wuwa/manifest.json`.
-- `npm run assets:sync -- --force` re-downloads assets even when the manifest already references the same source URL.
+- `npm run assets:sync -- --force` re-fetches remote assets, while still deduplicating identical file content locally.
 
 ## Stable association model
 
 Assets are keyed by the source entity ID, not by display name. This prevents a rename, localization change, or filename normalization from breaking future associations.
 
-Example manifest shape:
+The manifest uses schema version 2 and maps each logical asset to a content-addressed object:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "gameVersion": "Release",
   "categories": ["characters", "weapons", "echoes"],
+  "storage": {
+    "strategy": "sha256-content-addressed",
+    "root": "/assets/wuwa/objects"
+  },
   "entities": {
     "characters": {
       "1102": {
@@ -27,7 +31,7 @@ Example manifest shape:
         "name": "Example",
         "assets": {
           "roleheadicon": {
-            "path": "/assets/wuwa/characters/1102/roleheadicon.webp",
+            "path": "/assets/wuwa/objects/<sha256>.webp",
             "sourceUrl": "https://...",
             "contentType": "image/webp",
             "bytes": 12345,
@@ -42,7 +46,23 @@ Example manifest shape:
 
 Future domain integration should add an explicit source-ID mapping to the relevant resonator, weapon, or echo and resolve images through this manifest. Do not use display names as the primary join key.
 
-The asset key is derived from the API field path. This allows one entity to keep several distinct images without overwriting them.
+The asset key is derived from the API field path. This allows one entity to keep several distinct image roles without overwriting them.
+
+## Duplicate prevention and updates
+
+Physical image files are stored by SHA-256 content hash under `public/assets/wuwa/objects`.
+
+This means:
+
+- the same image referenced by several entities or fields is stored only once;
+- the same image returned through different URLs is stored only once;
+- an Encore URL that has already been synchronized can reuse the existing verified object without downloading it again;
+- if an existing content-addressed file is present, its actual SHA-256 is rechecked before reuse;
+- `--force` may re-fetch a URL, but identical bytes still resolve to the same physical object;
+- after a fully successful synchronization, unreferenced content-addressed objects are removed;
+- if any asset fails during synchronization, the previous successful manifest is kept instead of replacing it with a partial manifest.
+
+So future refreshes do not create duplicate files merely because a source URL, API field, or logical association changes.
 
 ## Current scope
 
@@ -71,10 +91,12 @@ The downloader is intentionally fail-closed:
 - JSON responses are capped at 8 MiB;
 - requests time out after 15 seconds;
 - category size, nested payload depth, visited nodes, and image count per entity are bounded;
-- output paths are normalized and verified to remain under `public/assets/wuwa`;
+- output paths are normalized and verified to remain under the WuWa asset root;
 - files are written atomically through a temporary file before rename;
+- content-addressed files are verified by SHA-256 before reuse;
 - downloaded content is never executed;
 - SHA-256 and byte size are recorded in the manifest;
+- a partial/failed synchronization does not replace the last successful manifest;
 - only Encore's `Release` dataset is used, never Beta.
 
 If Encore changes its image delivery to another host, the synchronizer will reject it until that host is explicitly reviewed and allowlisted.
