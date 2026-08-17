@@ -8,7 +8,7 @@ The target flow is:
 
 `external source -> raw snapshot -> normalize/validate -> generated Game Database -> curated combat overlays -> GameCatalog -> player build -> build/stat resolver -> combat engines`
 
-The current V1 foundation only defines the normalized catalog schemas and the internal `GameCatalog` access layer. It does not yet import remote data and does not change the Character Box, `finalStats`, or any combat engine.
+The V1 foundation defines the normalized catalog schemas and the internal `GameCatalog` access layer. A fail-closed Encore RAW importer is also available and documented in [`game-data-import.md`](game-data-import.md). The importer deliberately stops before normalized field mapping until the real Release schema audit has been reviewed. It does not change the Character Box, `finalStats`, or any combat engine.
 
 ## Identity model
 
@@ -47,7 +47,9 @@ Sonata thresholds are modeled as arbitrary piece-count bonuses instead of hard-c
 - Echo references to unknown Sonata sets;
 - manifest counts that do not match generated arrays.
 
-Future importer validation will add schema checks, known enum/stat validation, source-volume regression guards, asset association checks, and curated-data reference checks.
+The RAW importer separately validates its network/source boundary: exact endpoint families, Release-only requests, JSON content type, response/total byte budgets, UTF-8/JSON structure, dangerous object keys, bounded IDs, duplicate source IDs, source removals, path containment and staged promotion.
+
+Normalized-data validation will add known enum/stat validation, asset association checks and curated-data reference checks once the field mapping is derived from the audited Release schema.
 
 ## Asset integration
 
@@ -61,40 +63,41 @@ This keeps catalog data independent from physical filenames and preserves the cu
 
 ## Import safety boundary
 
-The future Encore importer must be fail-closed and treat every remote byte as untrusted data.
+The Encore importer is fail-closed and treats every remote byte as untrusted data.
 
-Required rules:
+Current rules include:
 
-- fetch only from the explicitly allowlisted Encore API origin;
-- use HTTPS only;
-- use the Release dataset only;
-- reject redirects, URL credentials, custom ports, and unexpected origins;
+- fetch only from the explicitly allowlisted Encore API origin and character/weapon/Echo endpoint families;
+- use HTTPS only and the Release dataset only;
+- reject redirects, URL credentials, custom ports, fragments and unexpected query parameters;
 - accept API responses only when the HTTP content type is JSON;
-- cap response sizes while streaming, not only through `Content-Length`;
+- cap response sizes and total transfer while streaming, not only through `Content-Length`;
 - enforce request timeouts;
+- require valid UTF-8 and valid JSON;
+- reject dangerous object keys such as `__proto__`, `prototype` and `constructor`;
+- bound collection sizes, strings, nesting depth and traversal work;
 - parse JSON as data only and never evaluate or execute source-provided strings;
-- never install packages, browser extensions, binaries, scripts, HTML, advertisements, archives, or executables discovered in source payloads;
+- never install packages, browser extensions, binaries, scripts, HTML, advertisements, archives or executables discovered in source payloads;
 - never follow arbitrary URLs embedded in descriptive fields;
-- bound collection sizes, nesting depth, and traversal work;
-- validate recognized entity IDs, costs, weapon types, elements, stats, and references before generated data becomes authoritative;
-- write snapshots/generated output atomically;
-- keep the previous successful generated database when an import is incomplete or invalid;
-- never automatically delete a previously known entity merely because it disappeared from one remote response;
-- report source removals as warnings for explicit review;
-- keep raw source snapshots separate from executable application code;
+- never allow remote source IDs to choose filesystem paths;
+- stage complete RAW acquisition in an ignored quarantine directory before promotion;
+- keep the previous successful RAW snapshot when an import is incomplete or invalid;
+- block promotion if a previously known entity disappears from a remote response;
 - never turn remote descriptions into executable combat logic.
 
-The existing image synchronizer already implements many equivalent network/content protections for image acquisition. The data importer should share or extract the same trusted Encore client instead of introducing a weaker second network path.
+The existing image synchronizer uses equivalent defensive principles for image acquisition. Both data and asset pipelines keep their network/content boundaries isolated from the runtime application.
 
-## Planned import lifecycle
+## Import lifecycle
 
-The intended command will eventually perform:
+The current first stage is:
 
-`fetch -> raw snapshot -> normalize -> validate -> deduplicate -> asset match -> generate -> diff report`
+`fetch list/detail -> quarantine -> network/JSON validation -> RAW manifest + source hashes -> schema report -> diff/removal guard -> staged promotion`
 
-Fetch and normalization should also be runnable independently so normalizer development and tests do not repeatedly contact Encore.
+The next stage, after inspecting the live audit artifact, will be:
 
-Each imported entity should retain provider metadata, external ID, language, dataset, import time, source version when available, and a deterministic source hash. Same ID + same source hash means no semantic source change; same ID + changed hash is an update candidate; new ID is an addition; missing ID is a warning, not an automatic deletion.
+`RAW snapshot -> explicit reviewed normalizer -> generated Game Database -> catalog validation -> asset match -> generated diff report`
+
+Each RAW entity already retains a source ID, deterministic source hash, byte size and trusted request URL through the snapshot manifest. Same ID + same detail hash means no source change; same ID + changed detail hash is an update candidate; new ID is an addition; a missing ID blocks automatic promotion.
 
 ## Combat boundary
 
