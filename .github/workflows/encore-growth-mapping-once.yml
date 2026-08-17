@@ -1,0 +1,170 @@
+name: Encore growth mapping audit once
+
+on:
+  push:
+    branches:
+      - 'audit/encore-growth-mapping-20260817'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: encore-growth-mapping-once
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Inspect numeric growth mapping only
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact audit head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify importer hostile-input boundary
+        run: |
+          set -euo pipefail
+          npm audit signatures
+          npm audit --audit-level=high
+          npm run game-data:test-security
+
+      - name: Import current Encore Release into ephemeral runner storage
+        run: npm run game-data:import
+
+      - name: Produce numeric-only growth mapping summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/encore-growth-mapping-audit
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from 'node:fs/promises';
+          import path from 'node:path';
+
+          const root = path.resolve('data/sources/encore/release');
+          const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
+          const safeScalar = (value) => {
+            if (typeof value === 'number') {
+              if (!Number.isFinite(value)) throw new Error('Non-finite scalar');
+              return value;
+            }
+            if (typeof value === 'string') {
+              if (value.length > 64 || /https?:|<|>|javascript:|data:/i.test(value)) throw new Error('Unsafe scalar');
+              return value;
+            }
+            if (value === null || value === undefined) return null;
+            throw new Error(`Unexpected scalar type ${typeof value}`);
+          };
+          const detail = async (family, entity) => {
+            const file = path.join(root, family, 'details', entity.detailFile);
+            return JSON.parse(await readFile(file, 'utf8'));
+          };
+          const growthTuple = (entry) => [
+            safeScalar(entry?.level ?? entry?.Level),
+            safeScalar(entry?.growthId ?? entry?.GrowthId ?? null),
+            safeScalar(entry?.value ?? entry?.Value),
+          ];
+          const propertySummary = (property) => ({
+            name: safeScalar(property?.Name),
+            baseValue: safeScalar(property?.BaseValue),
+            growth: Array.isArray(property?.GrowthValues) ? property.GrowthValues.map(growthTuple) : [],
+          });
+          const sequenceKey = (properties) => JSON.stringify(
+            (properties ?? []).map((property) =>
+              (property?.GrowthValues ?? []).map((entry) => [entry?.level ?? entry?.Level ?? null, entry?.growthId ?? entry?.GrowthId ?? null])
+            )
+          );
+          const summarizeFamily = async (family) => {
+            const entities = manifest.resources?.[family]?.entities ?? [];
+            const sequenceCounts = new Map();
+            const raritySamples = new Map();
+            const propertyLengths = new Map();
+            for (const entity of entities) {
+              const row = await detail(family, entity);
+              const properties = Array.isArray(row.Properties) ? row.Properties : [];
+              const key = sequenceKey(properties);
+              sequenceCounts.set(key, (sequenceCounts.get(key) ?? 0) + 1);
+              for (const property of properties) {
+                const length = Array.isArray(property?.GrowthValues) ? property.GrowthValues.length : 0;
+                propertyLengths.set(length, (propertyLengths.get(length) ?? 0) + 1);
+              }
+              const rarity = Number(row.QualityId);
+              if ((rarity === 4 || rarity === 5) && !raritySamples.has(rarity)) {
+                raritySamples.set(rarity, {
+                  sourceId: entity.sourceId,
+                  rarity,
+                  maxLevel: safeScalar(row.MaxLevel ?? null),
+                  properties: properties.map(propertySummary),
+                  ...(family === 'weapons' ? {
+                    firstProp: row.FirstPropId ? {
+                      id: safeScalar(row.FirstPropId.Id ?? null),
+                      value: safeScalar(row.FirstPropId.Value ?? null),
+                      isRatio: Boolean(row.FirstPropId.IsRatio),
+                    } : null,
+                    secondProp: row.SecondPropId ? {
+                      id: safeScalar(row.SecondPropId.Id ?? null),
+                      value: safeScalar(row.SecondPropId.Value ?? null),
+                      isRatio: Boolean(row.SecondPropId.IsRatio),
+                    } : null,
+                    breaches: Array.isArray(row.Breaches) ? row.Breaches.map((breach) => ({
+                      level: safeScalar(breach?.Level),
+                      levelLimit: safeScalar(breach?.LevelLimit),
+                    })) : [],
+                  } : {}),
+                });
+              }
+            }
+            const signatures = [...sequenceCounts.entries()]
+              .map(([key, count]) => ({ count, sequence: JSON.parse(key) }))
+              .sort((a, b) => b.count - a.count);
+            return {
+              entityCount: entities.length,
+              uniqueGrowthSequenceSignatures: signatures.length,
+              growthSequenceSignatures: signatures,
+              propertyGrowthLengths: Object.fromEntries([...propertyLengths.entries()].sort((a, b) => a[0] - b[0])),
+              samples: Object.fromEntries([...raritySamples.entries()].sort((a, b) => a[0] - b[0])),
+            };
+          };
+
+          const summary = {
+            schemaVersion: 1,
+            dataset: manifest.dataset,
+            sourceImportedAt: manifest.importedAt,
+            characters: await summarizeFamily('characters'),
+            weapons: await summarizeFamily('weapons'),
+          };
+          const serialized = `${JSON.stringify(summary, null, 2)}\n`;
+          if (Buffer.byteLength(serialized) > 1024 * 1024) throw new Error('Growth summary exceeded 1 MiB');
+          if (/https?:\/\/|<[^>]+>|javascript:|data:/i.test(serialized)) throw new Error('Growth summary leaked unsafe text');
+          await writeFile('.tmp/encore-growth-mapping-audit/summary.json', serialized, { flag: 'wx' });
+          console.log(`WUWA_ENCORE_GROWTH_MAPPING_AUDIT=${JSON.stringify({
+            characterEntities: summary.characters.entityCount,
+            characterSignatures: summary.characters.uniqueGrowthSequenceSignatures,
+            weaponEntities: summary.weapons.entityCount,
+            weaponSignatures: summary.weapons.uniqueGrowthSequenceSignatures,
+            characterGrowthLengths: summary.characters.propertyGrowthLengths,
+            weaponGrowthLengths: summary.weapons.propertyGrowthLengths,
+          })}`);
+          NODE
+
+      - name: Upload numeric-only summary
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: encore-growth-mapping-audit
+          path: .tmp/encore-growth-mapping-audit/summary.json
+          if-no-files-found: error
+          retention-days: 1
+          include-hidden-files: false
