@@ -56,10 +56,54 @@ const SOURCES = Object.freeze({
   weapons: Object.freeze({ endpoint: "/weapon", collectionKeys: ["weapons"], detail: true }),
   echoes: Object.freeze({ endpoint: "/echo", collectionKeys: ["Echo", "echoes"], detail: true }),
 });
+const SOURCE_CATEGORIES = Object.freeze(Object.keys(SOURCES));
 
-const args = new Set(process.argv.slice(2));
-const dryRun = args.has("--dry-run");
-const force = args.has("--force");
+function parseArguments(argv) {
+  let dryRun = false;
+  let force = false;
+  let category = null;
+  let resetManifest = false;
+  let finalize = false;
+
+  for (const arg of argv) {
+    if (arg === "--dry-run") dryRun = true;
+    else if (arg === "--force") force = true;
+    else if (arg === "--reset-manifest") resetManifest = true;
+    else if (arg === "--finalize") finalize = true;
+    else if (arg.startsWith("--category=")) {
+      const candidate = arg.slice("--category=".length);
+      if (!Object.prototype.hasOwnProperty.call(SOURCES, candidate)) {
+        throw new Error(`Unsupported asset-sync category: ${candidate}`);
+      }
+      if (category !== null) throw new Error("Asset sync accepts at most one --category option");
+      category = candidate;
+    } else {
+      throw new Error(`Unsupported asset-sync argument: ${arg}`);
+    }
+  }
+
+  if ((resetManifest || finalize) && category === null) {
+    throw new Error("--reset-manifest and --finalize are only valid with --category");
+  }
+  if (resetManifest && category !== "characters") {
+    throw new Error("A batched promotion must reset from the characters checkpoint");
+  }
+  if (finalize && category !== "echoes") {
+    throw new Error("A batched promotion may finalize only on the echoes checkpoint");
+  }
+  if (dryRun && (resetManifest || finalize)) {
+    throw new Error("Dry-run mode cannot mutate batch checkpoint state");
+  }
+
+  return Object.freeze({ dryRun, force, category, resetManifest, finalize });
+}
+
+const options = parseArguments(process.argv.slice(2));
+const { dryRun, force, category: selectedCategory, resetManifest, finalize } = options;
+const batched = selectedCategory !== null;
+const selectedSources = batched
+  ? Object.freeze({ [selectedCategory]: SOURCES[selectedCategory] })
+  : SOURCES;
 let remoteBytesRead = 0;
 const createdObjectPaths = new Set();
 
@@ -343,7 +387,7 @@ async function trustedFetch(rawUrl, { accept, api = false, maxBytes }) {
     method: "GET",
     headers: {
       Accept: accept,
-      "User-Agent": "wuwa-dps-calculator-asset-sync/4",
+      "User-Agent": "wuwa-dps-calculator-asset-sync/5",
     },
     redirect: "error",
     cache: "no-store",
@@ -442,6 +486,17 @@ function manifestAssetKey(fieldPath) {
   return assertSafeObjectKey(safeSegment(fieldPath.replaceAll(".", "-")), "Asset key");
 }
 
+function isSafeManifestAssetKey(value) {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 1024 &&
+    /^[a-z0-9._-]+$/.test(value) &&
+    !DANGEROUS_OBJECT_KEYS.has(value) &&
+    !FORBIDDEN_REMOTE_IMAGE_PATH_PATTERN.test(value)
+  );
+}
+
 function resolveObjectPath(hash, extension) {
   if (!/^[a-f0-9]{64}$/.test(hash)) throw new Error("Invalid SHA-256 object key");
   if (![...ALLOWED_IMAGE_TYPES.values()].includes(extension)) {
@@ -491,6 +546,78 @@ function isValidManifestAssetRecord(asset) {
   const extension = ALLOWED_IMAGE_TYPES.get(asset.contentType);
   if (!extension) return false;
   return asset.path === `/assets/wuwa/objects/${asset.sha256}.${extension}`;
+}
+
+function copyPreviousCategory(previousManifest, category) {
+  const output = createDictionary();
+  const source = previousManifest?.entities?.[category];
+  if (source === undefined || source === null) return output;
+  if (typeof source !== "object" || Array.isArray(source)) {
+    throw new Error(`Existing manifest category ${category} is invalid`);
+  }
+
+  const entries = Object.entries(source);
+  if (entries.length > MAX_ENTITIES_PER_CATEGORY) {
+    throw new Error(`Existing manifest category ${category} exceeds entity limit`);
+  }
+
+  for (const [sourceIdKey, rawEntity] of entries) {
+    const sourceId = normalizeId(sourceIdKey);
+    if (!sourceId || sourceId !== sourceIdKey) {
+      throw new Error(`Existing manifest ${category} source ID is invalid`);
+    }
+    if (!rawEntity || typeof rawEntity !== "object" || Array.isArray(rawEntity)) {
+      throw new Error(`Existing manifest ${category}:${sourceId} is invalid`);
+    }
+    if (rawEntity.sourceId !== sourceId || rawEntity.entityKey !== `${category}:${sourceId}`) {
+      throw new Error(`Existing manifest ${category}:${sourceId} identity mismatch`);
+    }
+    if (
+      typeof rawEntity.name !== "string" ||
+      rawEntity.name.length > 200 ||
+      /[\u0000-\u001f\u007f-\u009f]/.test(rawEntity.name)
+    ) {
+      throw new Error(`Existing manifest ${category}:${sourceId} has invalid name`);
+    }
+    if (!rawEntity.assets || typeof rawEntity.assets !== "object" || Array.isArray(rawEntity.assets)) {
+      throw new Error(`Existing manifest ${category}:${sourceId} assets are invalid`);
+    }
+
+    const assetEntries = Object.entries(rawEntity.assets);
+    if (assetEntries.length > MAX_IMAGES_PER_ENTITY) {
+      throw new Error(`Existing manifest ${category}:${sourceId} exceeds per-entity asset limit`);
+    }
+    const assets = createDictionary();
+    for (const [assetKey, asset] of assetEntries) {
+      if (!isSafeManifestAssetKey(assetKey) || !isValidManifestAssetRecord(asset)) {
+        throw new Error(`Existing manifest ${category}:${sourceId}:${assetKey} is invalid`);
+      }
+      assets[assetKey] = Object.freeze({
+        path: asset.path,
+        sourceUrl: asset.sourceUrl,
+        contentType: asset.contentType,
+        bytes: asset.bytes,
+        sha256: asset.sha256,
+      });
+    }
+    output[sourceId] = {
+      sourceId,
+      entityKey: `${category}:${sourceId}`,
+      name: rawEntity.name,
+      assets,
+    };
+  }
+
+  return output;
+}
+
+function existingOptionalMissingCount(previousManifest) {
+  const value = previousManifest?.security?.optionalMissingHttp404;
+  if (value === undefined) return 0;
+  if (!Number.isInteger(value) || value < 0 || value > MAX_TOTAL_ASSETS) {
+    throw new Error("Existing manifest optionalMissingHttp404 is invalid");
+  }
+  return value;
 }
 
 function toPublicPath(outputPath) {
@@ -619,16 +746,33 @@ async function materializeDownloadedAsset(sourceUrl, downloaded) {
   });
 }
 
-function assertRequiredManifestCoverage(entities) {
-  for (const [category, requiredKeys] of Object.entries(requiredUniversalAssetRoles)) {
-    for (const [sourceId, entity] of Object.entries(entities[category] ?? {})) {
-      for (const requiredKey of requiredKeys) {
+function assertRequiredManifestCoverage(entities, categories) {
+  for (const category of categories) {
+    const categoryEntities = entities[category] ?? {};
+    if (Object.keys(categoryEntities).length === 0) {
+      throw new Error(`${category} has no materialized entities`);
+    }
+    for (const [sourceId, entity] of Object.entries(categoryEntities)) {
+      for (const requiredKey of requiredUniversalAssetRoles[category] ?? []) {
         if (!entity.assets?.[requiredKey]) {
           throw new Error(`${category}:${sourceId} did not materialize required role ${requiredKey}`);
         }
       }
     }
   }
+}
+
+function countLogicalAssets(entities) {
+  let count = 0;
+  for (const category of Object.values(entities)) {
+    for (const entity of Object.values(category)) {
+      count += Object.keys(entity.assets ?? {}).length;
+      if (count > MAX_TOTAL_ASSETS) {
+        throw new SyncBudgetError(`Asset count exceeded ${MAX_TOTAL_ASSETS}`);
+      }
+    }
+  }
+  return count;
 }
 
 function buildReferencedObjectPaths(entities) {
@@ -672,26 +816,36 @@ async function main() {
   const previousManifest = await loadExistingManifest();
   const previousUrlIndex = buildPreviousUrlIndex(previousManifest);
   const previousReferencedPaths = buildPreviousReferencedPaths(previousManifest);
-  const currentUrlIndex = new Map();
+
   const entities = {
     characters: createDictionary(),
     weapons: createDictionary(),
     echoes: createDictionary(),
   };
 
-  let logicalAssetCount = 0;
+  if (batched && !resetManifest) {
+    for (const category of SOURCE_CATEGORIES) {
+      entities[category] = copyPreviousCategory(previousManifest, category);
+    }
+  }
+  if (batched) entities[selectedCategory] = createDictionary();
+
+  const currentUrlIndex = new Map();
+  let batchLogicalAssetCount = 0;
   let downloadedAssetCount = 0;
   let reusedAssetCount = 0;
-  let optionalMissingHttp404 = 0;
+  let optionalMissingHttp404 = resetManifest || !batched
+    ? 0
+    : existingOptionalMissingCount(previousManifest);
 
   try {
-    for (const [category, source] of Object.entries(SOURCES)) {
+    for (const [category, source] of Object.entries(selectedSources)) {
       const entries = await getEntries(category, source);
       for (const entry of entries) {
         const assets = createDictionary();
         for (const [fieldPath, sourceUrlRaw] of entry.images) {
-          logicalAssetCount += 1;
-          if (logicalAssetCount > MAX_TOTAL_ASSETS) {
+          batchLogicalAssetCount += 1;
+          if (batchLogicalAssetCount > MAX_TOTAL_ASSETS) {
             throw new SyncBudgetError(`Asset count exceeded ${MAX_TOTAL_ASSETS}`);
           }
 
@@ -746,7 +900,8 @@ async function main() {
       console.log(
         `WUWA_ASSET_SYNC_REPORT=${JSON.stringify({
           dryRun: true,
-          logicalAssets: logicalAssetCount,
+          category: selectedCategory,
+          batchLogicalAssets: batchLogicalAssetCount,
           remoteBytesRead,
           maxImagesPerEntity: MAX_IMAGES_PER_ENTITY,
         })}`,
@@ -754,7 +909,11 @@ async function main() {
       return;
     }
 
-    assertRequiredManifestCoverage(entities);
+    assertRequiredManifestCoverage(
+      entities,
+      batched && !finalize ? [selectedCategory] : SOURCE_CATEGORIES,
+    );
+    const totalLogicalAssets = countLogicalAssets(entities);
 
     const manifest = {
       schemaVersion: 2,
@@ -762,7 +921,7 @@ async function main() {
       sourceApi: API_BASE,
       gameVersion: GAME_VERSION,
       generatedAt: new Date().toISOString(),
-      categories: Object.keys(SOURCES),
+      categories: SOURCE_CATEGORIES,
       storage: {
         strategy: "sha256-content-addressed",
         root: "/assets/wuwa/objects",
@@ -780,12 +939,16 @@ async function main() {
 
     const referencedPaths = buildReferencedObjectPaths(entities);
     await writeManifestAtomic(manifest);
-    await pruneUnreferencedObjects(referencedPaths);
+    if (!batched || finalize) await pruneUnreferencedObjects(referencedPaths);
 
     console.log(
       `WUWA_ASSET_SYNC_REPORT=${JSON.stringify({
         dryRun: false,
-        logicalAssets: logicalAssetCount,
+        category: selectedCategory,
+        resetManifest,
+        finalize,
+        batchLogicalAssets: batchLogicalAssetCount,
+        totalLogicalAssets,
         materializedAssets: referencedPaths.size,
         downloadedAssets: downloadedAssetCount,
         reusedAssets: reusedAssetCount,
