@@ -50,16 +50,22 @@ jobs:
       - name: Test asset synchronization security
         run: npm run assets:test-security
 
-      - name: Validate game-data importer syntax
+      - name: Validate game-data importer and normalizer syntax
         run: |
           node --check scripts/lib/encore-client.mjs
           node --check scripts/lib/encore-field-inventory.mjs
+          node --check scripts/lib/encore-normalizer.mjs
           node --check scripts/import-wuwa-game-data.mjs
+          node --check scripts/normalize-wuwa-game-data.mjs
           node --check scripts/test-fixtures/mock-encore-data-fetch.mjs
           node --check scripts/test-wuwa-game-data-import-security.mjs
+          node --check scripts/test-wuwa-game-data-normalizer-security.mjs
 
       - name: Test game-data importer security
         run: npm run game-data:test-security
+
+      - name: Test game-data normalizer security
+        run: npm run game-data:test-normalizer-security
 
       - name: Lint
         run: npm run lint
