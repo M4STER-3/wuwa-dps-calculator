@@ -12,7 +12,7 @@ V1 acquires the current Encore `Release` dataset for:
 
 The current Encore API documentation exposes these resources under `https://api-v2.encore.moe/api/{lang}`. The importer fixes the language to `en` and the dataset to `Release`.
 
-A first live Release audit on 2026-08-17 confirmed the source shapes used by the reviewed normalizer. The detailed security findings are recorded in `docs/security/encore-live-audit-2026-08-17.md`.
+A live Release audit on 2026-08-17 confirmed the source shapes used by the reviewed normalizer. The detailed security findings are recorded in `docs/security/encore-live-audit-2026-08-17.md`.
 
 ## Commands
 
@@ -40,7 +40,19 @@ npm run game-data:normalize
 
 The normalized preview includes a SHA-256 provenance index for every character, weapon and Echo detail payload. This allows any normalized source entity to be traced back to the exact validated RAW bytes that produced it without copying remote URLs into browser-facing data.
 
-`game-data:test-normalizer-security` first builds a mocked valid RAW snapshot, then proves that the normalizer strips source rich-text to inert plain text, removes unknown fields by rebuilding allowlisted shapes, rejects allowlisted script-like/URL-bearing text, rejects unsafe paths/symlinks, preserves legitimate source entries with missing display names without inventing names, removes all temporary normalization sentinels, preserves SHA-256 provenance and produces deterministic output.
+The normalizer applies a 32 MiB total output ceiling before its atomic write. The successful live Release output was 9,525,520 bytes.
+
+`game-data:test-normalizer-security` first builds a mocked valid RAW snapshot, then proves that the normalizer:
+
+- strips source rich-text to inert plain text;
+- removes unknown fields by rebuilding allowlisted shapes;
+- rejects allowlisted script-like/URL-bearing text;
+- rejects unsafe paths and symlinks;
+- preserves legitimate source entries with missing display names without inventing names;
+- removes all temporary normalization sentinels;
+- preserves exact SHA-256 provenance;
+- preserves only the reviewed weapon half-step source indexes and rejects new fractional conventions;
+- produces deterministic output.
 
 ## Network boundary
 
@@ -100,9 +112,35 @@ Promotion uses a staged directory and a recoverable directory swap so an incompl
 
 The first live audit observed 60 characters, 120 weapons and 287 Echo entries. It confirmed source fields for character identity/element/weapon/skills/sequences/properties, weapon identity/type/properties/passive templates, Echo skills and repeated Sonata definitions/effect thresholds.
 
-The same audit also found many URL-like and rich-text-like source strings. Generated browser-facing text therefore always goes through the normalizer's inert plain-text boundary; source markup is not trusted presentation code.
+The same audit found many URL-like and rich-text-like source strings. Generated browser-facing text therefore always goes through the normalizer's inert plain-text boundary; source markup is not trusted presentation code.
 
-A follow-up live normalization probe found at least one legitimate source skill (`character 1305`, source skill `1002308`) whose `SkillName` is an empty string while its type is `Inherent Skill` and its description is populated. The source-normalized layer therefore preserves such entries without a `name` field and emits a data-quality diagnostic instead of deleting the information or inventing a display name.
+The live normalization passes also exposed real source-shape exceptions that are now handled explicitly rather than silently coerced.
+
+### Source skills without display names
+
+Six legitimate source skill entries currently have an empty `SkillName` while their type and description are populated:
+
+- `1305 / 1002308`;
+- `1410 / 1003808`;
+- `1412 / 1005108`;
+- `1604 / 1001708`;
+- `1605 / 1001708`;
+- `1607 / 1003108`.
+
+The source-normalized layer preserves these entries without a `name` field and emits `source-skill-name-missing`. It does not delete them and does not invent a display name.
+
+### Weapon source growth half-steps
+
+The live Release source contains 23,040 weapon property growth points. 1,440 use one of six exact half-step source indexes:
+
+- `20.5`;
+- `40.5`;
+- `50.5`;
+- `60.5`;
+- `70.5`;
+- `80.5`.
+
+Each value appears 240 times and all 120 weapons are affected. These values are preserved exactly as source metadata and are not rounded or interpreted as game levels. The normalizer rejects any other fractional convention until it is separately reviewed.
 
 ## Reviewed normalizer mapping
 
@@ -122,7 +160,7 @@ Weapons include:
 
 - source ID, name, weapon type and rarity;
 - descriptive text;
-- named source properties and source growth points;
+- named source properties and exact source growth points;
 - passive name, inert plain-text description template and rank parameter sets;
 - breach index and level-limit metadata.
 
@@ -135,14 +173,33 @@ Echoes include:
 
 Repeated Sonata definitions are deduplicated by name and must agree on their piece/effect definitions. Conflicting definitions fail normalization rather than silently choosing one. Echo-local Sonata lore/definition text remains RAW-only because the live source contains duplicated and occasionally mixed-language variants.
 
+Structured source `DamageList`, internal condition strings and formula-like values remain evidence in RAW data only. They are not automatically translated into executable `CombatEffect` or Damage Engine rules.
+
+## Successful live normalization result
+
+The reviewed live path `Encore Release -> validated RAW -> offline source normalizer -> inert-output scan` completed successfully after the source-shape exceptions above were modeled explicitly.
+
+The normalized preview contained:
+
+- 60 characters;
+- 120 weapons;
+- 287 Echoes;
+- 34 deduplicated Sonata sets;
+- 9,525,520 bytes of normalized JSON;
+- SHA-256 provenance for all 467 source entities.
+
+The live workflow verified that the output contains no HTTP(S) URL, source markup, script-like token or internal missing-name sentinel under the current audit patterns. A separate artifact inspection additionally found no duplicate source IDs, duplicate Sonata names, dangerous object keys, source `DamageList`/condition/formula fields, advertisement fields or Sonata source-lore fields.
+
+This output is still a **source-normalized preview**, not the canonical `GameDatabaseV1` and not browser/runtime data.
+
 ## Explicitly unresolved mappings
 
-The normalizer deliberately does **not** guess two important concepts yet:
+The normalizer deliberately does **not** guess important game semantics that the source representation alone does not prove:
 
-1. Character/weapon `GrowthValues.level` is preserved as `sourceLevelIndex`. The live source currently reports indexes up to 48; those values are not silently reinterpreted as game levels 1–90.
+1. Character and weapon growth indexes remain `sourceLevelIndex`. Integer and reviewed half-step source indexes are not silently reinterpreted as game levels or ascension boundaries.
 2. Echo `Rarity`, `QualityId`, `LevelUpGroupId` and handbook intensity are preserved as source metadata. Echo cost 1/3/4 is not generated until the mapping is independently verified.
-
-Structured source `DamageList`, internal condition strings and formula-like values remain evidence in RAW data only. They are not automatically translated into executable `CombatEffect` or Damage Engine rules.
+3. Source combat `DamageList`, conditions and formula-like strings are not executable combat rules.
+4. Unnamed source skills are not automatically promoted into a canonical UI skill entry until the generator classifies their role.
 
 The current flow is:
 
@@ -155,3 +212,5 @@ The next generator step will add canonical calculator identities and translate o
 `.github/workflows/encore-import-audit.yml` remains manual-only (`workflow_dispatch`) on `main`. It has read-only repository permissions, no deployment secrets, no write permission to `main`, installs locked dependencies with lifecycle scripts disabled, verifies npm signatures/provenance, runs the mock attack tests, then performs `game-data:import:audit`.
 
 Only the audit manifest, schema report and safe field inventory are uploaded as a short-lived GitHub artifact. RAW payloads are not uploaded by this workflow.
+
+One-time disposable live-normalization branches used during development are not part of the production pipeline and are not merged into `main`.
