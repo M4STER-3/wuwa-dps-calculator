@@ -1,4 +1,4 @@
-import type { DamageType, Element } from "@/domain/models";
+import type { Element } from "@/domain/models";
 import type {
   EchoCost,
   EchoMainStatDefinition,
@@ -47,10 +47,12 @@ export interface EchoPermanentStatContributions {
     energyRegen: number;
     healingBonus: number;
     elementalDamageBonus: Record<Element, number>;
-    damageTypeBonus: Pick<
-      Record<DamageType, number>,
-      "basicAttack" | "heavyAttack" | "resonanceSkill" | "resonanceLiberation"
-    >;
+    damageTypeBonus: {
+      basicAttack: number;
+      heavyAttack: number;
+      resonanceSkill: number;
+      resonanceLiberation: number;
+    };
   };
 }
 
