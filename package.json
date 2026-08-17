@@ -26,6 +26,7 @@
     "game-data:test-readiness-security": "node scripts/test-wuwa-game-data-readiness-security.mjs && node scripts/test-wuwa-game-database-generator-security.mjs",
     "game-data:generate": "node scripts/generate-wuwa-game-database-v1.mjs",
     "game-data:build": "npm run game-data:normalize && npm run game-data:readiness && npm run game-data:generate",
+    "game-data:test-promotion-security": "node scripts/test-generated-game-database-promotion-security.mjs",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run --passWithNoTests",
