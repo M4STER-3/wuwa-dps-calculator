@@ -37,6 +37,9 @@ jobs:
       - name: Verify npm registry signatures and provenance
         run: npm audit signatures
 
+      - name: Audit all dependencies
+        run: npm audit --audit-level=high
+
       - name: Lint
         run: npm run lint
 
@@ -48,9 +51,6 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
 
   dependency-review:
     name: Review dependency changes
