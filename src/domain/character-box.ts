@@ -5,6 +5,10 @@ import type {
   UserBuild,
 } from "./models";
 import { damageTypes, elements, skillTypes } from "./models";
+import {
+  isUserEchoLoadoutV1,
+  sanitizeUserEchoLoadoutV1,
+} from "./user-echo-loadout";
 
 export const MAX_CHARACTER_BOX_SERIALIZED_LENGTH = 1_000_000;
 
@@ -125,6 +129,9 @@ export function isValidBuild(build: unknown): build is UserBuild {
     value.weapon.rank > 5
   )
     return false;
+  if (value.echoLoadout !== undefined && !isUserEchoLoadoutV1(value.echoLoadout)) {
+    return false;
+  }
   if (value.sonataId !== undefined && !isSafeString(value.sonataId)) return false;
   if (value.mainEchoId !== undefined && !isSafeString(value.mainEchoId)) return false;
   const stats = value.finalStats;
@@ -207,6 +214,9 @@ function sanitizeValidatedBuild(build: UserBuild): UserBuild {
         echoSkill: build.finalStats.damageTypeBonus.echoSkill,
       },
     },
+    ...(build.echoLoadout !== undefined
+      ? { echoLoadout: sanitizeUserEchoLoadoutV1(build.echoLoadout) }
+      : {}),
     ...(build.sonataId !== undefined ? { sonataId: build.sonataId } : {}),
     ...(build.mainEchoId !== undefined ? { mainEchoId: build.mainEchoId } : {}),
     createdAt: build.createdAt,
