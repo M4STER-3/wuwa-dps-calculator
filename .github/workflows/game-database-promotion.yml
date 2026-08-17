@@ -31,22 +31,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "${GITHUB_REF_NAME}" != game-data-promotion/* ]]; then
-            exit 1
-          fi
+          [[ "${GITHUB_REF_NAME}" == game-data-promotion/* ]]
           git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
           main_sha="$(git rev-parse refs/remotes/origin/main)"
           parent_sha="$(git rev-parse HEAD^)"
-          if [[ "${parent_sha}" != "${main_sha}" ]]; then
-            exit 1
-          fi
+          [[ "${parent_sha}" == "${main_sha}" ]]
           mapfile -t changed < <(git diff --name-only "${main_sha}" HEAD)
-          if [[ "${#changed[@]}" -ne 1 || "${changed[0]}" != '.game-data-promotion-trigger' ]]; then
-            exit 1
-          fi
-          if [[ "$(cat .game-data-promotion-trigger)" != 'release' ]]; then
-            exit 1
-          fi
+          [[ "${#changed[@]}" -eq 1 && "${changed[0]}" == '.game-data-promotion-trigger' ]]
+          [[ "$(cat .game-data-promotion-trigger)" == 'release' ]]
 
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -96,3 +88,78 @@ jobs:
           if-no-files-found: error
           retention-days: 3
           include-hidden-files: false
+
+  promote:
+    name: Commit verified database to promotion branch
+    needs: build
+    if: needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout exact promotion branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref_name }}
+          persist-credentials: true
+          fetch-depth: 2
+
+      - name: Verify write job branch origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${GITHUB_REF_NAME}" == game-data-promotion/* ]]
+          [[ "$(git log -1 --format=%B)" == 'trigger game-data promotion' ]]
+          git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
+          main_sha="$(git rev-parse refs/remotes/origin/main)"
+          parent_sha="$(git rev-parse HEAD^)"
+          [[ "${parent_sha}" == "${main_sha}" ]]
+          mapfile -t changed < <(git diff --name-only "${main_sha}" HEAD)
+          [[ "${#changed[@]}" -eq 1 && "${changed[0]}" == '.game-data-promotion-trigger' ]]
+
+      - name: Download sanitized build artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: game-database-promotion
+          path: .tmp/game-database-promotion-download
+
+      - name: Verify downloaded artifact independently
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! find .tmp/game-database-promotion-download -type l -print -quit | grep -q .
+          mapfile -t files < <(find .tmp/game-database-promotion-download -type f -printf '%f\n' | sort)
+          expected=('game-database-v1.json' 'game-database-v1.sha256')
+          [[ "${files[*]}" == "${expected[*]}" ]]
+          expected_sha="$(tr -d '\r\n' < .tmp/game-database-promotion-download/game-database-v1.sha256)"
+          [[ "${expected_sha}" =~ ^[a-f0-9]{64}$ ]]
+          actual_sha="$(sha256sum .tmp/game-database-promotion-download/game-database-v1.json | awk '{print $1}')"
+          [[ "${actual_sha}" == "${expected_sha}" ]]
+          node scripts/verify-generated-game-database.mjs --artifact
+
+      - name: Promote only the verified public database
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/data/wuwa
+          cp .tmp/game-database-promotion-download/game-database-v1.json public/data/wuwa/game-database-v1.json
+          node scripts/verify-generated-game-database.mjs --public
+          artifact_sha="$(sha256sum .tmp/game-database-promotion-download/game-database-v1.json | awk '{print $1}')"
+          public_sha="$(sha256sum public/data/wuwa/game-database-v1.json | awk '{print $1}')"
+          [[ "${artifact_sha}" == "${public_sha}" ]]
+          rm .game-data-promotion-trigger
+          mapfile -t changed < <(git status --porcelain=v1 -uall | sed -E 's/^.. //' | sort)
+          expected=('.game-data-promotion-trigger' 'public/data/wuwa/game-database-v1.json')
+          [[ "${changed[*]}" == "${expected[*]}" ]]
+
+      - name: Commit to promotion branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- .game-data-promotion-trigger public/data/wuwa/game-database-v1.json
+          git diff --cached --check
+          git commit -m 'promote verified GameDatabase Release snapshot'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
