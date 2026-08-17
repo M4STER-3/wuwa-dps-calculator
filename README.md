@@ -2,7 +2,7 @@
 
 Première version du **Character Box / Build Planner** pour Wuthering Waves. Elle permet d'ajouter Aemeath ou les fixtures restantes, de personnaliser leurs builds et de les conserver localement. Les données réelles, recommandations communautaires, calculs communautaires, inconnues et fixtures techniques sont identifiés séparément.
 
-Le Team Builder et le calculateur de DPS ne font pas partie de cette étape. Les décisions métier importantes, notamment la règle anti-double-comptage des statistiques finales, sont documentées dans [`docs/architecture.md`](docs/architecture.md).
+Le Team Builder et le calculateur de DPS ne font pas partie de cette étape. Les décisions métier importantes, notamment la règle anti-double-comptage des statistiques finales, sont documentées dans [`docs/architecture.md`](docs/architecture.md). Le modèle de menace et les protections du dépôt sont documentés dans [`docs/security.md`](docs/security.md).
 
 ## Prérequis
 
@@ -12,7 +12,7 @@ Le Team Builder et le calculateur de DPS ne font pas partie de cette étape. Les
 ## Commandes
 
 ```bash
-npm install        # installe les dépendances verrouillées par package-lock.json
+npm ci             # installe exactement les dépendances du package-lock.json
 npm run dev        # démarre le serveur de développement
 npm run build      # crée le build de production
 npm run build:cloudflare # crée le Worker Cloudflare avec OpenNext
@@ -21,6 +21,8 @@ npm run preview    # construit puis prévisualise le Worker localement
 npm run deploy     # construit puis déploie le Worker (authentification requise)
 npm run upload     # construit puis téléverse une version du Worker
 npm run cf-typegen # régénère les types des bindings Cloudflare
+npm run assets:sync:dry # vérifie la synchronisation d'assets sans écrire les téléchargements
+npm run assets:sync # synchronise les assets via le wrapper de sécurité
 npm run lint       # exécute ESLint
 npm run typecheck  # vérifie les types TypeScript sans générer de fichiers
 npm test           # exécute les tests Vitest une fois

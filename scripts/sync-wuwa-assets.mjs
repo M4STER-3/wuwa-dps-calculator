@@ -12,11 +12,19 @@ const MANIFEST_PATH = path.join(OUTPUT_ROOT, "manifest.json");
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_JSON_BYTES = 8 * 1024 * 1024;
+const MAX_TOTAL_REMOTE_BYTES = 1024 * 1024 * 1024;
+const MAX_TOTAL_ASSETS = 10_000;
 const MAX_ENTITIES_PER_CATEGORY = 1000;
 const MAX_IMAGES_PER_ENTITY = 32;
 const MAX_TRAVERSAL_DEPTH = 12;
 const MAX_TRAVERSAL_NODES = 20_000;
+const MAX_SOURCE_ID_LENGTH = 128;
+const MAX_URL_LENGTH = 4096;
 const REQUEST_TIMEOUT_MS = 15_000;
+
+const DANGEROUS_OBJECT_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+const FORBIDDEN_REMOTE_IMAGE_PATH_PATTERN =
+  /(?:^|[._-])(?:ad|ads|advert|advertisement|advertising|sponsor|sponsored|tracking|tracker|pixel|promo|promotion)(?:[._-]|$)/i;
 
 const ALLOWED_IMAGE_TYPES = new Map([
   ["image/png", "png"],
@@ -33,10 +41,36 @@ const SOURCES = {
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
 const force = args.has("--force");
+let remoteBytesRead = 0;
+
+class SyncBudgetError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "SyncBudgetError";
+  }
+}
+
+function createDictionary() {
+  return Object.create(null);
+}
+
+function assertSafeObjectKey(value, label) {
+  if (DANGEROUS_OBJECT_KEYS.has(value)) {
+    throw new Error(`${label} contains a forbidden object key`);
+  }
+  return value;
+}
 
 function normalizeId(value) {
   if (value === null || value === undefined || value === "") return null;
-  return String(value);
+  const normalized = String(value);
+  if (normalized.length > MAX_SOURCE_ID_LENGTH) {
+    throw new Error(`Source ID exceeds ${MAX_SOURCE_ID_LENGTH} characters`);
+  }
+  if (/[\u0000-\u001f\u007f-\u009f]/.test(normalized)) {
+    throw new Error("Source ID contains control characters");
+  }
+  return assertSafeObjectKey(normalized, "Source ID");
 }
 
 function safeSegment(value) {
@@ -53,6 +87,10 @@ function sha256(buffer) {
 }
 
 function parseTrustedUrl(rawUrl, { api = false } = {}) {
+  if (typeof rawUrl !== "string" || rawUrl.length === 0 || rawUrl.length > MAX_URL_LENGTH) {
+    throw new Error(`URL length must be between 1 and ${MAX_URL_LENGTH} characters`);
+  }
+
   const url = new URL(rawUrl);
   if (url.protocol !== "https:") throw new Error("Only HTTPS URLs are allowed");
   if (url.username || url.password || url.port || url.hash) {
@@ -69,7 +107,8 @@ function parseTrustedUrl(rawUrl, { api = false } = {}) {
   return url;
 }
 
-function looksLikeImageField(key, value) {
+function looksLikeImageField(fieldPath, key, value) {
+  if (FORBIDDEN_REMOTE_IMAGE_PATH_PATTERN.test(fieldPath)) return false;
   if (typeof value !== "string") return false;
   let url;
   try {
@@ -107,7 +146,7 @@ function collectImageUrls(value, prefix = "root") {
 
     for (const [key, child] of Object.entries(current.value)) {
       const fieldPath = `${current.prefix}.${key}`;
-      if (looksLikeImageField(key, child)) {
+      if (looksLikeImageField(fieldPath, key, child)) {
         if (found.size >= MAX_IMAGES_PER_ENTITY) throw new Error(`Entity exceeded ${MAX_IMAGES_PER_ENTITY} image fields`);
         found.set(fieldPath, parseTrustedUrl(child).toString());
       } else if (child && typeof child === "object") {
@@ -146,7 +185,16 @@ function getEntityId(entity) {
 }
 
 function getEntityName(entity) {
-  return String(entity?.Name ?? entity?.name ?? entity?.Title ?? entity?.title ?? "Unknown").slice(0, 200);
+  return String(entity?.Name ?? entity?.name ?? entity?.Title ?? entity?.title ?? "Unknown")
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
+    .slice(0, 200);
+}
+
+function consumeRemoteBudget(bytes) {
+  remoteBytesRead += bytes;
+  if (remoteBytesRead > MAX_TOTAL_REMOTE_BYTES) {
+    throw new SyncBudgetError(`Remote transfer budget exceeded ${MAX_TOTAL_REMOTE_BYTES} bytes`);
+  }
 }
 
 async function readResponseWithLimit(response, maxBytes) {
@@ -165,6 +213,7 @@ async function readResponseWithLimit(response, maxBytes) {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+      consumeRemoteBudget(value.byteLength);
       total += value.byteLength;
       if (total > maxBytes) {
         await reader.cancel("size limit exceeded");
@@ -184,7 +233,7 @@ async function trustedFetch(rawUrl, { accept, api = false, maxBytes }) {
   const url = parseTrustedUrl(rawUrl, { api });
   const response = await fetch(url, {
     method: "GET",
-    headers: { Accept: accept, "User-Agent": "wuwa-dps-calculator-asset-sync/2" },
+    headers: { Accept: accept, "User-Agent": "wuwa-dps-calculator-asset-sync/3" },
     redirect: "error",
     cache: "no-store",
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
@@ -261,7 +310,7 @@ async function loadExistingManifest() {
 }
 
 function manifestAssetKey(fieldPath) {
-  return safeSegment(fieldPath.replace(/^(?:list|detail)\./, "").replaceAll(".", "-"));
+  return assertSafeObjectKey(safeSegment(fieldPath.replaceAll(".", "-")), "Asset key");
 }
 
 function resolveObjectPath(hash, extension) {
@@ -276,8 +325,34 @@ function resolveObjectPath(hash, extension) {
   return outputPath;
 }
 
+function isValidManifestAssetRecord(asset) {
+  if (
+    !asset ||
+    typeof asset.sourceUrl !== "string" ||
+    typeof asset.path !== "string" ||
+    typeof asset.sha256 !== "string" ||
+    typeof asset.contentType !== "string" ||
+    !Number.isInteger(asset.bytes) ||
+    asset.bytes <= 0 ||
+    asset.bytes > MAX_IMAGE_BYTES ||
+    !/^[a-f0-9]{64}$/.test(asset.sha256)
+  ) {
+    return false;
+  }
+
+  try {
+    parseTrustedUrl(asset.sourceUrl);
+  } catch {
+    return false;
+  }
+
+  const extension = ALLOWED_IMAGE_TYPES.get(asset.contentType);
+  if (!extension) return false;
+  return asset.path === `/assets/wuwa/objects/${asset.sha256}.${extension}`;
+}
+
 function resolveManifestPath(assetPath) {
-  if (typeof assetPath !== "string" || !assetPath.startsWith("/assets/wuwa/")) return null;
+  if (typeof assetPath !== "string" || !/^\/assets\/wuwa\/objects\/[a-f0-9]{64}\.(?:png|jpg|webp)$/.test(assetPath)) return null;
   const absolute = path.resolve("public", assetPath.slice(1));
   const relative = path.relative(OUTPUT_ROOT, absolute);
   if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) return null;
@@ -322,14 +397,7 @@ function buildPreviousUrlIndex(previousManifest) {
   for (const category of Object.values(previousManifest.entities ?? {})) {
     for (const entity of Object.values(category ?? {})) {
       for (const asset of Object.values(entity?.assets ?? {})) {
-        if (
-          asset &&
-          typeof asset.sourceUrl === "string" &&
-          typeof asset.path === "string" &&
-          typeof asset.sha256 === "string" &&
-          typeof asset.contentType === "string" &&
-          typeof asset.bytes === "number"
-        ) {
+        if (isValidManifestAssetRecord(asset)) {
           index.set(asset.sourceUrl, asset);
         }
       }
@@ -339,7 +407,7 @@ function buildPreviousUrlIndex(previousManifest) {
 }
 
 async function reusableAsset(asset) {
-  if (!asset?.path || !asset?.sha256) return false;
+  if (!isValidManifestAssetRecord(asset)) return false;
   const filePath = resolveManifestPath(asset.path);
   if (!filePath || !(await fileExists(filePath))) return false;
   await verifyObjectFile(filePath, asset.sha256);
@@ -351,7 +419,7 @@ function collectReferencedObjectPaths(manifest) {
   for (const category of Object.values(manifest.entities ?? {})) {
     for (const entity of Object.values(category ?? {})) {
       for (const asset of Object.values(entity?.assets ?? {})) {
-        if (typeof asset?.path === "string" && asset.path.startsWith("/assets/wuwa/objects/")) {
+        if (isValidManifestAssetRecord(asset)) {
           referenced.add(asset.path);
         }
       }
@@ -392,6 +460,7 @@ async function collectEntityImages(entity, category, config, sourceId) {
     const detail = await fetchJson(detailUrl);
     mergeImageUrls(images, collectImageUrls(detail, "detail"));
   } catch (error) {
+    if (error instanceof SyncBudgetError) throw error;
     console.warn(`[${category}] detail unavailable for ${sourceId}: ${error instanceof Error ? error.message : String(error)}`);
   }
   return images;
@@ -416,9 +485,11 @@ async function main() {
     security: {
       allowedFormats: [...ALLOWED_IMAGE_TYPES.keys()],
       maxImageBytes: MAX_IMAGE_BYTES,
+      maxRemoteBytesPerRun: MAX_TOTAL_REMOTE_BYTES,
+      maxAssetsPerRun: MAX_TOTAL_ASSETS,
       requestTimeoutMs: REQUEST_TIMEOUT_MS,
     },
-    entities: {},
+    entities: createDictionary(),
   };
 
   let discovered = 0;
@@ -432,7 +503,7 @@ async function main() {
     console.log(`\n[${category}] syncing Release assets`);
     const payload = await fetchJson(url);
     const entities = getCollection(payload, config.collectionKeys);
-    manifest.entities[category] = {};
+    manifest.entities[category] = createDictionary();
 
     for (const entity of entities) {
       const sourceId = getEntityId(entity);
@@ -440,14 +511,26 @@ async function main() {
         console.warn(`[${category}] skipped entity without stable ID`);
         continue;
       }
+      if (Object.hasOwn(manifest.entities[category], sourceId)) {
+        throw new Error(`[${category}] duplicate stable source ID: ${sourceId}`);
+      }
 
       const entityKey = `${category}:${sourceId}`;
       const imageUrls = await collectEntityImages(entity, category, config, sourceId);
-      const entry = { sourceId, entityKey, name: getEntityName(entity), assets: {} };
+      const entry = { sourceId, entityKey, name: getEntityName(entity), assets: createDictionary() };
 
       for (const [fieldPath, imageUrl] of imageUrls) {
         discovered++;
+        if (discovered > MAX_TOTAL_ASSETS) {
+          throw new SyncBudgetError(`Asset discovery exceeded ${MAX_TOTAL_ASSETS} entries`);
+        }
+
         const assetKey = manifestAssetKey(fieldPath);
+        if (Object.hasOwn(entry.assets, assetKey)) {
+          const prior = entry.assets[assetKey];
+          if (prior?.sourceUrl === imageUrl) continue;
+          throw new Error(`Asset key collision for ${entityKey}: ${assetKey}`);
+        }
 
         if (!force) {
           const sameUrlAsset = currentUrlIndex.get(imageUrl) ?? previousUrlIndex.get(imageUrl);
@@ -491,6 +574,7 @@ async function main() {
           entry.assets[assetKey] = record;
           currentUrlIndex.set(imageUrl, record);
         } catch (error) {
+          if (error instanceof SyncBudgetError) throw error;
           failed++;
           entry.assets[assetKey] = {
             sourceUrl: imageUrl,
@@ -515,7 +599,7 @@ async function main() {
   }
 
   console.log(
-    `\nDiscovered: ${discovered}; downloaded: ${downloaded}; reused: ${reused}; deduplicated: ${deduplicated}; pruned: ${pruned}; failed: ${failed}; dry-run: ${dryRun}`,
+    `\nDiscovered: ${discovered}; downloaded: ${downloaded}; reused: ${reused}; deduplicated: ${deduplicated}; pruned: ${pruned}; failed: ${failed}; remote bytes: ${remoteBytesRead}; dry-run: ${dryRun}`,
   );
   if (failed > 0) process.exitCode = 1;
 }

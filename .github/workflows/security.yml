@@ -1,0 +1,161 @@
+name: Security baseline
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate without dependency install scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify npm registry signatures and provenance
+        run: npm audit signatures
+
+      - name: Audit all dependencies
+        run: npm audit --audit-level=high
+
+      - name: Validate asset security script syntax
+        run: |
+          node --check scripts/run-safe-wuwa-assets.mjs
+          node --check scripts/sync-wuwa-assets.mjs
+          node --check scripts/test-fixtures/mock-encore-fetch.mjs
+          node --check scripts/test-wuwa-assets-security.mjs
+
+      - name: Test asset synchronization security
+        run: npm run assets:test-security
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Smoke-test production security headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          log_file="$(mktemp)"
+          npm run start -- --hostname 127.0.0.1 --port 3000 >"${log_file}" 2>&1 &
+          server_pid=$!
+          trap 'kill "${server_pid}" 2>/dev/null || true' EXIT
+
+          ready=false
+          for _ in $(seq 1 30); do
+            if curl --fail --silent --show-error --output /dev/null http://127.0.0.1:3000/; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "${ready}" != true ]; then
+            cat "${log_file}"
+            exit 1
+          fi
+
+          headers="$(curl --fail --silent --show-error --head http://127.0.0.1:3000/)"
+          require_header() {
+            printf '%s\n' "${headers}" | grep --ignore-case --quiet "^$1:"
+          }
+
+          require_header 'content-security-policy'
+          require_header 'x-content-type-options'
+          require_header 'x-frame-options'
+          require_header 'referrer-policy'
+          require_header 'permissions-policy'
+          require_header 'cross-origin-opener-policy'
+          require_header 'cross-origin-resource-policy'
+          require_header 'strict-transport-security'
+
+          if printf '%s\n' "${headers}" | grep --ignore-case --quiet '^x-powered-by:'; then
+            echo 'X-Powered-By must remain disabled.' >&2
+            exit 1
+          fi
+
+      - name: Build Cloudflare Worker
+        run: npm run build:cloudflare
+
+      - name: Validate Wrangler deployment bundle
+        run: npm exec --offline wrangler -- deploy --dry-run
+
+  dependency-review:
+    name: Review dependency changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check dependency review availability
+        id: dependency-graph
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          status="$({ curl \
+            --silent \
+            --show-error \
+            --output "${response_file}" \
+            --write-out '%{http_code}' \
+            --header 'Accept: application/vnd.github+json' \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/dependency-graph/compare/${BASE_SHA}...${HEAD_SHA}"; } || true)"
+
+          case "${status}" in
+            200)
+              echo 'available=true' >> "${GITHUB_OUTPUT}"
+              ;;
+            403|404)
+              echo 'available=false' >> "${GITHUB_OUTPUT}"
+              echo '::warning::GitHub Dependency Review is unavailable for this repository. Enable/restore the dependency graph or GitHub Code Security to make this check blocking.'
+              ;;
+            *)
+              echo "Unexpected dependency-review API status: ${status}" >&2
+              head -c 2000 "${response_file}" >&2 || true
+              exit 1
+              ;;
+          esac
+
+      - name: Review dependency changes
+        if: steps.dependency-graph.outputs.available == 'true'
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
