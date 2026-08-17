@@ -1,0 +1,178 @@
+name: Echo base outlier audit
+
+on:
+  push:
+    branches:
+      - "audit/echo-cost-release-20260817"
+    paths:
+      - ".github/echo-base-outlier.trigger"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Classify base-looking Echo rows without names
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and validate importer boundary
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm audit signatures
+          npm audit --audit-level=high
+          npm run game-data:test-security
+
+      - name: Import current Encore Release into ephemeral runner storage
+        run: npm run game-data:import
+
+      - name: Classify base-looking rows
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/echo-base-outlier-audit
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { readFile, writeFile } from 'node:fs/promises';
+          import path from 'node:path';
+
+          const root = 'data/sources/encore/release';
+          const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
+          const entities = manifest?.resources?.echoes?.entities;
+          if (manifest?.sourceProvider !== 'encore' || manifest?.dataset !== 'Release' || !Array.isArray(entities)) {
+            throw new Error('Unexpected source boundary.');
+          }
+          const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+          const counts = () => Object.create(null);
+          const add = (map, key) => { const k = String(key); map[k] = (map[k] ?? 0) + 1; };
+          const addCross = (map, a, b) => { const k = String(a); map[k] ??= counts(); add(map[k], b); };
+          const safeScalar = (value) => {
+            if (value === undefined) return '<missing>';
+            if (value === null) return '<null>';
+            if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+            if (typeof value !== 'string') return `<${typeof value}>`;
+            if (value.length > 100 || /[\u0000-\u001f\u007f-\u009f]/.test(value)) return '<unsafe-string>';
+            return value;
+          };
+          const idBucket = (id) => {
+            if (/^390/.test(id)) return '390*';
+            if (/^391/.test(id)) return '391*';
+            if (/^600/.test(id)) return '600*';
+            if (/^601/.test(id)) return '601*';
+            if (/^602/.test(id)) return '602*';
+            if (/^603/.test(id)) return '603*';
+            return 'other';
+          };
+          const sortMap = (map) => Object.fromEntries(
+            Object.entries(map)
+              .sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true }))
+              .map(([key, value]) => [key, value && typeof value === 'object' && !Array.isArray(value)
+                ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true })))
+                : value]),
+          );
+
+          const bySourcePrefix = counts();
+          const byItemPrefix = counts();
+          const levelUpGroup = counts();
+          const type = counts();
+          const elementType = counts();
+          const area = counts();
+          const country = counts();
+          const skillPresence = counts();
+          const skillType = counts();
+          const fetterCount = counts();
+          const prefixToRandGroup = counts();
+          const prefixToLevelUpGroup = counts();
+          const prefixToSkillPresence = counts();
+          const prefixToFetterCount = counts();
+          const randGroupToLevelUpGroup = counts();
+          const sourceLength = counts();
+          let baseRows = 0;
+          let verifiedBytes = 0;
+
+          for (const entity of entities) {
+            const bytes = await readFile(path.join(root, 'echoes', 'details', entity.detailFile));
+            verifiedBytes += bytes.length;
+            if (bytes.length <= 0 || bytes.length > 8 * 1024 * 1024 || sha256(bytes) !== entity.detailSha256) {
+              throw new Error(`Echo ${entity.sourceId} integrity failed.`);
+            }
+            const detail = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+            if (String(detail.MonsterId) !== entity.sourceId) throw new Error(`Echo ${entity.sourceId} ID mismatch.`);
+            if (detail.PhantomType !== 1 || detail.QualityId !== 5) continue;
+            if (typeof detail.MonsterName !== 'string' || /^Phantom(?::|\s)/i.test(detail.MonsterName.trim())) continue;
+            baseRows += 1;
+
+            const sourcePrefix = idBucket(entity.sourceId);
+            const itemId = String(detail.ItemId ?? '');
+            const itemPrefix = /^\d+$/.test(itemId) ? idBucket(itemId) : '<invalid>';
+            const level = safeScalar(detail.LevelUpGroupId);
+            const rand = safeScalar(detail.MainProp?.RandGroupId);
+            const hasSkill = detail.Skill && typeof detail.Skill === 'object' && !Array.isArray(detail.Skill) ? 'yes' : 'no';
+            const sourceSkillType = safeScalar(detail.Skill?.Type ?? detail.Skill?.SkillType ?? detail.Type);
+            const refs = Array.isArray(detail.FetterGroup) ? detail.FetterGroup.length : 0;
+
+            add(bySourcePrefix, sourcePrefix);
+            add(byItemPrefix, itemPrefix);
+            add(levelUpGroup, level);
+            add(type, safeScalar(detail.Type));
+            add(elementType, safeScalar(detail.ElementType));
+            add(area, safeScalar(detail.Area));
+            add(country, safeScalar(detail.Country));
+            add(skillPresence, hasSkill);
+            add(skillType, sourceSkillType);
+            add(fetterCount, refs);
+            add(sourceLength, entity.sourceId.length);
+            addCross(prefixToRandGroup, sourcePrefix, rand);
+            addCross(prefixToLevelUpGroup, sourcePrefix, level);
+            addCross(prefixToSkillPresence, sourcePrefix, hasSkill);
+            addCross(prefixToFetterCount, sourcePrefix, refs);
+            addCross(randGroupToLevelUpGroup, rand, level);
+          }
+
+          const summary = {
+            baseRows,
+            verifiedDetailBytes: verifiedBytes,
+            bySourcePrefix: sortMap(bySourcePrefix),
+            byItemPrefix: sortMap(byItemPrefix),
+            sourceIdLength: sortMap(sourceLength),
+            levelUpGroupId: sortMap(levelUpGroup),
+            type: sortMap(type),
+            elementType: sortMap(elementType),
+            area: sortMap(area),
+            country: sortMap(country),
+            skillPresence: sortMap(skillPresence),
+            skillType: sortMap(skillType),
+            sonataReferenceCount: sortMap(fetterCount),
+            sourcePrefixToRandGroup: sortMap(prefixToRandGroup),
+            sourcePrefixToLevelUpGroup: sortMap(prefixToLevelUpGroup),
+            sourcePrefixToSkillPresence: sortMap(prefixToSkillPresence),
+            sourcePrefixToSonataReferenceCount: sortMap(prefixToFetterCount),
+            randGroupToLevelUpGroup: sortMap(randGroupToLevelUpGroup),
+          };
+          const serialized = `${JSON.stringify(summary, null, 2)}\n`;
+          if (Buffer.byteLength(serialized) > 256 * 1024) throw new Error('Summary unexpectedly large.');
+          if (/MonsterName|sourceUrl|https?:\/\/|<script/i.test(serialized)) throw new Error('Summary leaked raw data.');
+          await writeFile('.tmp/echo-base-outlier-audit/summary.json', serialized, 'utf8');
+          console.log(`WUWA_ECHO_BASE_OUTLIER_AUDIT=${JSON.stringify(summary)}`);
+          NODE
+
+      - name: Upload summary only
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: echo-base-outlier-summary
+          path: .tmp/echo-base-outlier-audit/summary.json
+          if-no-files-found: error
+          retention-days: 3
