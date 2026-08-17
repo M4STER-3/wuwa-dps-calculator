@@ -18,6 +18,7 @@ Example manifest shape:
 {
   "schemaVersion": 1,
   "gameVersion": "Release",
+  "categories": ["characters", "weapons", "echoes"],
   "entities": {
     "characters": {
       "1102": {
@@ -25,8 +26,8 @@ Example manifest shape:
         "entityKey": "characters:1102",
         "name": "Example",
         "assets": {
-          "detail-roleheadicon": {
-            "path": "/assets/wuwa/characters/1102/detail-roleheadicon.webp",
+          "roleheadicon": {
+            "path": "/assets/wuwa/characters/1102/roleheadicon.webp",
             "sourceUrl": "https://...",
             "contentType": "image/webp",
             "bytes": 12345,
@@ -39,36 +40,41 @@ Example manifest shape:
 }
 ```
 
-Future domain integration should add an explicit source-ID mapping to the relevant game entity (resonator, weapon, echo, item/stat icon, etc.) and resolve images through this manifest. Do not use display names as the primary join key.
+Future domain integration should add an explicit source-ID mapping to the relevant resonator, weapon, or echo and resolve images through this manifest. Do not use display names as the primary join key.
 
-The asset key is derived from the API field path. This allows one entity to keep several distinct images (portrait, head icon, skill icon, background, and so on) without overwriting them.
+The asset key is derived from the API field path. This allows one entity to keep several distinct images without overwriting them.
 
-## Current categories
+## Current scope
 
-The first version reads the Encore.moe `Release` collections for:
+For now the synchronizer reads only the Encore.moe `Release` collections for:
 
 - characters
 - weapons
 - echoes
-- monsters
-- items
-- namecards
-- phones
-- titles
 
-Characters, weapons, echoes, and monsters also query their documented detail endpoint by stable ID so image variants that are absent from the list response can still be discovered. This is especially useful for future character/skill/stat presentation.
+These three categories may also query their detail endpoint by stable ID so image variants absent from the list response can still be discovered. No other asset category is synchronized at this stage.
 
 ## Safety boundaries
 
-The downloader:
+The downloader is intentionally fail-closed:
 
-- uses only `https`;
-- accepts only `encore.moe` or its subdomains as image hosts;
-- rejects redirects;
-- caps each image at 12 MiB;
-- validates PNG, JPEG, WebP, GIF, or AVIF using file signatures in addition to the HTTP content type;
-- never executes downloaded content;
-- writes a SHA-256 digest and byte size into the manifest;
-- uses Encore's `Release` dataset rather than Beta.
+- HTTPS only;
+- API requests must use the exact `https://api-v2.encore.moe` origin;
+- image hosts must be `encore.moe` or one of its subdomains;
+- redirects are rejected;
+- URL credentials, custom ports, and fragments are rejected;
+- only PNG, JPEG, and WebP are accepted;
+- the HTTP content type must exactly match an allowed image type;
+- the actual file signature must also match the declared image type;
+- SVG, GIF, AVIF, HTML, JavaScript, archives, and executables are rejected;
+- each image is capped at 8 MiB while streaming, so a missing or false `Content-Length` cannot bypass the limit;
+- JSON responses are capped at 8 MiB;
+- requests time out after 15 seconds;
+- category size, nested payload depth, visited nodes, and image count per entity are bounded;
+- output paths are normalized and verified to remain under `public/assets/wuwa`;
+- files are written atomically through a temporary file before rename;
+- downloaded content is never executed;
+- SHA-256 and byte size are recorded in the manifest;
+- only Encore's `Release` dataset is used, never Beta.
 
-If Encore moves image delivery to a third-party CDN, the script will fail closed instead of silently trusting the new host. That host should be reviewed before being added to the allowlist.
+If Encore changes its image delivery to another host, the synchronizer will reject it until that host is explicitly reviewed and allowlisted.
