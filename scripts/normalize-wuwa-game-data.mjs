@@ -19,6 +19,7 @@ const MAX_KEY_LENGTH = 256;
 const MAX_STRING_LENGTH = 2 * 1024 * 1024;
 const DANGEROUS_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 const RESOURCE_NAMES = ["characters", "weapons", "echoes"];
+const MISSING_SKILL_NAME_SENTINEL = "__WUWA_REVIEWED_SOURCE_NAME_MISSING__";
 
 function fail(message) {
   throw new Error(message);
@@ -164,7 +165,87 @@ function sourceHashIndex(details) {
   );
 }
 
-function hardenNormalizedOutput(normalized, { characterDetails, weaponDetails, echoDetails }) {
+function prepareUnnamedCharacterSkills(characterDetails) {
+  const unnamedSkills = [];
+  for (const character of characterDetails) {
+    const skills = character.detail?.Skills;
+    if (!Array.isArray(skills)) continue;
+    for (let index = 0; index < skills.length; index += 1) {
+      const skill = skills[index];
+      if (!skill || typeof skill !== "object" || Array.isArray(skill)) continue;
+      if (typeof skill.SkillName !== "string" || skill.SkillName.trim().length > 0) continue;
+
+      const sourceSkillId = normalizeSourceId(
+        skill.SkillId,
+        `character ${character.sourceId}.Skills[${index}].SkillId`,
+      );
+      const typePresent = typeof skill.SkillType === "string" && skill.SkillType.trim().length > 0;
+      const descriptionPresent =
+        typeof skill.SkillDescribe === "string" && skill.SkillDescribe.trim().length > 0;
+      const attributeCount = Array.isArray(skill.SkillAttributes) ? skill.SkillAttributes.length : 0;
+
+      if (!typePresent) {
+        fail(`character ${character.sourceId}.Skills[${index}] has an unnamed skill without a type`);
+      }
+      if (!descriptionPresent && attributeCount === 0) {
+        fail(
+          `character ${character.sourceId}.Skills[${index}] has an unnamed skill without reviewed descriptive or numeric content`,
+        );
+      }
+
+      skill.SkillName = MISSING_SKILL_NAME_SENTINEL;
+      unnamedSkills.push({
+        characterSourceId: character.sourceId,
+        sourceSkillId,
+      });
+    }
+  }
+  return unnamedSkills.sort((a, b) =>
+    `${a.characterSourceId}:${a.sourceSkillId}`.localeCompare(
+      `${b.characterSourceId}:${b.sourceSkillId}`,
+    ),
+  );
+}
+
+function removeTemporarySkillNameSentinels(characters, unnamedSkills) {
+  const unnamed = new Set(
+    unnamedSkills.map((entry) => `${entry.characterSourceId}:${entry.sourceSkillId}`),
+  );
+  return characters.map((character) => ({
+    ...character,
+    skills: character.skills.map((skill) => {
+      const key = `${character.sourceId}:${skill.sourceSkillId}`;
+      if (!unnamed.has(key)) return skill;
+      if (skill.name !== MISSING_SKILL_NAME_SENTINEL) {
+        fail(`Unnamed skill sentinel mismatch for ${key}`);
+      }
+      const { name: _temporaryName, ...withoutInventedName } = skill;
+      return withoutInventedName;
+    }),
+  }));
+}
+
+function hardenNormalizedOutput(
+  normalized,
+  { characterDetails, weaponDetails, echoDetails, unnamedSkills },
+) {
+  const diagnostics = [
+    ...normalized.diagnostics,
+    {
+      code: "sonata-source-lore-raw-only",
+      severity: "info",
+      message:
+        "Echo-local Sonata definition lore remains in RAW only because the live source contains duplicated and occasionally mixed-language definition text.",
+    },
+  ];
+  if (unnamedSkills.length > 0) {
+    diagnostics.push({
+      code: "source-skill-name-missing",
+      severity: "warning",
+      message: `${unnamedSkills.length} source skill entr${unnamedSkills.length === 1 ? "y has" : "ies have"} no display name. Their source IDs, types and reviewed content are preserved without inventing names.`,
+    });
+  }
+
   return {
     ...normalized,
     sourceHashes: {
@@ -172,16 +253,9 @@ function hardenNormalizedOutput(normalized, { characterDetails, weaponDetails, e
       weapons: sourceHashIndex(weaponDetails),
       echoes: sourceHashIndex(echoDetails),
     },
+    characters: removeTemporarySkillNameSentinels(normalized.characters, unnamedSkills),
     sonataSets: normalized.sonataSets.map(({ sourceLore: _sourceLore, ...sonata }) => sonata),
-    diagnostics: [
-      ...normalized.diagnostics,
-      {
-        code: "sonata-source-lore-raw-only",
-        severity: "info",
-        message:
-          "Echo-local Sonata definition lore remains in RAW only because the live source contains duplicated and occasionally mixed-language definition text.",
-      },
-    ],
+    diagnostics,
   };
 }
 
@@ -218,6 +292,7 @@ async function main() {
     loadResourceDetails(manifest, "weapons"),
     loadResourceDetails(manifest, "echoes"),
   ]);
+  const unnamedSkills = prepareUnnamedCharacterSkills(characterDetails);
 
   const normalized = hardenNormalizedOutput(
     normalizeEncoreSourceSnapshot({
@@ -226,7 +301,7 @@ async function main() {
       weaponDetails,
       echoDetails,
     }),
-    { characterDetails, weaponDetails, echoDetails },
+    { characterDetails, weaponDetails, echoDetails, unnamedSkills },
   );
   const bytes = await writeOutputAtomic(normalized);
   console.log(
