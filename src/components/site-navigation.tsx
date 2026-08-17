@@ -8,8 +8,7 @@ const primaryNavigation = [
   { href: "/character-box", label: "Character Box", index: "02" },
   { href: "/personal-dps", label: "DPS personnel", index: "03" },
   { href: "/team-dps", label: "DPS équipe", index: "04" },
-  { href: "/echoes", label: "Échos", index: "05" },
-  { href: "/data", label: "Game Data", index: "06" },
+  { href: "/data", label: "Données", index: "05" },
 ] as const;
 
 function isRouteActive(pathname: string, href: string) {
