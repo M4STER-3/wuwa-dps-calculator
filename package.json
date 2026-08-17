@@ -17,6 +17,8 @@
     "game-data:import": "node scripts/import-wuwa-game-data.mjs",
     "game-data:import:audit": "node scripts/import-wuwa-game-data.mjs --audit-only",
     "game-data:test-security": "node scripts/test-wuwa-game-data-import-security.mjs",
+    "game-data:normalize": "node scripts/normalize-wuwa-game-data.mjs",
+    "game-data:test-normalizer-security": "node scripts/test-wuwa-game-data-normalizer-security.mjs",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run --passWithNoTests",
