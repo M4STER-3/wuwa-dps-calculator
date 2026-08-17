@@ -1,11 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { resonators } from "@/data/catalog";
+import { emptyCharacterBox } from "@/domain/character-box";
+import type { UserBuild } from "@/domain/models";
 import type {
   EchoCatalogItemV1,
   EchoCatalogProjectionV1,
 } from "@/game-data/echo-catalog-projection";
+import { resolveEchoLoadoutV1 } from "@/game-data/echo-loadout";
 import { reviewedEchoStatTableV1 } from "@/game-data/echo-stats-v1";
 import type {
   EchoMainStatDefinition,
@@ -13,20 +23,24 @@ import type {
   EchoStatRollDefinition,
   EchoStatTarget,
 } from "@/game-data/schema";
-
-interface DraftSubstat {
-  statId: string;
-  value: string;
-}
-
-interface DraftEchoSlot {
-  echoId: string;
-  sonataSetId: string;
-  primaryMainStatId: string;
-  substats: DraftSubstat[];
-}
+import {
+  createBrowserCharacterBoxStorage,
+  getBrowserCharacterBoxSnapshot,
+  subscribeToBrowserCharacterBox,
+} from "@/storage/character-box-storage";
+import {
+  clearBuildEchoLoadout,
+  draftSlotsFromLoadout,
+  emptyEchoDraftSlot,
+  emptyEchoDraftSlots,
+  loadoutFromDraftSlots,
+  replaceBuildEchoLoadout,
+  type DraftEchoSlot,
+  type DraftSubstat,
+} from "./echo-editor-state";
 
 type LoadState = "loading" | "ready" | "error";
+type SaveState = "idle" | "saved" | "error";
 
 const SLOT_LABELS = ["Main Echo", "Echo 2", "Echo 3", "Echo 4", "Echo 5"] as const;
 const ELEMENT_LABELS: Record<string, string> = {
@@ -37,10 +51,7 @@ const ELEMENT_LABELS: Record<string, string> = {
   havoc: "Havoc",
   spectro: "Spectro",
 };
-
-function emptySlot(): DraftEchoSlot {
-  return { echoId: "", sonataSetId: "", primaryMainStatId: "", substats: [] };
-}
+const serverBox = emptyCharacterBox();
 
 function isProjection(value: unknown): value is EchoCatalogProjectionV1 {
   if (typeof value !== "object" || value === null) return false;
@@ -93,13 +104,24 @@ function echoById(
   return catalog?.echoes.find((echo) => echo.id === id);
 }
 
+function buildLabel(build: UserBuild): string {
+  return resonators.find((resonator) => resonator.id === build.resonatorId)?.name ?? build.resonatorId;
+}
+
 export function EchoEditor() {
+  const box = useSyncExternalStore(
+    subscribeToBrowserCharacterBox,
+    getBrowserCharacterBoxSnapshot,
+    () => serverBox,
+  );
   const [catalog, setCatalog] = useState<EchoCatalogProjectionV1 | null>(null);
   const [loadState, setLoadState] = useState<LoadState>("loading");
-  const [slots, setSlots] = useState<DraftEchoSlot[]>(() =>
-    Array.from({ length: 5 }, () => emptySlot()),
-  );
+  const [slots, setSlots] = useState<DraftEchoSlot[]>(() => emptyEchoDraftSlots());
   const [activeSlot, setActiveSlot] = useState(0);
+  const [selectedBuildId, setSelectedBuildId] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
+  const initialBuildResolved = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -129,6 +151,28 @@ export function EchoEditor() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    if (initialBuildResolved.current) return;
+    initialBuildResolved.current = true;
+    const currentBox = getBrowserCharacterBoxSnapshot();
+    const requestedId = new URLSearchParams(window.location.search).get("build") ?? "";
+    const requestedBuild = currentBox.builds.find((build) => build.id === requestedId);
+    if (!requestedBuild) return;
+    setSelectedBuildId(requestedBuild.id);
+    setSlots(draftSlotsFromLoadout(requestedBuild.echoLoadout));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedBuildId) return;
+    if (box.builds.some((build) => build.id === selectedBuildId)) return;
+    setSelectedBuildId("");
+    setSlots(emptyEchoDraftSlots());
+    setActiveSlot(0);
+    setSaveState("idle");
+    setSaveMessage("");
+    updateBuildQuery("");
+  }, [box.builds, selectedBuildId]);
+
   const sortedEchoes = useMemo(
     () =>
       catalog
@@ -145,6 +189,7 @@ export function EchoEditor() {
   const selectedCount = selectedEchoes.filter(Boolean).length;
   const activeDraft = slots[activeSlot]!;
   const activeEcho = selectedEchoes[activeSlot];
+  const selectedBuild = box.builds.find((build) => build.id === selectedBuildId);
 
   const sonataCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -165,12 +210,41 @@ export function EchoEditor() {
           slot.substats.every((substat) => substat.statId.length > 0 && substat.value.length > 0)),
     );
 
+  const canSave = Boolean(selectedBuildId && catalog && selectionsComplete && totalCost <= 12);
+
+  function updateBuildQuery(buildId: string) {
+    const url = new URL(window.location.href);
+    if (buildId) url.searchParams.set("build", buildId);
+    else url.searchParams.delete("build");
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }
+
+  function chooseBuild(buildId: string) {
+    setSelectedBuildId(buildId);
+    setActiveSlot(0);
+    setSaveState("idle");
+    setSaveMessage("");
+    updateBuildQuery(buildId);
+    if (!buildId) {
+      setSlots(emptyEchoDraftSlots());
+      return;
+    }
+    const build = getBrowserCharacterBoxSnapshot().builds.find((candidate) => candidate.id === buildId);
+    setSlots(draftSlotsFromLoadout(build?.echoLoadout));
+  }
+
+  function markDraftChanged() {
+    setSaveState("idle");
+    setSaveMessage("");
+  }
+
   function updateSlot(index: number, update: (slot: DraftEchoSlot) => DraftEchoSlot) {
+    markDraftChanged();
     setSlots((current) => current.map((slot, slotIndex) => (slotIndex === index ? update(slot) : slot)));
   }
 
   function selectEcho(index: number, id: string) {
-    updateSlot(index, () => (id ? { ...emptySlot(), echoId: id } : emptySlot()));
+    updateSlot(index, () => (id ? { ...emptyEchoDraftSlot(), echoId: id } : emptyEchoDraftSlot()));
     setActiveSlot(index);
   }
 
@@ -196,6 +270,50 @@ export function EchoEditor() {
     }));
   }
 
+  function saveLoadout() {
+    if (!catalog || !selectedBuildId || !canSave) return;
+    try {
+      const loadout = loadoutFromDraftSlots(slots);
+      const resolved = resolveEchoLoadoutV1(catalog, loadout);
+      const currentBox = getBrowserCharacterBoxSnapshot();
+      const nextBox = replaceBuildEchoLoadout(
+        currentBox,
+        selectedBuildId,
+        loadout,
+        new Date().toISOString(),
+      );
+      createBrowserCharacterBoxStorage().save(nextBox);
+      setSaveState("saved");
+      setSaveMessage(`Validé par le resolver · coût ${resolved.totalCost}/12 · sauvegardé dans la Character Box.`);
+    } catch (error) {
+      setSaveState("error");
+      setSaveMessage(error instanceof Error ? error.message : "Le loadout a été refusé.");
+    }
+  }
+
+  function clearSavedLoadout() {
+    if (!selectedBuildId || !selectedBuild?.echoLoadout) return;
+    if (!window.confirm("Effacer uniquement le loadout Echo détaillé de ce build ? Les finalStats resteront inchangées.")) {
+      return;
+    }
+    try {
+      const currentBox = getBrowserCharacterBoxSnapshot();
+      const nextBox = clearBuildEchoLoadout(
+        currentBox,
+        selectedBuildId,
+        new Date().toISOString(),
+      );
+      createBrowserCharacterBoxStorage().save(nextBox);
+      setSlots(emptyEchoDraftSlots());
+      setActiveSlot(0);
+      setSaveState("saved");
+      setSaveMessage("Loadout Echo détaillé supprimé. finalStats n’a pas été modifié.");
+    } catch (error) {
+      setSaveState("error");
+      setSaveMessage(error instanceof Error ? error.message : "Impossible d’effacer le loadout.");
+    }
+  }
+
   return (
     <main className="mx-auto max-w-[1800px] px-4 py-8 sm:px-8 lg:px-12 lg:py-10">
       <header className="mb-8 flex flex-col gap-5 border-b border-white/10 pb-7 lg:flex-row lg:items-end lg:justify-between">
@@ -205,13 +323,13 @@ export function EchoEditor() {
             <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-100">
               Catalogue réel
             </span>
-            <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-100">
-              Non enregistré
+            <span className="rounded-full border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-sky-100">
+              Character Box
             </span>
           </div>
           <h1 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">Échos</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-            Sélectionnez jusqu’à cinq Échos avec leurs Sonata, main stats et rolls exacts. Ce brouillon ne modifie pas encore la Character Box ni <code>finalStats</code>.
+            Configurez jusqu’à cinq Échos puis sauvegardez le loadout détaillé sur un build de votre Character Box. La sauvegarde passe par le resolver exact et ne recalcule jamais <code>finalStats</code>.
           </p>
         </div>
         <Link
@@ -221,6 +339,37 @@ export function EchoEditor() {
           Retour à la Character Box
         </Link>
       </header>
+
+      <section className="mb-5 rounded-2xl border border-white/10 bg-[#11151d]/85 p-5 sm:p-6">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <label className="grid gap-2 text-xs font-black uppercase tracking-[0.14em] text-[var(--muted)]">
+            Build Character Box
+            <select
+              value={selectedBuildId}
+              onChange={(event) => chooseBuild(event.target.value)}
+              className="rounded-xl border border-white/10 bg-[#090c12] px-4 py-3 text-sm font-semibold normal-case tracking-normal text-white"
+            >
+              <option value="">Choisir un build…</option>
+              {box.builds.map((build) => (
+                <option key={build.id} value={build.id}>
+                  {buildLabel(build)} · niv. {build.characterLevel}{build.echoLoadout ? " · loadout Echo enregistré" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="text-sm text-[var(--muted)] lg:max-w-md">
+            {box.builds.length === 0 ? (
+              <span>Votre Character Box est vide. Ajoutez d’abord un Resonator.</span>
+            ) : selectedBuild ? (
+              <span>
+                Édition de <strong className="text-white">{buildLabel(selectedBuild)}</strong>. Seul <code>echoLoadout</code> sera modifié ici.
+              </span>
+            ) : (
+              <span>Sélectionnez le build qui recevra ce loadout.</span>
+            )}
+          </div>
+        </div>
+      </section>
 
       {loadState === "loading" ? (
         <section className="rounded-2xl border border-white/10 bg-[#11151d]/85 p-8 text-sm text-[var(--muted)]">
@@ -272,14 +421,14 @@ export function EchoEditor() {
                     <div className="mt-4 grid h-14 w-14 place-items-center rounded-2xl border border-dashed border-white/15 bg-black/20 text-xl text-[var(--muted)]">✦</div>
                     <h3 className="mt-4 font-bold text-white">{SLOT_LABELS[index]}</h3>
                     <p className="mt-1 min-h-5 truncate text-xs text-[var(--muted)]">
-                      {selected?.name ?? (index === 0 ? "Slot Echo Skill principal" : "Emplacement libre")}
+                      {selected?.name ?? (slot.echoId ? "Echo enregistré absent du catalogue courant" : index === 0 ? "Slot Echo Skill principal" : "Emplacement libre")}
                     </p>
 
                     <label className="mt-4 block text-[11px] font-bold uppercase tracking-wider text-[var(--muted)]">
                       Echo
                       <select
                         className="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090c12] px-2.5 py-2 text-xs normal-case tracking-normal text-white"
-                        value={slot.echoId}
+                        value={selected ? slot.echoId : ""}
                         onChange={(event) => selectEcho(index, event.target.value)}
                         onClick={(event) => event.stopPropagation()}
                       >
@@ -375,7 +524,7 @@ export function EchoEditor() {
                       <div className="rounded-xl border border-dashed border-white/10 p-4 text-center text-xs text-[var(--muted)]">Aucune substat renseignée.</div>
                     ) : activeDraft.substats.map((substat, subIndex) => {
                       const definition = reviewedEchoStatTableV1.substatRolls.find((candidate) => candidate.statId === substat.statId);
-                      const usedIds = new Set(activeDraft.substats.map((candidate, index) => index === subIndex ? "" : candidate.statId));
+                      const usedIds = new Set(activeDraft.substats.map((candidate, candidateIndex) => candidateIndex === subIndex ? "" : candidate.statId));
                       return (
                         <div key={subIndex} className="grid grid-cols-[1fr_100px_auto] gap-2">
                           <select
@@ -444,22 +593,39 @@ export function EchoEditor() {
               </div>
             </section>
 
-            <section className={`rounded-2xl border p-5 ${selectionsComplete ? "border-emerald-400/20 bg-emerald-400/5" : "border-amber-400/20 bg-amber-400/5"}`}>
-              <h2 className={`font-bold ${selectionsComplete ? "text-emerald-100" : "text-amber-100"}`}>
-                {selectionsComplete ? "Brouillon prêt pour le branchement" : "Configuration incomplète"}
+            <section className={`rounded-2xl border p-5 ${canSave ? "border-emerald-400/20 bg-emerald-400/5" : "border-amber-400/20 bg-amber-400/5"}`}>
+              <h2 className={`font-bold ${canSave ? "text-emerald-100" : "text-amber-100"}`}>
+                {canSave ? "Prêt à sauvegarder" : "Configuration incomplète"}
               </h2>
-              <p className={`mt-2 text-sm leading-6 ${selectionsComplete ? "text-emerald-50/75" : "text-amber-50/75"}`}>
-                {selectionsComplete
-                  ? "Les choix visibles utilisent le catalogue promu et les tables exactes. La prochaine étape sera la persistance Character Box puis la validation par le resolver existant."
-                  : "Choisissez une Sonata et une main stat pour chaque Echo équipé. Les substats ajoutées doivent aussi avoir un roll exact."}
+              <p className={`mt-2 text-sm leading-6 ${canSave ? "text-emerald-50/75" : "text-amber-50/75"}`}>
+                {!selectedBuildId
+                  ? "Choisissez d’abord un build de la Character Box."
+                  : selectionsComplete
+                    ? "La sauvegarde sera revalidée par resolveEchoLoadoutV1 avant toute écriture locale. finalStats restera inchangé."
+                    : "Choisissez une Sonata et une main stat pour chaque Echo équipé. Les substats ajoutées doivent aussi avoir un roll exact."}
               </p>
               <button
                 type="button"
-                disabled
-                className="mt-4 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-bold text-white/45"
+                onClick={saveLoadout}
+                disabled={!canSave}
+                className="mt-4 w-full rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm font-bold text-emerald-50 disabled:border-white/10 disabled:bg-black/20 disabled:text-white/35"
               >
-                Enregistrement Character Box — prochaine étape
+                Valider et enregistrer dans la Character Box
               </button>
+              {selectedBuild?.echoLoadout ? (
+                <button
+                  type="button"
+                  onClick={clearSavedLoadout}
+                  className="mt-2 w-full rounded-xl border border-red-400/20 bg-red-400/5 px-4 py-2.5 text-xs font-bold text-red-100"
+                >
+                  Effacer le loadout Echo enregistré
+                </button>
+              ) : null}
+              {saveMessage ? (
+                <p className={`mt-3 rounded-lg border px-3 py-2 text-xs leading-5 ${saveState === "error" ? "border-red-400/20 bg-red-400/5 text-red-100" : "border-emerald-400/20 bg-emerald-400/5 text-emerald-100"}`}>
+                  {saveMessage}
+                </p>
+              ) : null}
             </section>
           </aside>
         </div>
