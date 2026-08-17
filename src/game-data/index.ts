@@ -11,6 +11,11 @@ export type {
   GameAssetRecord,
   GameAssetRegistry,
 } from "./asset-registry";
+export {
+  getGameAssetSemanticRoleDefinition,
+  resolveGameAssetByRole,
+} from "./asset-roles";
+export type { GameAssetSemanticRole } from "./asset-roles";
 export type {
   CharacterCatalogEntry,
   EchoCatalogEntry,
