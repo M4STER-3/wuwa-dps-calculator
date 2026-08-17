@@ -44,6 +44,37 @@ jobs:
       - name: Import live Encore Release into ephemeral workspace
         run: npm run game-data:import
 
+      - name: Inspect fractional weapon growth indexes without source text
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import path from 'node:path';
+          const root = path.join(process.cwd(), 'data', 'sources', 'encore', 'release');
+          const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
+          const counts = new Map();
+          let total = 0;
+          let fractional = 0;
+          let affectedWeapons = 0;
+          for (const entity of manifest.resources.weapons.entities) {
+            const detail = JSON.parse(await readFile(path.join(root, 'weapons', 'details', entity.detailFile), 'utf8'));
+            let affected = false;
+            for (const property of detail.Properties ?? []) {
+              for (const growth of property?.GrowthValues ?? []) {
+                const value = growth?.Level ?? growth?.level;
+                if (typeof value !== 'number' || !Number.isFinite(value)) continue;
+                total += 1;
+                if (!Number.isInteger(value)) {
+                  fractional += 1;
+                  affected = true;
+                  counts.set(String(value), (counts.get(String(value)) ?? 0) + 1);
+                }
+              }
+            }
+            if (affected) affectedWeapons += 1;
+          }
+          console.log(`FRACTIONAL_WEAPON_GROWTH_INDEXES=${JSON.stringify({ total, fractional, affectedWeapons, values: Object.fromEntries([...counts.entries()].sort((a,b) => Number(a[0]) - Number(b[0]))) })}`);
+          NODE
+
       - name: Normalize live RAW snapshot offline
         run: npm run game-data:normalize
 
