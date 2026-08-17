@@ -3,7 +3,7 @@
   "source": "Encore.moe",
   "sourceApi": "https://api-v2.encore.moe/api/en",
   "gameVersion": "Release",
-  "generatedAt": "2026-08-17T14:32:03.881Z",
+  "generatedAt": "2026-08-17T14:33:10.303Z",
   "categories": [
     "characters",
     "weapons",
@@ -16961,7 +16961,1688 @@
         }
       }
     },
-    "weapons": {},
+    "weapons": {
+      "21010011": {
+        "sourceId": "21010011",
+        "entityKey": "weapons:21010011",
+        "name": "Training Broadblade",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/5bbad72d3e12e8b63294e125157116f6e6fdc9038122925e5b8f91d6aeaeb18a.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010011_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 13926,
+            "sha256": "5bbad72d3e12e8b63294e125157116f6e6fdc9038122925e5b8f91d6aeaeb18a"
+          }
+        }
+      },
+      "21010012": {
+        "sourceId": "21010012",
+        "entityKey": "weapons:21010012",
+        "name": "Tyro Broadblade",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/dbab9c5d8810f260479502c34f4bdc4c52c6053a50e1c3635d0424c95878044f.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010012_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15848,
+            "sha256": "dbab9c5d8810f260479502c34f4bdc4c52c6053a50e1c3635d0424c95878044f"
+          }
+        }
+      },
+      "21010013": {
+        "sourceId": "21010013",
+        "entityKey": "weapons:21010013",
+        "name": "Broadblade of Night",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/7b4c57327caf71b090c1af0f600f163db864e8a5b06fe5495543aa13f28c86b4.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010013_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 12734,
+            "sha256": "7b4c57327caf71b090c1af0f600f163db864e8a5b06fe5495543aa13f28c86b4"
+          }
+        }
+      },
+      "21010015": {
+        "sourceId": "21010015",
+        "entityKey": "weapons:21010015",
+        "name": "Lustrous Razor",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/077299643e7a2a717afc08fd41f65fd56104b8e4144668b37ab676446bec35a7.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010015_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 22848,
+            "sha256": "077299643e7a2a717afc08fd41f65fd56104b8e4144668b37ab676446bec35a7"
+          }
+        }
+      },
+      "21010016": {
+        "sourceId": "21010016",
+        "entityKey": "weapons:21010016",
+        "name": "Verdant Summit",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/4b8f1bc2b686373cb0d606fe6e3f3882050a8d4ce6b11c62374301de16cfad64.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010016_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 19272,
+            "sha256": "4b8f1bc2b686373cb0d606fe6e3f3882050a8d4ce6b11c62374301de16cfad64"
+          }
+        }
+      },
+      "21010023": {
+        "sourceId": "21010023",
+        "entityKey": "weapons:21010023",
+        "name": "Originite: Type I",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/a582c9d6936557e28ebcc11ff74ff34d8a368c7d278edddadc51096438976112.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010023_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15136,
+            "sha256": "a582c9d6936557e28ebcc11ff74ff34d8a368c7d278edddadc51096438976112"
+          }
+        }
+      },
+      "21010024": {
+        "sourceId": "21010024",
+        "entityKey": "weapons:21010024",
+        "name": "Discord",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0ebdbc929abf95450f014a73fd3ae99baad449a4c8d774ccf054e439d407ea8f.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010024_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15586,
+            "sha256": "0ebdbc929abf95450f014a73fd3ae99baad449a4c8d774ccf054e439d407ea8f"
+          }
+        }
+      },
+      "21010026": {
+        "sourceId": "21010026",
+        "entityKey": "weapons:21010026",
+        "name": "Ages of Harvest",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/69f1c2149a7a717f16f6d3c429b73cdd6b9834c99e7d05b5e9f8ada81f9392e6.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010026_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 23930,
+            "sha256": "69f1c2149a7a717f16f6d3c429b73cdd6b9834c99e7d05b5e9f8ada81f9392e6"
+          }
+        }
+      },
+      "21010034": {
+        "sourceId": "21010034",
+        "entityKey": "weapons:21010034",
+        "name": "Broadblade#41",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/fcbb8390f2165ceb10e8b8b919b1cff36bb01942e7573f1bee294972c30b78ad.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010034_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 14780,
+            "sha256": "fcbb8390f2165ceb10e8b8b919b1cff36bb01942e7573f1bee294972c30b78ad"
+          }
+        }
+      },
+      "21010036": {
+        "sourceId": "21010036",
+        "entityKey": "weapons:21010036",
+        "name": "Wildfire Mark",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/2ac0b9335503232fec799ddc07cc3b2d938abb7a454ed540b7259beccb6d77f6.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010036_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 25226,
+            "sha256": "2ac0b9335503232fec799ddc07cc3b2d938abb7a454ed540b7259beccb6d77f6"
+          }
+        }
+      },
+      "21010043": {
+        "sourceId": "21010043",
+        "entityKey": "weapons:21010043",
+        "name": "Broadblade of Voyager",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/1501c47ea723431ab66f16ba362b2e99dc63a022472503e88d4d9fb6e2361ffe.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010043_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15222,
+            "sha256": "1501c47ea723431ab66f16ba362b2e99dc63a022472503e88d4d9fb6e2361ffe"
+          }
+        }
+      },
+      "21010044": {
+        "sourceId": "21010044",
+        "entityKey": "weapons:21010044",
+        "name": "Dauntless Evernight",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0fc349e79ab345549da20bf0fbb5f5cfb0b3fd1dd37511b1425315c95c179604.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010044_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15610,
+            "sha256": "0fc349e79ab345549da20bf0fbb5f5cfb0b3fd1dd37511b1425315c95c179604"
+          }
+        }
+      },
+      "21010045": {
+        "sourceId": "21010045",
+        "entityKey": "weapons:21010045",
+        "name": "Radiance Cleaver",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/f1132d9021047272722fbb8d6f9ea1adc873ead1dace2f5860eddc06da6baf8a.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon_21010045_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 27026,
+            "sha256": "f1132d9021047272722fbb8d6f9ea1adc873ead1dace2f5860eddc06da6baf8a"
+          }
+        }
+      },
+      "21010046": {
+        "sourceId": "21010046",
+        "entityKey": "weapons:21010046",
+        "name": "Thunderflare Dominion",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/756100ddd6fc09245932aebe29443501c328f6ee2142a4ff580b36be5a6be2f0.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010046_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 39900,
+            "sha256": "756100ddd6fc09245932aebe29443501c328f6ee2142a4ff580b36be5a6be2f0"
+          }
+        }
+      },
+      "21010053": {
+        "sourceId": "21010053",
+        "entityKey": "weapons:21010053",
+        "name": "Guardian Broadblade",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/7e0fb35c9ffd65b2279cb6e4c4b75a6b85a832d0267e4178e761193c209e3e61.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010053_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15722,
+            "sha256": "7e0fb35c9ffd65b2279cb6e4c4b75a6b85a832d0267e4178e761193c209e3e61"
+          }
+        }
+      },
+      "21010056": {
+        "sourceId": "21010056",
+        "entityKey": "weapons:21010056",
+        "name": "Kumokiri",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/b71ad7d5738edb73c2c46e3bed7214bd2608f472f8027d7677244fabcae38ca0.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010056_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 41492,
+            "sha256": "b71ad7d5738edb73c2c46e3bed7214bd2608f472f8027d7677244fabcae38ca0"
+          }
+        }
+      },
+      "21010063": {
+        "sourceId": "21010063",
+        "entityKey": "weapons:21010063",
+        "name": "Beguiling Melody",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/062c7c6efe2eea5a498e83144d544d6699790fab08f52720efc378e881941232.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010063_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 24272,
+            "sha256": "062c7c6efe2eea5a498e83144d544d6699790fab08f52720efc378e881941232"
+          }
+        }
+      },
+      "21010064": {
+        "sourceId": "21010064",
+        "entityKey": "weapons:21010064",
+        "name": "Helios Cleaver",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/08cd00d27c31903c12db908b3305bcb8e6bb578f9ba8833166abdaa8db886866.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010064_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 16292,
+            "sha256": "08cd00d27c31903c12db908b3305bcb8e6bb578f9ba8833166abdaa8db886866"
+          }
+        }
+      },
+      "21010066": {
+        "sourceId": "21010066",
+        "entityKey": "weapons:21010066",
+        "name": "Starfield Calibrator",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/01c4d902d7b7ab1ec749390548f0a72e1303b039d1a1ba84797935fc010ee614.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010066_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 66820,
+            "sha256": "01c4d902d7b7ab1ec749390548f0a72e1303b039d1a1ba84797935fc010ee614"
+          }
+        }
+      },
+      "21010074": {
+        "sourceId": "21010074",
+        "entityKey": "weapons:21010074",
+        "name": "Autumntrace",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/eabefb7e3bf14b5eef81a44cb252bf3a65ab0be6c25b7b7713e1d7d2c0b3b245.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010074_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15628,
+            "sha256": "eabefb7e3bf14b5eef81a44cb252bf3a65ab0be6c25b7b7713e1d7d2c0b3b245"
+          }
+        }
+      },
+      "21010084": {
+        "sourceId": "21010084",
+        "entityKey": "weapons:21010084",
+        "name": "Waning Redshift",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/84b91c4bcfc438c17dfd8eacc0f94af331c80ed198e9ea7bd653453df122cfc0.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010084_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 21022,
+            "sha256": "84b91c4bcfc438c17dfd8eacc0f94af331c80ed198e9ea7bd653453df122cfc0"
+          }
+        }
+      },
+      "21010094": {
+        "sourceId": "21010094",
+        "entityKey": "weapons:21010094",
+        "name": "Meditations on Mercy",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/9ae1debe76d5df772f624aa6f82edfaa901fb5436be5ae395ae74138b40b5506.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010094_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 20420,
+            "sha256": "9ae1debe76d5df772f624aa6f82edfaa901fb5436be5ae395ae74138b40b5506"
+          }
+        }
+      },
+      "21010104": {
+        "sourceId": "21010104",
+        "entityKey": "weapons:21010104",
+        "name": "Aureate Zenith",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/db6d806b28cd15e39c8be232b4d1906cdf81db3d64d80e2d35793d48074949b0.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21010104_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 24712,
+            "sha256": "db6d806b28cd15e39c8be232b4d1906cdf81db3d64d80e2d35793d48074949b0"
+          }
+        }
+      },
+      "21020011": {
+        "sourceId": "21020011",
+        "entityKey": "weapons:21020011",
+        "name": "Training Sword",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/2c746459b462c0010a780c3c343019ec09f14b231d1743592c6073e62f89da08.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020011_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 16892,
+            "sha256": "2c746459b462c0010a780c3c343019ec09f14b231d1743592c6073e62f89da08"
+          }
+        }
+      },
+      "21020012": {
+        "sourceId": "21020012",
+        "entityKey": "weapons:21020012",
+        "name": "Tyro Sword",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/5d0155ebd5c8dcb137be43d2544b7aa4ebdc3be642b5b4a5c3a468e648b880e4.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020012_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18486,
+            "sha256": "5d0155ebd5c8dcb137be43d2544b7aa4ebdc3be642b5b4a5c3a468e648b880e4"
+          }
+        }
+      },
+      "21020013": {
+        "sourceId": "21020013",
+        "entityKey": "weapons:21020013",
+        "name": "Sword of Night",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/a4fa5b82937ae059bda9233739919343b072faea7cba1f90bb4307c176d4b3cf.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020013_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 16506,
+            "sha256": "a4fa5b82937ae059bda9233739919343b072faea7cba1f90bb4307c176d4b3cf"
+          }
+        }
+      },
+      "21020015": {
+        "sourceId": "21020015",
+        "entityKey": "weapons:21020015",
+        "name": "Emerald of Genesis",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/8b4f0fc58f5476b3859d171448d7a5338673a69a2f3bc71ec2ae3b927a0277bf.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020015_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 19608,
+            "sha256": "8b4f0fc58f5476b3859d171448d7a5338673a69a2f3bc71ec2ae3b927a0277bf"
+          }
+        }
+      },
+      "21020016": {
+        "sourceId": "21020016",
+        "entityKey": "weapons:21020016",
+        "name": "Blazing Brilliance",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0cfbc6b7e3ea47dfa0ec58b132e2934d70b344b57f6e55f05d83b467f30b569d.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020016_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 25334,
+            "sha256": "0cfbc6b7e3ea47dfa0ec58b132e2934d70b344b57f6e55f05d83b467f30b569d"
+          }
+        }
+      },
+      "21020017": {
+        "sourceId": "21020017",
+        "entityKey": "weapons:21020017",
+        "name": "Somnoire Anchor",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/165e5a52cb30ff80e7db06df8956ba36f5e2aa46d208d6881f107ba4686c58b4.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020019_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 23778,
+            "sha256": "165e5a52cb30ff80e7db06df8956ba36f5e2aa46d208d6881f107ba4686c58b4"
+          }
+        }
+      },
+      "21020023": {
+        "sourceId": "21020023",
+        "entityKey": "weapons:21020023",
+        "name": "Originite: Type II",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/f50b4f3210bd8c53f8ba3fe71adc57f74ab1e421876bdabe656eab2c2b72038a.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020023_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 16000,
+            "sha256": "f50b4f3210bd8c53f8ba3fe71adc57f74ab1e421876bdabe656eab2c2b72038a"
+          }
+        }
+      },
+      "21020024": {
+        "sourceId": "21020024",
+        "entityKey": "weapons:21020024",
+        "name": "Overture",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/70dd00ff81ee6cbe0e704c5a219f7fc6fd784d1f4770202cfb26ee6b4cd26216.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020024_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18018,
+            "sha256": "70dd00ff81ee6cbe0e704c5a219f7fc6fd784d1f4770202cfb26ee6b4cd26216"
+          }
+        }
+      },
+      "21020026": {
+        "sourceId": "21020026",
+        "entityKey": "weapons:21020026",
+        "name": "Red Spring",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/1aaf70088f97fb305d053d4b61ee1380692744c7c938eb8dca1ab750ee32e76e.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020017_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 29868,
+            "sha256": "1aaf70088f97fb305d053d4b61ee1380692744c7c938eb8dca1ab750ee32e76e"
+          }
+        }
+      },
+      "21020034": {
+        "sourceId": "21020034",
+        "entityKey": "weapons:21020034",
+        "name": "Sword#18",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/8aa71d60dcedc5faf4b79e34b549a7656dd9d22506a663f682a9a943a9d8ccc5.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020034_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 17064,
+            "sha256": "8aa71d60dcedc5faf4b79e34b549a7656dd9d22506a663f682a9a943a9d8ccc5"
+          }
+        }
+      },
+      "21020036": {
+        "sourceId": "21020036",
+        "entityKey": "weapons:21020036",
+        "name": "Unflickering Valor",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/2dd69d4073c336866f643ab6c9429f3434c48de01f23065216b0622c855f0263.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020025_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 31888,
+            "sha256": "2dd69d4073c336866f643ab6c9429f3434c48de01f23065216b0622c855f0263"
+          }
+        }
+      },
+      "21020043": {
+        "sourceId": "21020043",
+        "entityKey": "weapons:21020043",
+        "name": "Sword of Voyager",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/5520aae6a500233e9fd8c53c2e80853b96934e5b5cf9d26f75f13799a1d29d31.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020043_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 19700,
+            "sha256": "5520aae6a500233e9fd8c53c2e80853b96934e5b5cf9d26f75f13799a1d29d31"
+          }
+        }
+      },
+      "21020044": {
+        "sourceId": "21020044",
+        "entityKey": "weapons:21020044",
+        "name": "Commando of Conviction",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/fe4fd5033da581db107efebf1158de058fff83db5e4384ba9b04957b3879f75f.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020044_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 21608,
+            "sha256": "fe4fd5033da581db107efebf1158de058fff83db5e4384ba9b04957b3879f75f"
+          }
+        }
+      },
+      "21020045": {
+        "sourceId": "21020045",
+        "entityKey": "weapons:21020045",
+        "name": "Laser Shearer",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/d5a19b6b6e2ad91a8802594e4395d7622414da0d020e0ccb5fc2eb8844dcd7b0.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon_21020045_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 24000,
+            "sha256": "d5a19b6b6e2ad91a8802594e4395d7622414da0d020e0ccb5fc2eb8844dcd7b0"
+          }
+        }
+      },
+      "21020046": {
+        "sourceId": "21020046",
+        "entityKey": "weapons:21020046",
+        "name": "Bloodpact's Pledge",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/570e544edee4a911e3b249de02ab74ec436e00d4eefe77446312f13c3d03908b.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020026_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 30130,
+            "sha256": "570e544edee4a911e3b249de02ab74ec436e00d4eefe77446312f13c3d03908b"
+          }
+        }
+      },
+      "21020053": {
+        "sourceId": "21020053",
+        "entityKey": "weapons:21020053",
+        "name": "Guardian Sword",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/1fd00fc8454345a905369d524d7f2a4571effa2899062a8cc2c26deb211d29c3.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020053_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18892,
+            "sha256": "1fd00fc8454345a905369d524d7f2a4571effa2899062a8cc2c26deb211d29c3"
+          }
+        }
+      },
+      "21020056": {
+        "sourceId": "21020056",
+        "entityKey": "weapons:21020056",
+        "name": "Defier's Thorn",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0a42d107510726fc96a8208f18574f711d8f7077e4bb51ae568e93d79f2ccf3c.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020056_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 49436,
+            "sha256": "0a42d107510726fc96a8208f18574f711d8f7077e4bb51ae568e93d79f2ccf3c"
+          }
+        }
+      },
+      "21020064": {
+        "sourceId": "21020064",
+        "entityKey": "weapons:21020064",
+        "name": "Lunar Cutter",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0c227dc133ff119ca6434037f30a552cc172c0bd8f4b0afbfc27375445df3d3d.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020064_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 19382,
+            "sha256": "0c227dc133ff119ca6434037f30a552cc172c0bd8f4b0afbfc27375445df3d3d"
+          }
+        }
+      },
+      "21020066": {
+        "sourceId": "21020066",
+        "entityKey": "weapons:21020066",
+        "name": "Emerald Sentence",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/ee4d2cd315dbcdc5e7be0867938b582088f969ab604e8ff10be53e60e419772c.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020066_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 29214,
+            "sha256": "ee4d2cd315dbcdc5e7be0867938b582088f969ab604e8ff10be53e60e419772c"
+          }
+        }
+      },
+      "21020074": {
+        "sourceId": "21020074",
+        "entityKey": "weapons:21020074",
+        "name": "Lumingloss",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/61d99d4a30d5ff4b5b098a9fae6c0485999f1c008736c20aa3000b8b1b5410b5.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020074_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18522,
+            "sha256": "61d99d4a30d5ff4b5b098a9fae6c0485999f1c008736c20aa3000b8b1b5410b5"
+          }
+        }
+      },
+      "21020076": {
+        "sourceId": "21020076",
+        "entityKey": "weapons:21020076",
+        "name": "Everbright Polestar",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/cb5948fae96eca7de41fa1fe1afced2f133024c060b75a47b37c4b055a96fd7c.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020076_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 50500,
+            "sha256": "cb5948fae96eca7de41fa1fe1afced2f133024c060b75a47b37c4b055a96fd7c"
+          }
+        }
+      },
+      "21020084": {
+        "sourceId": "21020084",
+        "entityKey": "weapons:21020084",
+        "name": "Endless Collapse",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/dea9ab03a93cca644cb3ef52552cdbd33a3ff30a4e51b7f9013a357e1ea5c322.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020084_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 21642,
+            "sha256": "dea9ab03a93cca644cb3ef52552cdbd33a3ff30a4e51b7f9013a357e1ea5c322"
+          }
+        }
+      },
+      "21020086": {
+        "sourceId": "21020086",
+        "entityKey": "weapons:21020086",
+        "name": "Frostburn",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/cf9cd2ba3811c05f571ba48001d52d3ccbee209d047cc7a683f62571b5dba349.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020086_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 46892,
+            "sha256": "cf9cd2ba3811c05f571ba48001d52d3ccbee209d047cc7a683f62571b5dba349"
+          }
+        }
+      },
+      "21020094": {
+        "sourceId": "21020094",
+        "entityKey": "weapons:21020094",
+        "name": "Fables of Wisdom",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/e0e8fdb758a12db60f1189044850b2de337a7e77cae0de412d5a01dc51086feb.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020094_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 20686,
+            "sha256": "e0e8fdb758a12db60f1189044850b2de337a7e77cae0de412d5a01dc51086feb"
+          }
+        }
+      },
+      "21020096": {
+        "sourceId": "21020096",
+        "entityKey": "weapons:21020096",
+        "name": "Azure Oath",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/e80b5c82c5e07dca4548f9afa457912d91c0d2523a384957bcaa26f80b3dac1f.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020096_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 35640,
+            "sha256": "e80b5c82c5e07dca4548f9afa457912d91c0d2523a384957bcaa26f80b3dac1f"
+          }
+        }
+      },
+      "21020104": {
+        "sourceId": "21020104",
+        "entityKey": "weapons:21020104",
+        "name": "Feather Edge",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0f7da57c441c68d0d0c959fe686e315d928ba0adc07136164274740fb2634c9d.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21020104_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 24714,
+            "sha256": "0f7da57c441c68d0d0c959fe686e315d928ba0adc07136164274740fb2634c9d"
+          }
+        }
+      },
+      "21030011": {
+        "sourceId": "21030011",
+        "entityKey": "weapons:21030011",
+        "name": "Training Pistols",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/f3f3865bef8a8cedfda7d9d83850d8fb273467bf390893447afa17d6e951dd2e.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030011_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 12144,
+            "sha256": "f3f3865bef8a8cedfda7d9d83850d8fb273467bf390893447afa17d6e951dd2e"
+          }
+        }
+      },
+      "21030012": {
+        "sourceId": "21030012",
+        "entityKey": "weapons:21030012",
+        "name": "Tyro Pistols",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/43cd78191700f68d0f1834eb0f9841f4ebd576e25fb23a9cc9524d01dc6323e3.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030012_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 12958,
+            "sha256": "43cd78191700f68d0f1834eb0f9841f4ebd576e25fb23a9cc9524d01dc6323e3"
+          }
+        }
+      },
+      "21030013": {
+        "sourceId": "21030013",
+        "entityKey": "weapons:21030013",
+        "name": "Pistols of Night",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/f542e961c539a6bb4ef4b0ba5b1e4397e92b0aa7f1ec1c806dd424707c58d9b3.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030013_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 12824,
+            "sha256": "f542e961c539a6bb4ef4b0ba5b1e4397e92b0aa7f1ec1c806dd424707c58d9b3"
+          }
+        }
+      },
+      "21030015": {
+        "sourceId": "21030015",
+        "entityKey": "weapons:21030015",
+        "name": "Static Mist",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/2c04cf30875cf7996089b330fcc4ce03ade9cc2dabd745fbbff212c02864c5f9.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030015_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 16670,
+            "sha256": "2c04cf30875cf7996089b330fcc4ce03ade9cc2dabd745fbbff212c02864c5f9"
+          }
+        }
+      },
+      "21030016": {
+        "sourceId": "21030016",
+        "entityKey": "weapons:21030016",
+        "name": "The Last Dance",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/324a1002dfefb9429485626406e6c89600eaf7878421abe083550f6d26a65596.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030017_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 20252,
+            "sha256": "324a1002dfefb9429485626406e6c89600eaf7878421abe083550f6d26a65596"
+          }
+        }
+      },
+      "21030023": {
+        "sourceId": "21030023",
+        "entityKey": "weapons:21030023",
+        "name": "Originite: Type III",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/144260cd1e8215335129fc6070c78d1f3b43ecce79a159ae3250f77e2653d2bf.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030023_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 13094,
+            "sha256": "144260cd1e8215335129fc6070c78d1f3b43ecce79a159ae3250f77e2653d2bf"
+          }
+        }
+      },
+      "21030024": {
+        "sourceId": "21030024",
+        "entityKey": "weapons:21030024",
+        "name": "Cadenza",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/f6adba4a3c77189fb3d47f9cab9bf04ac09b5ca01037d94cbdfa6652037dc73d.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030024_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 14728,
+            "sha256": "f6adba4a3c77189fb3d47f9cab9bf04ac09b5ca01037d94cbdfa6652037dc73d"
+          }
+        }
+      },
+      "21030026": {
+        "sourceId": "21030026",
+        "entityKey": "weapons:21030026",
+        "name": "Woodland Aria",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/c82c43ff9800619888b107f2c6e993186d41ff3e35831ce2a511f5db49e1a6b6.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030026_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 20626,
+            "sha256": "c82c43ff9800619888b107f2c6e993186d41ff3e35831ce2a511f5db49e1a6b6"
+          }
+        }
+      },
+      "21030034": {
+        "sourceId": "21030034",
+        "entityKey": "weapons:21030034",
+        "name": "Pistols#26",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/e77bdde3a3df6415fe23762c1ea828914d716f87f11a606e1a5c6ec052805ad6.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030034_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 14178,
+            "sha256": "e77bdde3a3df6415fe23762c1ea828914d716f87f11a606e1a5c6ec052805ad6"
+          }
+        }
+      },
+      "21030036": {
+        "sourceId": "21030036",
+        "entityKey": "weapons:21030036",
+        "name": "Lux & Umbra",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/eb80e9cf82268633a623c1267fff3c5c5454c1662e67333ae06d55f7d497b911.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030036_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 34540,
+            "sha256": "eb80e9cf82268633a623c1267fff3c5c5454c1662e67333ae06d55f7d497b911"
+          }
+        }
+      },
+      "21030043": {
+        "sourceId": "21030043",
+        "entityKey": "weapons:21030043",
+        "name": "Pistols of Voyager",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/36f65b14e33c2f2a3581c0540ae694f49f6eefb9738aeace60da27628c206f6c.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030043_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 14178,
+            "sha256": "36f65b14e33c2f2a3581c0540ae694f49f6eefb9738aeace60da27628c206f6c"
+          }
+        }
+      },
+      "21030044": {
+        "sourceId": "21030044",
+        "entityKey": "weapons:21030044",
+        "name": "Undying Flame",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/bea7d3b7b14b8ac4ebea0194229d1a5a6ae522a9661e2f6b727c7ddb72bee0f0.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030044_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 14530,
+            "sha256": "bea7d3b7b14b8ac4ebea0194229d1a5a6ae522a9661e2f6b727c7ddb72bee0f0"
+          }
+        }
+      },
+      "21030045": {
+        "sourceId": "21030045",
+        "entityKey": "weapons:21030045",
+        "name": "Phasic Homogenizer",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/257864e71f119a44cb4c15d9721b487584e9e33e88b195a0ad74edd056f18862.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon_21030045_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 17420,
+            "sha256": "257864e71f119a44cb4c15d9721b487584e9e33e88b195a0ad74edd056f18862"
+          }
+        }
+      },
+      "21030046": {
+        "sourceId": "21030046",
+        "entityKey": "weapons:21030046",
+        "name": "Spectrum Blaster",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/4b389f65f60aff259035512d63a4dae5183b5f96343ca8cd62543fe5c49c46c1.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030046_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 36510,
+            "sha256": "4b389f65f60aff259035512d63a4dae5183b5f96343ca8cd62543fe5c49c46c1"
+          }
+        }
+      },
+      "21030053": {
+        "sourceId": "21030053",
+        "entityKey": "weapons:21030053",
+        "name": "Guardian Pistols",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/305a6e3ea7907db8e7d56ddc29b06089313a0977f87c06d9633fa1bb9a990c60.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030053_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15488,
+            "sha256": "305a6e3ea7907db8e7d56ddc29b06089313a0977f87c06d9633fa1bb9a990c60"
+          }
+        }
+      },
+      "21030056": {
+        "sourceId": "21030056",
+        "entityKey": "weapons:21030056",
+        "name": "Spectral Trigger",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/3423ffda046cc418636d45bd59222fd67863aadb53a50afb1b606a461663c8c6.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030056_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 31386,
+            "sha256": "3423ffda046cc418636d45bd59222fd67863aadb53a50afb1b606a461663c8c6"
+          }
+        }
+      },
+      "21030064": {
+        "sourceId": "21030064",
+        "entityKey": "weapons:21030064",
+        "name": "Novaburst",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/4e009fe16bd0edf5df858c61e076c68ede5c0e28fb76b5f1503c46e05738907e.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030064_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15400,
+            "sha256": "4e009fe16bd0edf5df858c61e076c68ede5c0e28fb76b5f1503c46e05738907e"
+          }
+        }
+      },
+      "21030066": {
+        "sourceId": "21030066",
+        "entityKey": "weapons:21030066",
+        "name": "Skull Thrasher",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/463508f3f2886989c131c057d9485494ff0757086e8f725b8396e691c661540d.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030066_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 38550,
+            "sha256": "463508f3f2886989c131c057d9485494ff0757086e8f725b8396e691c661540d"
+          }
+        }
+      },
+      "21030074": {
+        "sourceId": "21030074",
+        "entityKey": "weapons:21030074",
+        "name": "Thunderbolt",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/e833dbfde21f9bbab5aa0c8f5fc9364e575898454356575f436b135b14de057b.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030074_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15920,
+            "sha256": "e833dbfde21f9bbab5aa0c8f5fc9364e575898454356575f436b135b14de057b"
+          }
+        }
+      },
+      "21030084": {
+        "sourceId": "21030084",
+        "entityKey": "weapons:21030084",
+        "name": "Relativistic Jet",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/af90f839b630c446ac7708fd895dfe67342c635c457e68a1c9ec3e4edd29c813.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030084_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 16046,
+            "sha256": "af90f839b630c446ac7708fd895dfe67342c635c457e68a1c9ec3e4edd29c813"
+          }
+        }
+      },
+      "21030094": {
+        "sourceId": "21030094",
+        "entityKey": "weapons:21030094",
+        "name": "Romance in Farewell",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/e68f94d2a3b8e5bbf7f881d2ca5b877ad2ef4b5ba5522bb8bc517ff26535df2f.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030094_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 16604,
+            "sha256": "e68f94d2a3b8e5bbf7f881d2ca5b877ad2ef4b5ba5522bb8bc517ff26535df2f"
+          }
+        }
+      },
+      "21030104": {
+        "sourceId": "21030104",
+        "entityKey": "weapons:21030104",
+        "name": "Solar Flame",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/d2fac12e862002196fa372af8b1685965c3ab999b03c4f2b4485139b4aba2024.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21030104_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18440,
+            "sha256": "d2fac12e862002196fa372af8b1685965c3ab999b03c4f2b4485139b4aba2024"
+          }
+        }
+      },
+      "21040011": {
+        "sourceId": "21040011",
+        "entityKey": "weapons:21040011",
+        "name": "Training Gauntlets",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0bd81c5076117f4383a70f30b9849da98f54568bab7a9c49b83e698de3059eaf.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040011_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 14806,
+            "sha256": "0bd81c5076117f4383a70f30b9849da98f54568bab7a9c49b83e698de3059eaf"
+          }
+        }
+      },
+      "21040012": {
+        "sourceId": "21040012",
+        "entityKey": "weapons:21040012",
+        "name": "Tyro Gauntlets",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/00e8a8887481dba108323dfbf18304bf56a8e59d819fd71a30ffff06f1130d4d.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040012_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 14074,
+            "sha256": "00e8a8887481dba108323dfbf18304bf56a8e59d819fd71a30ffff06f1130d4d"
+          }
+        }
+      },
+      "21040013": {
+        "sourceId": "21040013",
+        "entityKey": "weapons:21040013",
+        "name": "Gauntlets of Night",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/4c513959a937b894dfbdd478da89072aeb37ee3d8c9d52b8c076438352aeb969.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040013_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 14462,
+            "sha256": "4c513959a937b894dfbdd478da89072aeb37ee3d8c9d52b8c076438352aeb969"
+          }
+        }
+      },
+      "21040015": {
+        "sourceId": "21040015",
+        "entityKey": "weapons:21040015",
+        "name": "Abyss Surges",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/113d4415a54ef5aebcbf3759c62b4f653dbc89e6257a7d1e87a2d00302b9270a.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040015_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 20590,
+            "sha256": "113d4415a54ef5aebcbf3759c62b4f653dbc89e6257a7d1e87a2d00302b9270a"
+          }
+        }
+      },
+      "21040016": {
+        "sourceId": "21040016",
+        "entityKey": "weapons:21040016",
+        "name": "Verity's Handle",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/8cb62efc97e570f6be5fde2582b79a7f630044e84084de889b2956ee76b159a9.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040016_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 20402,
+            "sha256": "8cb62efc97e570f6be5fde2582b79a7f630044e84084de889b2956ee76b159a9"
+          }
+        }
+      },
+      "21040023": {
+        "sourceId": "21040023",
+        "entityKey": "weapons:21040023",
+        "name": "Originite: Type IV",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0cac166759a64443007d1e2cc028b62ed8172b20df55409819ed1b1915e8788f.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040023_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 14420,
+            "sha256": "0cac166759a64443007d1e2cc028b62ed8172b20df55409819ed1b1915e8788f"
+          }
+        }
+      },
+      "21040024": {
+        "sourceId": "21040024",
+        "entityKey": "weapons:21040024",
+        "name": "Marcato",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/ef0d6e98da03421915a5a66487f82c9b2a5564a7d7f3bde1d869fe7a024fbc9e.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040024_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18788,
+            "sha256": "ef0d6e98da03421915a5a66487f82c9b2a5564a7d7f3bde1d869fe7a024fbc9e"
+          }
+        }
+      },
+      "21040026": {
+        "sourceId": "21040026",
+        "entityKey": "weapons:21040026",
+        "name": "Tragicomedy",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/db702474d324796476ca6a372905a4143275a0c0d1cd8ee72944a1cb0ad027d3.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040018_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 34160,
+            "sha256": "db702474d324796476ca6a372905a4143275a0c0d1cd8ee72944a1cb0ad027d3"
+          }
+        }
+      },
+      "21040034": {
+        "sourceId": "21040034",
+        "entityKey": "weapons:21040034",
+        "name": "Gauntlets#21D",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/2677e9862401fc9d998aacef872ef3af4eb97686eaf33ce24570081602285cf8.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040034_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 14952,
+            "sha256": "2677e9862401fc9d998aacef872ef3af4eb97686eaf33ce24570081602285cf8"
+          }
+        }
+      },
+      "21040036": {
+        "sourceId": "21040036",
+        "entityKey": "weapons:21040036",
+        "name": "Blazing Justice",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/a6c6d277a3096fd57bb11514c536c5b09dd04070a359669772dd614e1d77aa0d.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040019_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 22408,
+            "sha256": "a6c6d277a3096fd57bb11514c536c5b09dd04070a359669772dd614e1d77aa0d"
+          }
+        }
+      },
+      "21040043": {
+        "sourceId": "21040043",
+        "entityKey": "weapons:21040043",
+        "name": "Gauntlets of Voyager",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/ad76d2adad8c15db32bb70abb205071423f4f9f104e176d000cdbe853fe05217.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040043_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15534,
+            "sha256": "ad76d2adad8c15db32bb70abb205071423f4f9f104e176d000cdbe853fe05217"
+          }
+        }
+      },
+      "21040044": {
+        "sourceId": "21040044",
+        "entityKey": "weapons:21040044",
+        "name": "Amity Accord",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/c088073d405a1e3c1eee4e5dd4e87e1960e6ba3e8c84f69bdb4d605b507d6bee.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040044_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15082,
+            "sha256": "c088073d405a1e3c1eee4e5dd4e87e1960e6ba3e8c84f69bdb4d605b507d6bee"
+          }
+        }
+      },
+      "21040045": {
+        "sourceId": "21040045",
+        "entityKey": "weapons:21040045",
+        "name": "Pulsation Bracer",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/3005188e8f7eb8158964498d335290bf43f1595bf8dcd96cace5f19173efdf28.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon_21040045_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 24402,
+            "sha256": "3005188e8f7eb8158964498d335290bf43f1595bf8dcd96cace5f19173efdf28"
+          }
+        }
+      },
+      "21040046": {
+        "sourceId": "21040046",
+        "entityKey": "weapons:21040046",
+        "name": "Moongazer's Sigil",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0c7cb221df644bbe20544249708581530ece8705728c6f450d34ccc51a7e43a9.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040046_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 57514,
+            "sha256": "0c7cb221df644bbe20544249708581530ece8705728c6f450d34ccc51a7e43a9"
+          }
+        }
+      },
+      "21040053": {
+        "sourceId": "21040053",
+        "entityKey": "weapons:21040053",
+        "name": "Guardian Gauntlets",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/4eda39a291a59a55703dec6e5da4f294749c512559defd6d24249549a694fbfa.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040053_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15492,
+            "sha256": "4eda39a291a59a55703dec6e5da4f294749c512559defd6d24249549a694fbfa"
+          }
+        }
+      },
+      "21040056": {
+        "sourceId": "21040056",
+        "entityKey": "weapons:21040056",
+        "name": "Daybreaker's Spine",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/1d7d0aa9b239395f691c5fcd5f024ac0028ddf3cf9fef9a403f85701b8d9fe9e.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon_21040056_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 48552,
+            "sha256": "1d7d0aa9b239395f691c5fcd5f024ac0028ddf3cf9fef9a403f85701b8d9fe9e"
+          }
+        }
+      },
+      "21040064": {
+        "sourceId": "21040064",
+        "entityKey": "weapons:21040064",
+        "name": "Hollow Mirage",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/d9a42556f92b061423bb27a61a364608a62eb6c968da0a80d4be0457bea5f1fe.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040064_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15852,
+            "sha256": "d9a42556f92b061423bb27a61a364608a62eb6c968da0a80d4be0457bea5f1fe"
+          }
+        }
+      },
+      "21040066": {
+        "sourceId": "21040066",
+        "entityKey": "weapons:21040066",
+        "name": "Solsworn Ciphers",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/5ad5f1636843c220e4abbb7bbffe3510b221e252efab496d71e9dc730150b312.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040066_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 56854,
+            "sha256": "5ad5f1636843c220e4abbb7bbffe3510b221e252efab496d71e9dc730150b312"
+          }
+        }
+      },
+      "21040074": {
+        "sourceId": "21040074",
+        "entityKey": "weapons:21040074",
+        "name": "Stonard",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/a2ec9d2837398837b2458503deb4e15265e2d59a75ae22963450b046880f8722.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040074_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18118,
+            "sha256": "a2ec9d2837398837b2458503deb4e15265e2d59a75ae22963450b046880f8722"
+          }
+        }
+      },
+      "21040084": {
+        "sourceId": "21040084",
+        "entityKey": "weapons:21040084",
+        "name": "Celestial Spiral",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/8a5e79f2a93c042b048bf9711bc2ac401ffa817db9d35da3b0b300d6013c84f6.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040084_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18262,
+            "sha256": "8a5e79f2a93c042b048bf9711bc2ac401ffa817db9d35da3b0b300d6013c84f6"
+          }
+        }
+      },
+      "21040094": {
+        "sourceId": "21040094",
+        "entityKey": "weapons:21040094",
+        "name": "Legend of Drunken Hero",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/e1f860dd72a644fdc6bb36811be61a9c3259654f1b1316293cd578bfb6d8606c.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040094_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18744,
+            "sha256": "e1f860dd72a644fdc6bb36811be61a9c3259654f1b1316293cd578bfb6d8606c"
+          }
+        }
+      },
+      "21040104": {
+        "sourceId": "21040104",
+        "entityKey": "weapons:21040104",
+        "name": "Aether Strike",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/79e3c1f3bb4949a6bfa2f8a9d8bf8e40739c5f842392050b0ca5a28bbc54f294.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21040104_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 26952,
+            "sha256": "79e3c1f3bb4949a6bfa2f8a9d8bf8e40739c5f842392050b0ca5a28bbc54f294"
+          }
+        }
+      },
+      "21050011": {
+        "sourceId": "21050011",
+        "entityKey": "weapons:21050011",
+        "name": "Training Rectifier",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0260f0ab4cf9a2acf87dcc94e554cf68f07c358d9a90a222c0f1d9f4c84410cc.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050011_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 16852,
+            "sha256": "0260f0ab4cf9a2acf87dcc94e554cf68f07c358d9a90a222c0f1d9f4c84410cc"
+          }
+        }
+      },
+      "21050012": {
+        "sourceId": "21050012",
+        "entityKey": "weapons:21050012",
+        "name": "Tyro Rectifier",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/f4e75b396946480ce05f5f45a455cb2a8e0774ffac035e0b746d96ba3fe95c98.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050012_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 17026,
+            "sha256": "f4e75b396946480ce05f5f45a455cb2a8e0774ffac035e0b746d96ba3fe95c98"
+          }
+        }
+      },
+      "21050013": {
+        "sourceId": "21050013",
+        "entityKey": "weapons:21050013",
+        "name": "Rectifier of Night",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/5a1d248a2cf6bbaac0bba461068f6e4a30e893eb4ab8e1d6c4952f2017162039.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050013_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 19500,
+            "sha256": "5a1d248a2cf6bbaac0bba461068f6e4a30e893eb4ab8e1d6c4952f2017162039"
+          }
+        }
+      },
+      "21050015": {
+        "sourceId": "21050015",
+        "entityKey": "weapons:21050015",
+        "name": "Cosmic Ripples",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/f5991341de8cd343b11017c464a98a2c818017cfde5056e469871361afecc821.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050015_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 17768,
+            "sha256": "f5991341de8cd343b11017c464a98a2c818017cfde5056e469871361afecc821"
+          }
+        }
+      },
+      "21050016": {
+        "sourceId": "21050016",
+        "entityKey": "weapons:21050016",
+        "name": "Stringmaster",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/9627bb8fbe075b1878074a477157c9f603bbce338396c96c68833abde5a56040.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050016_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 22358,
+            "sha256": "9627bb8fbe075b1878074a477157c9f603bbce338396c96c68833abde5a56040"
+          }
+        }
+      },
+      "21050017": {
+        "sourceId": "21050017",
+        "entityKey": "weapons:21050017",
+        "name": "Call of the Abyss",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/10acb023b1eb0e4982771352a3ea7742c155cc6f82489e57a6b48c217c2a3810.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050017_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 22958,
+            "sha256": "10acb023b1eb0e4982771352a3ea7742c155cc6f82489e57a6b48c217c2a3810"
+          }
+        }
+      },
+      "21050023": {
+        "sourceId": "21050023",
+        "entityKey": "weapons:21050023",
+        "name": "Originite: Type V",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/bcdcf850e0083d5c0542de25acd245a0e076a263f17e2569909fd7129649b4ae.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050023_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 15664,
+            "sha256": "bcdcf850e0083d5c0542de25acd245a0e076a263f17e2569909fd7129649b4ae"
+          }
+        }
+      },
+      "21050024": {
+        "sourceId": "21050024",
+        "entityKey": "weapons:21050024",
+        "name": "Variation",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/c62c5d410539ab42bfc4cb58180f4c761b205d0da72df410ce478f1aeb203974.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050024_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 19568,
+            "sha256": "c62c5d410539ab42bfc4cb58180f4c761b205d0da72df410ce478f1aeb203974"
+          }
+        }
+      },
+      "21050026": {
+        "sourceId": "21050026",
+        "entityKey": "weapons:21050026",
+        "name": "Rime-Draped Sprouts",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/43aa5a2ab6cb98e43939403ce53a26122af32204a2c5181a97642601432d8268.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050026_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 44900,
+            "sha256": "43aa5a2ab6cb98e43939403ce53a26122af32204a2c5181a97642601432d8268"
+          }
+        }
+      },
+      "21050027": {
+        "sourceId": "21050027",
+        "entityKey": "weapons:21050027",
+        "name": "Ocean's Gift",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/4fab7720f824cd16247fee51be1b238db85fc6a2c584418618a57ebb07dd5ea9.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050036_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 25676,
+            "sha256": "4fab7720f824cd16247fee51be1b238db85fc6a2c584418618a57ebb07dd5ea9"
+          }
+        }
+      },
+      "21050034": {
+        "sourceId": "21050034",
+        "entityKey": "weapons:21050034",
+        "name": "Rectifier#25",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/0d8f9cd244aa063fa5be7b0d61055d94601731f35353f85a5a113259f0c6f405.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050034_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 19098,
+            "sha256": "0d8f9cd244aa063fa5be7b0d61055d94601731f35353f85a5a113259f0c6f405"
+          }
+        }
+      },
+      "21050036": {
+        "sourceId": "21050036",
+        "entityKey": "weapons:21050036",
+        "name": "Stellar Symphony",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/ee86b6e9a7c8fc4594e2e7cd5a48ab490f31c69aa1f3bbc68d7b9dfb5d54fda0.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050027_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 43756,
+            "sha256": "ee86b6e9a7c8fc4594e2e7cd5a48ab490f31c69aa1f3bbc68d7b9dfb5d54fda0"
+          }
+        }
+      },
+      "21050043": {
+        "sourceId": "21050043",
+        "entityKey": "weapons:21050043",
+        "name": "Rectifier of Voyager",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/b010e36db3840290c7ac16b784353e0e60ed0f1a33c8fb3d4b917deda67ba95e.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050043_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18522,
+            "sha256": "b010e36db3840290c7ac16b784353e0e60ed0f1a33c8fb3d4b917deda67ba95e"
+          }
+        }
+      },
+      "21050044": {
+        "sourceId": "21050044",
+        "entityKey": "weapons:21050044",
+        "name": "Jinzhou Keeper",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/bef067383bf3723cc9b43d3c8b1f9258399e3cda8f115c3983b6cf3b9e1130c5.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050044_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 19512,
+            "sha256": "bef067383bf3723cc9b43d3c8b1f9258399e3cda8f115c3983b6cf3b9e1130c5"
+          }
+        }
+      },
+      "21050045": {
+        "sourceId": "21050045",
+        "entityKey": "weapons:21050045",
+        "name": "Boson Astrolabe",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/5202c706a616147dbded317e349c9ee10071de87a184efa58d69c665ec488a37.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon_21050045_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 28848,
+            "sha256": "5202c706a616147dbded317e349c9ee10071de87a184efa58d69c665ec488a37"
+          }
+        }
+      },
+      "21050046": {
+        "sourceId": "21050046",
+        "entityKey": "weapons:21050046",
+        "name": "Luminous Hymn",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/33cd2aac1a646f96fe18e23e094c860a3de7c36aac760ef74c87c98c3aabd164.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050029_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 33664,
+            "sha256": "33cd2aac1a646f96fe18e23e094c860a3de7c36aac760ef74c87c98c3aabd164"
+          }
+        }
+      },
+      "21050053": {
+        "sourceId": "21050053",
+        "entityKey": "weapons:21050053",
+        "name": "Guardian Rectifier",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/fd738eca11d6a922dacb02559c13d3b8f875977e81552e0413550cfef331818f.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050053_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 17094,
+            "sha256": "fd738eca11d6a922dacb02559c13d3b8f875977e81552e0413550cfef331818f"
+          }
+        }
+      },
+      "21050056": {
+        "sourceId": "21050056",
+        "entityKey": "weapons:21050056",
+        "name": "Whispers of Sirens",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/616270fff279f9a78d44a8828d645cbd28ce87cfd34a90ca87726a442dd740ba.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050030_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 41272,
+            "sha256": "616270fff279f9a78d44a8828d645cbd28ce87cfd34a90ca87726a442dd740ba"
+          }
+        }
+      },
+      "21050064": {
+        "sourceId": "21050064",
+        "entityKey": "weapons:21050064",
+        "name": "Comet Flare",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/91d9b44aa3d47c133afaabf9a5ec98517294f7292ea0cd4acaed44bb71772dac.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050064_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 18428,
+            "sha256": "91d9b44aa3d47c133afaabf9a5ec98517294f7292ea0cd4acaed44bb71772dac"
+          }
+        }
+      },
+      "21050066": {
+        "sourceId": "21050066",
+        "entityKey": "weapons:21050066",
+        "name": "Lethean Elegy",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/a329c00588a3019b950fbdf1a1c1410b998c8ad3d56af5e9308fc85a02c91fa4.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050066_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 36838,
+            "sha256": "a329c00588a3019b950fbdf1a1c1410b998c8ad3d56af5e9308fc85a02c91fa4"
+          }
+        }
+      },
+      "21050074": {
+        "sourceId": "21050074",
+        "entityKey": "weapons:21050074",
+        "name": "Augment",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/ce9f5e972270277388e66347d905cef2b5844efb15b27e59cd0d0a0ff135bdd6.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050074_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 22056,
+            "sha256": "ce9f5e972270277388e66347d905cef2b5844efb15b27e59cd0d0a0ff135bdd6"
+          }
+        }
+      },
+      "21050076": {
+        "sourceId": "21050076",
+        "entityKey": "weapons:21050076",
+        "name": "Forged Dwarf Star",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/830935d25509fb807a8f6d33e15977c280574df5f8dbf2010b5c23e0543c29b0.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050076_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 51004,
+            "sha256": "830935d25509fb807a8f6d33e15977c280574df5f8dbf2010b5c23e0543c29b0"
+          }
+        }
+      },
+      "21050084": {
+        "sourceId": "21050084",
+        "entityKey": "weapons:21050084",
+        "name": "Fusion Accretion",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/337da2861c5e9b3252584b8fba04dcc1abd5eee13a38a937332e5de8b246efc4.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050084_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 19832,
+            "sha256": "337da2861c5e9b3252584b8fba04dcc1abd5eee13a38a937332e5de8b246efc4"
+          }
+        }
+      },
+      "21050086": {
+        "sourceId": "21050086",
+        "entityKey": "weapons:21050086",
+        "name": "Freeze Frame",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/f1f202f6fd723433f9ef67df9be5864c6460d700690e1338346519da81ebcfcd.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050086_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 50858,
+            "sha256": "f1f202f6fd723433f9ef67df9be5864c6460d700690e1338346519da81ebcfcd"
+          }
+        }
+      },
+      "21050094": {
+        "sourceId": "21050094",
+        "entityKey": "weapons:21050094",
+        "name": "Waltz in Masquerade",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/7840b7d71d387a0b4bfcc850ad03b59cf0eeb93fdf96159694ca3ac12de02daa.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050094_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 22740,
+            "sha256": "7840b7d71d387a0b4bfcc850ad03b59cf0eeb93fdf96159694ca3ac12de02daa"
+          }
+        }
+      },
+      "21050096": {
+        "sourceId": "21050096",
+        "entityKey": "weapons:21050096",
+        "name": "Firstlight's Herald",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/26e6fa6226245e747aff82c20e44f35683dcf95e9387ef56d43219439d1e6346.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050096_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 56666,
+            "sha256": "26e6fa6226245e747aff82c20e44f35683dcf95e9387ef56d43219439d1e6346"
+          }
+        }
+      },
+      "21050104": {
+        "sourceId": "21050104",
+        "entityKey": "weapons:21050104",
+        "name": "Radiant Dawn",
+        "assets": {
+          "list-icon": {
+            "path": "/assets/wuwa/objects/bb497c7691db9d178eaaba1fe6b3f18a10d086fa21be016ed66cf36eb47afdb5.webp",
+            "sourceUrl": "https://api.encore.moe/resource/Data/Game/Aki/UI/UIResources/Common/Image/IconWeapon/T_IconWeapon21050104_UI.webp",
+            "contentType": "image/webp",
+            "bytes": 23926,
+            "sha256": "bb497c7691db9d178eaaba1fe6b3f18a10d086fa21be016ed66cf36eb47afdb5"
+          }
+        }
+      }
+    },
     "echoes": {}
   }
 }
