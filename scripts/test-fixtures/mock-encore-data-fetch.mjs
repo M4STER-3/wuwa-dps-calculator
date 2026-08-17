@@ -114,6 +114,7 @@ function characterDetail() {
 }
 
 function weaponDetail() {
+  const reviewedHalfStep = testCase === "unreviewed-fractional-growth" ? 21.25 : 20.5;
   return {
     Id: 2,
     ItemId: 2,
@@ -142,7 +143,7 @@ function weaponDetail() {
         BaseValue: 40,
         GrowthValues: [
           { Level: 1, Value: "40" },
-          { Level: 2, Value: "43" },
+          { Level: reviewedHalfStep, Value: "43" },
         ],
       },
       {
@@ -150,7 +151,7 @@ function weaponDetail() {
         BaseValue: 0.08,
         GrowthValues: [
           { Level: 1, Value: "8%" },
-          { Level: 2, Value: "8.5%" },
+          { Level: 40.5, Value: "8.5%" },
         ],
       },
     ],
