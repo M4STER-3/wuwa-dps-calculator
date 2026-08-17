@@ -63,6 +63,22 @@ jobs:
       - name: Independently verify every promoted object
         run: node scripts/verify-wuwa-assets.mjs
 
+      - name: Bound GitHub promotion footprint
+        shell: bash
+        run: |
+          set -euo pipefail
+          object_count="$(find public/assets/wuwa/objects -maxdepth 1 -type f -printf '.' | wc -c)"
+          physical_bytes="$(du -sb public/assets/wuwa/objects | cut -f1)"
+          if [ "${object_count}" -gt 5000 ]; then
+            echo "Refusing to promote ${object_count} physical objects; cap is 5000." >&2
+            exit 1
+          fi
+          if [ "${physical_bytes}" -gt 268435456 ]; then
+            echo "Refusing to promote ${physical_bytes} physical bytes; cap is 256 MiB." >&2
+            exit 1
+          fi
+          echo "Promotion footprint: ${object_count} objects, ${physical_bytes} bytes."
+
       - name: Restrict generated changes to the asset tree
         shell: bash
         run: |
@@ -130,6 +146,7 @@ jobs:
           - reran the asset policy and hostile-input tests;
           - re-fetched live image bytes with `--force`;
           - independently re-read every generated object and verified its MIME signature, byte size, SHA-256, content-addressed path, trusted Encore source URL, required semantic roles, deduplication and orphan-free object store;
+          - enforced a 5000-object / 256 MiB GitHub promotion ceiling;
           - rejected changes outside `public/assets/wuwa`.
 
           Source workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
