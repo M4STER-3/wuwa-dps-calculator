@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { presets } from "@/data/catalog";
 import {
+  MAX_CHARACTER_BOX_SERIALIZED_LENGTH,
   addBuild,
   createBuildFromPreset,
   emptyCharacterBox,
@@ -90,6 +91,48 @@ describe("Character Box", () => {
     expect(parseCharacterBox("invalid")).toEqual(emptyCharacterBox());
     expect(
       parseCharacterBox(JSON.stringify({ schemaVersion: 99, builds: [] })),
+    ).toEqual(emptyCharacterBox());
+  });
+
+  it("refuse une persistance anormalement volumineuse", () => {
+    expect(
+      parseCharacterBox("x".repeat(MAX_CHARACTER_BOX_SERIALIZED_LENGTH + 1)),
+    ).toEqual(emptyCharacterBox());
+  });
+
+  it("supprime les propriétés inconnues de la persistance avant usage", () => {
+    const build = createBuild();
+    const serialized = JSON.stringify({
+      schemaVersion: 1,
+      untrustedRootField: "ignored",
+      builds: [
+        {
+          ...build,
+          untrustedBuildField: "ignored",
+          weapon: { ...build.weapon, untrustedWeaponField: "ignored" },
+          finalStats: {
+            ...build.finalStats,
+            untrustedStatsField: "ignored",
+          },
+        },
+      ],
+    });
+    const parsed = parseCharacterBox(serialized);
+    const restored = parsed.builds[0] as unknown as Record<string, unknown>;
+    const restoredWeapon = restored.weapon as Record<string, unknown>;
+    const restoredStats = restored.finalStats as Record<string, unknown>;
+
+    expect(parsed.builds).toHaveLength(1);
+    expect("untrustedRootField" in (parsed as unknown as Record<string, unknown>)).toBe(false);
+    expect("untrustedBuildField" in restored).toBe(false);
+    expect("untrustedWeaponField" in restoredWeapon).toBe(false);
+    expect("untrustedStatsField" in restoredStats).toBe(false);
+  });
+
+  it("refuse les identifiants de persistance anormalement longs", () => {
+    const build = { ...createBuild(), id: "x".repeat(201) };
+    expect(
+      parseCharacterBox(JSON.stringify({ schemaVersion: 1, builds: [build] })),
     ).toEqual(emptyCharacterBox());
   });
 
