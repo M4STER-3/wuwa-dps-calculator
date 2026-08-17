@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { lstat, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { analyzeGameDatabaseReadiness } from "./lib/game-database-readiness.mjs";
+import { analyzeReviewedGameDatabaseReadiness } from "./lib/reviewed-game-database-readiness.mjs";
 
 const REPO_ROOT = path.resolve(process.cwd());
 const INPUT_PATH = path.join(REPO_ROOT, ".tmp", "wuwa-game-data-normalized", "normalized-source.json");
@@ -78,7 +78,7 @@ async function writeReportAtomic(report) {
 async function main() {
   assertNoArguments();
   const snapshot = await readNormalizedInput();
-  const report = analyzeGameDatabaseReadiness(snapshot);
+  const report = analyzeReviewedGameDatabaseReadiness(snapshot);
   await writeReportAtomic(report);
   console.log(`WUWA_GAME_DATABASE_READINESS=${JSON.stringify({
     characters: report.readiness.characters,
@@ -86,6 +86,7 @@ async function main() {
     echoes: report.readiness.echoes,
     sonataSets: report.readiness.sonataSets,
     blockerCodes: report.blockers.map((entry) => entry.code),
+    reviewedMappings: report.reviewedMappings,
   })}`);
 }
 
