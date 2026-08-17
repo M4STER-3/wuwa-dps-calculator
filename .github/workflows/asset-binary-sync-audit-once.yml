@@ -1,0 +1,171 @@
+name: Asset binary sync audit once
+
+on:
+  push:
+    branches:
+      - audit/asset-binary-sync-20260817
+
+permissions:
+  contents: read
+
+concurrency:
+  group: asset-binary-sync-audit-once
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Download and verify Encore images in ephemeral workspace
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify npm registry signatures and provenance
+        run: npm audit signatures
+
+      - name: Run asset synchronization attack tests
+        run: npm run assets:test-security
+
+      - name: Synchronize live Release image bytes only inside this runner
+        run: npm run assets:sync
+
+      - name: Independently verify synchronized manifest and object bytes
+        run: |
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { lstat, readFile, readdir, stat } from 'node:fs/promises';
+          import path from 'node:path';
+
+          const root = path.join(process.cwd(), 'public', 'assets', 'wuwa');
+          const objectsRoot = path.join(root, 'objects');
+          const manifestPath = path.join(root, 'manifest.json');
+          const manifestRaw = await readFile(manifestPath);
+          const manifest = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(manifestRaw));
+
+          if (manifest.schemaVersion !== 2) throw new Error('Unexpected asset manifest schema');
+          if (manifest.source !== 'Encore.moe') throw new Error('Unexpected asset source');
+          if (manifest.sourceApi !== 'https://api-v2.encore.moe/api/en') throw new Error('Unexpected asset API');
+          if (manifest.gameVersion !== 'Release') throw new Error('Unexpected asset dataset');
+          if (manifest.storage?.strategy !== 'sha256-content-addressed') throw new Error('Unexpected asset storage strategy');
+          if (manifest.storage?.root !== '/assets/wuwa/objects') throw new Error('Unexpected asset storage root');
+
+          const allowedMime = new Map([
+            ['image/png', 'png'],
+            ['image/jpeg', 'jpg'],
+            ['image/webp', 'webp'],
+          ]);
+          const denyRole = /(?:^|[._-])(?:ad|ads|advert|advertisement|advertising|sponsor|sponsored|tracking|tracker|pixel|promo|promotion)(?:[._-]|$)/i;
+          const expectedCoverage = new Map([
+            ['characters:list-roleheadicon', 60],
+            ['weapons:list-icon', 120],
+            ['echoes:list-icon', 287],
+          ]);
+          const roleCoverage = new Map();
+          const referencedPaths = new Set();
+          const uniqueHashes = new Set();
+          const formats = new Map();
+          const entityCounts = {};
+          let logicalAssets = 0;
+          let logicalBytes = 0;
+
+          for (const category of ['characters', 'weapons', 'echoes']) {
+            const entities = manifest.entities?.[category];
+            if (!entities || typeof entities !== 'object' || Array.isArray(entities)) {
+              throw new Error(`Missing manifest category ${category}`);
+            }
+            entityCounts[category] = Object.keys(entities).length;
+            for (const [sourceId, entity] of Object.entries(entities)) {
+              if (entity.sourceId !== sourceId) throw new Error(`sourceId mismatch ${category}:${sourceId}`);
+              if (entity.entityKey !== `${category}:${sourceId}`) throw new Error(`entityKey mismatch ${category}:${sourceId}`);
+              for (const [assetKey, asset] of Object.entries(entity.assets ?? {})) {
+                logicalAssets += 1;
+                logicalBytes += asset.bytes;
+                if (denyRole.test(assetKey)) throw new Error(`Denied ad/tracking role reached manifest: ${category}:${assetKey}`);
+                const expectedExt = allowedMime.get(asset.contentType);
+                if (!expectedExt) throw new Error(`Unsupported MIME: ${asset.contentType}`);
+                if (!/^[a-f0-9]{64}$/.test(asset.sha256)) throw new Error(`Malformed SHA for ${category}:${sourceId}:${assetKey}`);
+                const expectedPath = `/assets/wuwa/objects/${asset.sha256}.${expectedExt}`;
+                if (asset.path !== expectedPath) throw new Error(`Object path mismatch for ${category}:${sourceId}:${assetKey}`);
+                if (typeof asset.sourceUrl !== 'string') throw new Error('Missing source URL');
+                const sourceUrl = new URL(asset.sourceUrl);
+                const host = sourceUrl.hostname.toLowerCase();
+                if (sourceUrl.protocol !== 'https:' || sourceUrl.username || sourceUrl.password || sourceUrl.port || sourceUrl.hash || (host !== 'encore.moe' && !host.endsWith('.encore.moe'))) {
+                  throw new Error(`Untrusted source URL in manifest for ${category}:${sourceId}:${assetKey}`);
+                }
+
+                const filePath = path.join(process.cwd(), 'public', asset.path.replace(/^\//, ''));
+                const fileInfo = await lstat(filePath);
+                if (!fileInfo.isFile() || fileInfo.isSymbolicLink()) throw new Error(`Object is not a regular file: ${asset.path}`);
+                if (fileInfo.size !== asset.bytes) throw new Error(`Byte-size mismatch: ${asset.path}`);
+                const bytes = await readFile(filePath);
+                const actualHash = createHash('sha256').update(bytes).digest('hex');
+                if (actualHash !== asset.sha256) throw new Error(`SHA mismatch: ${asset.path}`);
+
+                referencedPaths.add(asset.path);
+                uniqueHashes.add(asset.sha256);
+                formats.set(asset.contentType, (formats.get(asset.contentType) ?? 0) + 1);
+                const role = `${category}:${assetKey}`;
+                roleCoverage.set(role, (roleCoverage.get(role) ?? 0) + 1);
+              }
+            }
+          }
+
+          for (const [role, expected] of expectedCoverage) {
+            const observed = roleCoverage.get(role) ?? 0;
+            if (observed !== expected) throw new Error(`Universal role ${role} coverage changed: ${observed}/${expected}`);
+          }
+
+          const objectNames = await readdir(objectsRoot);
+          const objectFiles = [];
+          let physicalBytes = 0;
+          for (const name of objectNames) {
+            if (!/^[a-f0-9]{64}\.(?:png|jpg|webp)$/.test(name)) throw new Error(`Unexpected object filename: ${name}`);
+            const filePath = path.join(objectsRoot, name);
+            const info = await lstat(filePath);
+            if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Unexpected non-file object: ${name}`);
+            physicalBytes += info.size;
+            objectFiles.push(`/assets/wuwa/objects/${name}`);
+          }
+          const objectPathSet = new Set(objectFiles);
+          for (const referenced of referencedPaths) {
+            if (!objectPathSet.has(referenced)) throw new Error(`Referenced object missing from object directory: ${referenced}`);
+          }
+          for (const objectPath of objectPathSet) {
+            if (!referencedPaths.has(objectPath)) throw new Error(`Unreferenced object remained after successful sync: ${objectPath}`);
+          }
+          if (objectFiles.length !== uniqueHashes.size) throw new Error('Unique object/hash count mismatch');
+
+          const manifestInfo = await stat(manifestPath);
+          const summary = {
+            entityCounts,
+            logicalAssets,
+            uniqueObjects: objectFiles.length,
+            deduplicatedAssociations: logicalAssets - objectFiles.length,
+            logicalBytes,
+            physicalBytes,
+            manifestBytes: manifestInfo.size,
+            formatAssociations: Object.fromEntries([...formats.entries()].sort()),
+            universalRoleCoverage: Object.fromEntries([...expectedCoverage.keys()].map((key) => [key, roleCoverage.get(key) ?? 0])),
+          };
+          console.log(`ASSET_BINARY_AUDIT=${JSON.stringify(summary)}`);
+          NODE
+
+      - name: Confirm audit workflow cannot persist downloaded assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$(git status --porcelain -- public/assets/wuwa)"
+          echo 'Downloaded assets exist only as uncommitted runner workspace changes; workflow has contents:read and checkout credentials are not persisted.'
