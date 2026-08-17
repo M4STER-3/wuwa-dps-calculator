@@ -10,8 +10,8 @@
 
 .imageFrame {
   position: relative;
-  width: min(100vw, 1672px);
-  aspect-ratio: 1672 / 941;
+  width: min(100vw, 3840px);
+  aspect-ratio: 16 / 9;
   flex: none;
 }
 
@@ -19,10 +19,10 @@
   object-fit: contain;
 }
 
-@media (max-aspect-ratio: 1672 / 941) {
+@media (max-aspect-ratio: 16 / 9) {
   .imageFrame {
     width: auto;
-    height: min(100vh, 941px);
+    height: min(100vh, 2160px);
   }
 }
 
