@@ -1,4 +1,4 @@
-import { lstat, mkdir, realpath } from "node:fs/promises";
+import { lstat, mkdir, readdir, realpath } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { spawn } from "node:child_process";
@@ -8,6 +8,7 @@ const REPO_ROOT = path.resolve(process.cwd());
 const PUBLIC_ROOT = path.join(REPO_ROOT, "public");
 const OUTPUT_ROOT = path.join(PUBLIC_ROOT, "assets", "wuwa");
 const OBJECTS_ROOT = path.join(OUTPUT_ROOT, "objects");
+const MANIFEST_PATH = path.join(OUTPUT_ROOT, "manifest.json");
 const SYNC_SCRIPT = fileURLToPath(new URL("./sync-wuwa-assets.mjs", import.meta.url));
 const ALLOWED_ARGS = new Set(["--dry-run", "--force"]);
 
@@ -23,6 +24,17 @@ async function assertRegularFile(filePath, label) {
   const stats = await lstat(filePath);
   if (stats.isSymbolicLink()) throw new Error(`${label} must not be a symbolic link`);
   if (!stats.isFile()) throw new Error(`${label} must be a regular file`);
+}
+
+async function assertRegularFileIfPresent(filePath, label) {
+  try {
+    await assertRegularFile(filePath, label);
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
 }
 
 async function assertNoSymlinkComponents(targetPath, trustedRoot) {
@@ -61,11 +73,25 @@ async function assertRegularDirectoryIfPresent(directoryPath) {
   }
 }
 
+async function assertObjectStoreEntriesSafe() {
+  const entries = await readdir(OBJECTS_ROOT, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isSymbolicLink()) {
+      throw new Error(`Symbolic links are forbidden in the asset object store: ${entry.name}`);
+    }
+    if (!entry.isFile()) {
+      throw new Error(`Unexpected non-file entry in the asset object store: ${entry.name}`);
+    }
+  }
+}
+
 async function prepareSafeOutputTree() {
   await assertRegularFile(SYNC_SCRIPT, "Asset synchronizer");
   await assertNoSymlinkComponents(PUBLIC_ROOT, REPO_ROOT);
   await mkdir(OBJECTS_ROOT, { recursive: true, mode: 0o755 });
   await assertNoSymlinkComponents(OBJECTS_ROOT, REPO_ROOT);
+  await assertRegularFileIfPresent(MANIFEST_PATH, "Asset manifest");
+  await assertObjectStoreEntriesSafe();
 
   const realRepo = await realpath(REPO_ROOT);
   const realOutput = await realpath(OUTPUT_ROOT);
