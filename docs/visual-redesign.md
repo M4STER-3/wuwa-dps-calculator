@@ -1,6 +1,6 @@
 # WUWA LAB visual redesign
 
-Status: **Step 3 / 20 — typography system defined**
+Status: **Step 4 / 20 — shared UI primitives defined**
 
 This document is the visual source of truth for the WUWA LAB redesign. The redesign progress is tracked separately from the calculator's functional progress: it starts at 0% and reaches 100% only when all 20 steps below are complete.
 
@@ -195,14 +195,44 @@ Step 3 exposes opt-in classes including:
 
 These classes intentionally do **not** impose redesign colours or surfaces. Step 4 composes them with the new visual tokens inside reusable components.
 
-## 8. Twenty-step redesign roadmap
+## 8. Shared UI primitive contract
+
+Step 4 introduces typed React primitives in `src/components/ui/wuwa-ui.tsx` and their shared styles in `src/app/ui-primitives.css`. Their detailed API and accessibility rules are documented in `docs/ui-primitives.md`.
+
+The initial shared set includes:
+
+- paper / ink panels;
+- primary, secondary, ghost and destructive buttons;
+- compact semantic badges;
+- tablist / tab presentation;
+- labelled fields plus native input and select wrappers;
+- dense numeric stat rows;
+- warm-neutral dividers;
+- keyboard-accessible supplementary tooltips;
+- reusable editorial section headers.
+
+### Primitive rules
+
+- primitives consume `--wuwa-*` tokens instead of legacy cyan variables;
+- primitive typography uses the Step 3 roles rather than page-local font sizes;
+- buttons default to `type="button"` to avoid accidental form submission;
+- input/select visual sizing uses `controlSize` so native HTML `size` remains available;
+- badges remain compact and rectangular rather than becoming large pills;
+- semantic state colours supplement text and never carry meaning alone;
+- tooltips contain supplementary text only and never critical validation;
+- reduced-motion preference removes primitive transitions;
+- no primitive contains game, persistence, remote-data or combat logic.
+
+The primitives remain opt-in in Step 4. Existing `.lab-*` pages are not globally recoloured yet. Step 5 is the first controlled migration of the shared site shell.
+
+## 9. Twenty-step redesign roadmap
 
 Each completed step represents **5% of the visual redesign**.
 
 - [x] **01 — Lock art direction.** Establish the reference language, non-goals and product principles in this document.
 - [x] **02 — Design tokens.** Define colour, surface, border, radius, shadow and spacing tokens.
 - [x] **03 — Typography system.** Define heading, body, stat, label and numeric hierarchy.
-- [ ] **04 — Shared UI primitives.** Build panels, cards, buttons, tabs, fields, badges, stat rows, dividers and tooltips.
+- [x] **04 — Shared UI primitives.** Build panels, cards, buttons, tabs, fields, badges, stat rows, dividers and tooltips.
 - [ ] **05 — Global shell.** Rebuild navigation, page frame and footer in the new language. **Checkpoint.**
 - [ ] **06 — Background / texture system.** Implement restrained paper, grain and decorative treatment with accessibility/performance constraints.
 - [ ] **07 — Illustrated card system.** Create reusable image-led cards for Resonators, weapons and Echoes.
@@ -220,11 +250,11 @@ Each completed step represents **5% of the visual redesign**.
 - [ ] **19 — Game Data redesign.** Build the unified illustrated catalogue for Resonators, weapons, Echoes and Sonata.
 - [ ] **20 — Final visual QA.** Desktop/tablet/mobile, accessibility, loading/error states, image performance, consistency and production build verification.
 
-## 9. Checkpoint rule
+## 10. Checkpoint rule
 
 Steps 5, 9, 13, 16 and 18 are explicit visual checkpoints. At those points, the next block should not be rushed if the direction is visibly wrong. Fixing the shared language at a checkpoint is preferred over carrying a weak pattern into later pages.
 
-## 10. Architecture boundary during the redesign
+## 11. Architecture boundary during the redesign
 
 The redesign is presentation work unless a step explicitly requires a safe UI projection. It must not silently change combat semantics.
 
@@ -237,4 +267,4 @@ In particular:
 
 ---
 
-**Visual redesign progress after Step 3: 15%.**
+**Visual redesign progress after Step 4: 20%.**
