@@ -1,0 +1,52 @@
+.navigation {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+}
+
+.link {
+  position: absolute;
+  left: 2.864583%;
+  width: 12.239583%;
+  pointer-events: auto;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.link:nth-child(1) {
+  top: 25.787037%;
+  height: 6.712963%;
+}
+
+.link:nth-child(2) {
+  top: 34.12037%;
+  height: 6.25%;
+}
+
+.link:nth-child(3) {
+  top: 42.12963%;
+  height: 6.435185%;
+}
+
+.link:nth-child(4) {
+  top: 50.277778%;
+  height: 6.388889%;
+}
+
+.link:nth-child(5) {
+  top: 58.472222%;
+  height: 6.25%;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
