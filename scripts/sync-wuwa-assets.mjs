@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { access, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
@@ -7,6 +7,7 @@ const API_ORIGIN = "https://api-v2.encore.moe";
 const API_BASE = `${API_ORIGIN}/api/en`;
 const GAME_VERSION = "Release";
 const OUTPUT_ROOT = path.resolve("public/assets/wuwa");
+const OBJECTS_ROOT = path.join(OUTPUT_ROOT, "objects");
 const MANIFEST_PATH = path.join(OUTPUT_ROOT, "manifest.json");
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -45,6 +46,10 @@ function safeSegment(value) {
     .replace(/[^a-zA-Z0-9._-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .toLowerCase() || "asset";
+}
+
+function sha256(buffer) {
+  return createHash("sha256").update(buffer).digest("hex");
 }
 
 function parseTrustedUrl(rawUrl, { api = false } = {}) {
@@ -179,7 +184,7 @@ async function trustedFetch(rawUrl, { accept, api = false, maxBytes }) {
   const url = parseTrustedUrl(rawUrl, { api });
   const response = await fetch(url, {
     method: "GET",
-    headers: { Accept: accept, "User-Agent": "wuwa-dps-calculator-asset-sync/1" },
+    headers: { Accept: accept, "User-Agent": "wuwa-dps-calculator-asset-sync/2" },
     redirect: "error",
     cache: "no-store",
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
@@ -259,13 +264,33 @@ function manifestAssetKey(fieldPath) {
   return safeSegment(fieldPath.replace(/^(?:list|detail)\./, "").replaceAll(".", "-"));
 }
 
-function resolveOutputPath(category, sourceId, filename) {
-  const outputPath = path.resolve(OUTPUT_ROOT, safeSegment(category), safeSegment(sourceId), safeSegment(filename));
-  const relative = path.relative(OUTPUT_ROOT, outputPath);
+function resolveObjectPath(hash, extension) {
+  if (!/^[a-f0-9]{64}$/.test(hash)) throw new Error("Invalid SHA-256 object key");
+  if (![...ALLOWED_IMAGE_TYPES.values()].includes(extension)) throw new Error("Invalid object extension");
+
+  const outputPath = path.resolve(OBJECTS_ROOT, `${hash}.${extension}`);
+  const relative = path.relative(OBJECTS_ROOT, outputPath);
   if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) {
-    throw new Error("Resolved output path escaped the asset root");
+    throw new Error("Resolved object path escaped the object store");
   }
   return outputPath;
+}
+
+function resolveManifestPath(assetPath) {
+  if (typeof assetPath !== "string" || !assetPath.startsWith("/assets/wuwa/")) return null;
+  const absolute = path.resolve("public", assetPath.slice(1));
+  const relative = path.relative(OUTPUT_ROOT, absolute);
+  if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) return null;
+  return absolute;
+}
+
+function toPublicPath(outputPath) {
+  const publicRoot = path.resolve("public");
+  const relative = path.relative(publicRoot, outputPath);
+  if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) {
+    throw new Error("Asset path escaped public root");
+  }
+  return `/${relative.split(path.sep).join("/")}`;
 }
 
 async function writeFileAtomic(filePath, buffer) {
@@ -278,6 +303,84 @@ async function writeFileAtomic(filePath, buffer) {
     await unlink(tempPath).catch(() => {});
     throw error;
   }
+}
+
+async function verifyObjectFile(filePath, expectedHash) {
+  const raw = await readFile(filePath);
+  if (raw.length === 0 || raw.length > MAX_IMAGE_BYTES) {
+    throw new Error(`Existing object has invalid size: ${filePath}`);
+  }
+  if (sha256(raw) !== expectedHash) {
+    throw new Error(`Existing object hash mismatch: ${filePath}`);
+  }
+}
+
+function buildPreviousUrlIndex(previousManifest) {
+  const index = new Map();
+  if (previousManifest?.schemaVersion !== 2) return index;
+
+  for (const category of Object.values(previousManifest.entities ?? {})) {
+    for (const entity of Object.values(category ?? {})) {
+      for (const asset of Object.values(entity?.assets ?? {})) {
+        if (
+          asset &&
+          typeof asset.sourceUrl === "string" &&
+          typeof asset.path === "string" &&
+          typeof asset.sha256 === "string" &&
+          typeof asset.contentType === "string" &&
+          typeof asset.bytes === "number"
+        ) {
+          index.set(asset.sourceUrl, asset);
+        }
+      }
+    }
+  }
+  return index;
+}
+
+async function reusableAsset(asset) {
+  if (!asset?.path || !asset?.sha256) return false;
+  const filePath = resolveManifestPath(asset.path);
+  if (!filePath || !(await fileExists(filePath))) return false;
+  await verifyObjectFile(filePath, asset.sha256);
+  return true;
+}
+
+function collectReferencedObjectPaths(manifest) {
+  const referenced = new Set();
+  for (const category of Object.values(manifest.entities ?? {})) {
+    for (const entity of Object.values(category ?? {})) {
+      for (const asset of Object.values(entity?.assets ?? {})) {
+        if (typeof asset?.path === "string" && asset.path.startsWith("/assets/wuwa/objects/")) {
+          referenced.add(asset.path);
+        }
+      }
+    }
+  }
+  return referenced;
+}
+
+async function pruneUnreferencedObjects(manifest) {
+  const referenced = collectReferencedObjectPaths(manifest);
+  let entries;
+  try {
+    entries = await readdir(OBJECTS_ROOT, { withFileTypes: true });
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return 0;
+    throw error;
+  }
+
+  let pruned = 0;
+  for (const entry of entries) {
+    if (!entry.isFile() || !/^[a-f0-9]{64}\.(?:png|jpg|webp)$/.test(entry.name)) continue;
+    const filePath = path.resolve(OBJECTS_ROOT, entry.name);
+    const publicPath = toPublicPath(filePath);
+    if (!referenced.has(publicPath)) {
+      await unlink(filePath);
+      pruned++;
+    }
+  }
+  return pruned;
 }
 
 async function collectEntityImages(entity, category, config, sourceId) {
@@ -296,13 +399,20 @@ async function collectEntityImages(entity, category, config, sourceId) {
 
 async function main() {
   const previousManifest = await loadExistingManifest();
+  const previousUrlIndex = buildPreviousUrlIndex(previousManifest);
+  const currentUrlIndex = new Map();
+
   const manifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     source: "Encore.moe",
     sourceApi: API_BASE,
     gameVersion: GAME_VERSION,
     generatedAt: new Date().toISOString(),
     categories: Object.keys(SOURCES),
+    storage: {
+      strategy: "sha256-content-addressed",
+      root: "/assets/wuwa/objects",
+    },
     security: {
       allowedFormats: [...ALLOWED_IMAGE_TYPES.keys()],
       maxImageBytes: MAX_IMAGE_BYTES,
@@ -314,6 +424,7 @@ async function main() {
   let discovered = 0;
   let downloaded = 0;
   let reused = 0;
+  let deduplicated = 0;
   let failed = 0;
 
   for (const [category, config] of Object.entries(SOURCES)) {
@@ -337,42 +448,55 @@ async function main() {
       for (const [fieldPath, imageUrl] of imageUrls) {
         discovered++;
         const assetKey = manifestAssetKey(fieldPath);
-        const previous = previousManifest?.entities?.[category]?.[sourceId]?.assets?.[assetKey];
 
-        if (!force && previous?.sourceUrl === imageUrl && previous?.path) {
-          const previousPath = path.resolve("public", previous.path.replace(/^\//, ""));
-          const relativeToPublic = path.relative(path.resolve("public"), previousPath);
-          if (!relativeToPublic.startsWith("..") && !path.isAbsolute(relativeToPublic) && (await fileExists(previousPath))) {
-            entry.assets[assetKey] = previous;
+        if (!force) {
+          const sameUrlAsset = currentUrlIndex.get(imageUrl) ?? previousUrlIndex.get(imageUrl);
+          if (sameUrlAsset && (currentUrlIndex.has(imageUrl) || (await reusableAsset(sameUrlAsset)))) {
+            entry.assets[assetKey] = { ...sameUrlAsset, sourceUrl: imageUrl };
+            currentUrlIndex.set(imageUrl, entry.assets[assetKey]);
             reused++;
             continue;
           }
         }
 
         if (dryRun) {
-          entry.assets[assetKey] = { sourceUrl: imageUrl, path: null, status: "would-download" };
+          entry.assets[assetKey] = { sourceUrl: imageUrl, path: null, status: "would-download-or-deduplicate" };
           console.log(`[dry-run] ${entityKey} ${assetKey}`);
           continue;
         }
 
         try {
           const { buffer, extension, contentType } = await downloadImage(imageUrl);
-          const outputPath = resolveOutputPath(category, sourceId, `${assetKey}.${extension}`);
-          const relativePath = `/${path.relative(path.resolve("public"), outputPath).split(path.sep).join("/")}`;
-          await writeFileAtomic(outputPath, buffer);
+          const contentHash = sha256(buffer);
+          const outputPath = resolveObjectPath(contentHash, extension);
+          const relativePath = toPublicPath(outputPath);
 
-          entry.assets[assetKey] = {
+          if (await fileExists(outputPath)) {
+            await verifyObjectFile(outputPath, contentHash);
+            deduplicated++;
+            console.log(`[deduplicated] ${entityKey} ${assetKey}`);
+          } else {
+            await writeFileAtomic(outputPath, buffer);
+            downloaded++;
+            console.log(`[saved] ${entityKey} ${assetKey}`);
+          }
+
+          const record = {
             path: relativePath,
             sourceUrl: imageUrl,
             contentType,
             bytes: buffer.length,
-            sha256: createHash("sha256").update(buffer).digest("hex"),
+            sha256: contentHash,
           };
-          downloaded++;
-          console.log(`[saved] ${entityKey} ${assetKey}`);
+          entry.assets[assetKey] = record;
+          currentUrlIndex.set(imageUrl, record);
         } catch (error) {
           failed++;
-          entry.assets[assetKey] = { sourceUrl: imageUrl, path: null, error: error instanceof Error ? error.message : String(error) };
+          entry.assets[assetKey] = {
+            sourceUrl: imageUrl,
+            path: null,
+            error: error instanceof Error ? error.message : String(error),
+          };
           console.warn(`[failed] ${entityKey} ${assetKey}: ${entry.assets[assetKey].error}`);
         }
       }
@@ -381,12 +505,18 @@ async function main() {
     }
   }
 
-  if (!dryRun) {
+  let pruned = 0;
+  if (!dryRun && failed === 0) {
     await mkdir(OUTPUT_ROOT, { recursive: true });
     await writeFileAtomic(MANIFEST_PATH, Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, "utf8"));
+    pruned = await pruneUnreferencedObjects(manifest);
+  } else if (!dryRun && failed > 0) {
+    console.warn("Manifest not replaced because at least one asset failed; the last successful manifest remains authoritative.");
   }
 
-  console.log(`\nDiscovered: ${discovered}; downloaded: ${downloaded}; reused: ${reused}; failed: ${failed}; dry-run: ${dryRun}`);
+  console.log(
+    `\nDiscovered: ${discovered}; downloaded: ${downloaded}; reused: ${reused}; deduplicated: ${deduplicated}; pruned: ${pruned}; failed: ${failed}; dry-run: ${dryRun}`,
+  );
   if (failed > 0) process.exitCode = 1;
 }
 
