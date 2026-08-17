@@ -1,0 +1,4 @@
+.wuwa-site-shell :focus-visible {
+  outline: 2px solid var(--wuwa-focus);
+  outline-offset: 3px;
+}
