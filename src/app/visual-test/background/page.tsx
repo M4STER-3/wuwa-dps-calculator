@@ -2,7 +2,7 @@ import Image from "next/image";
 
 import styles from "./background-preview.module.css";
 
-const BACKGROUND_SRC = "/assets/ui/wuwa-lab-global-background.png";
+const BACKGROUND_SRC = "/assets/ui/wuwa-lab-global-background-4k.png";
 
 export default function BackgroundVisualTestPage() {
   return (
