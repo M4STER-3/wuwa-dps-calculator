@@ -25,6 +25,12 @@ export type {
   EquippedEchoV1,
   ResolvedEchoLoadoutV1,
 } from "./echo-loadout";
+export { resolveExactBuildStatSheetV1 } from "./build-resolver";
+export type {
+  ExactBuildStatInputV1,
+  ExactBuildStatResolutionV1,
+  UnresolvedPermanentSourceV1,
+} from "./build-resolver";
 export type {
   CharacterCatalogEntry,
   EchoCatalogEntry,
