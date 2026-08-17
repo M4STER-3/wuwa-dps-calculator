@@ -85,6 +85,13 @@ function characterDetail() {
           },
         ],
       },
+      {
+        SkillId: 102,
+        SkillName: "",
+        SkillType: "Inherent Skill",
+        SkillDescribe: "A source skill can contain reviewed descriptive content without a display name.",
+        SkillAttributes: [],
+      },
     ],
     ResonantChain: Array.from({ length: 6 }, (_, index) => ({
       GroupIndex: index + 1,
