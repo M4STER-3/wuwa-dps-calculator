@@ -55,12 +55,19 @@ Missing remote entities produce warnings/reviewable diffs; they are never automa
 
 ## Assets
 
-The existing asset synchronizer already constrains source hosts, response size, MIME type, binary signatures, paths and content hashes. Before unattended synchronization is enabled, it should additionally receive:
+The existing asset synchronizer constrains source hosts, response size, MIME type, binary signatures, paths and content hashes. Normal npm asset-sync commands now pass through a safety wrapper that:
+
+- accepts only the reviewed `--dry-run` and `--force` flags;
+- verifies that the synchronizer itself is a regular file rather than a symbolic link;
+- creates the output tree without using a shell;
+- rejects symbolic links in the repository-to-output directory chain;
+- resolves the final output directory and verifies that it still lives inside the repository before launching the network synchronizer.
+
+Before unattended synchronization is enabled, it should additionally receive:
 
 - reviewed allowlists for accepted image roles/field paths instead of relying only on broad image-name detection;
 - rejection of advertising/tracking/promotional fields even when hosted on an otherwise accepted origin;
-- symlink-aware filesystem containment checks;
-- explicit tests for malformed manifests, path traversal and hostile payload shapes.
+- explicit tests for malformed manifests, path traversal, symbolic-link edge cases and hostile payload shapes.
 
 Assets remain content-addressed by SHA-256 and are resolved through a manifest rather than embedding remote URLs in runtime game data.
 
@@ -68,7 +75,9 @@ Assets remain content-addressed by SHA-256 and are resolved through a manifest r
 
 Security CI runs with read-only repository permissions by default. Third-party GitHub Actions are pinned to full commit SHAs. Checkout does not persist repository credentials.
 
-Dependency installation in validation CI uses the lockfile and disables lifecycle scripts. Production dependencies are audited for high-severity advisories, and pull requests receive dependency review.
+Dependency installation in validation CI uses the lockfile and disables lifecycle scripts. CI also verifies npm registry signatures/provenance, runs the full lint/typecheck/test/build chain, and audits production dependencies for high-severity advisories.
+
+Pull requests use GitHub Dependency Review when the repository exposes the dependency-graph comparison API. If that GitHub capability is unavailable, CI emits an explicit warning instead of pretending the review ran.
 
 Future automated Encore imports must run in a separate job/workflow with no deployment secrets and no write permission to `main`. Their output should become a reviewable pull request only after validation.
 
