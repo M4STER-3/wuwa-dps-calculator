@@ -150,16 +150,16 @@ jobs:
           This pull request contains only the locally materialized WuWa asset tree generated from Encore.moe Release data.
 
           Before this branch was pushed, the workflow:
-          - required the promotion branch to match `main` except for its one-shot trigger;
+          - required the promotion branch to match main except for its one-shot trigger;
           - reran the asset policy and hostile-input tests;
-          - re-fetched live image bytes with `--force`;
+          - re-fetched live image bytes with --force;
           - independently re-read every generated object and verified its MIME signature, byte size, SHA-256, content-addressed path, trusted Encore source URL, required semantic roles, deduplication and orphan-free object store;
           - enforced a 5000-object / 256 MiB GitHub promotion ceiling;
-          - rejected changes outside `public/assets/wuwa`.
+          - rejected changes outside public/assets/wuwa.
 
           Source workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
 
-          The promotion never writes directly to `main`; normal PR validation still runs before merge.
+          The promotion never writes directly to main; normal PR validation still runs before merge.
           EOF
 
           gh pr create \
