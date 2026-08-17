@@ -1,6 +1,6 @@
 # WUWA LAB visual redesign
 
-Status: **Step 7 / 20 — illustrated card system defined**
+Status: **Step 8 / 20 — browser-safe asset projection defined**
 
 This document is the visual source of truth for the WUWA LAB redesign. Visual-redesign progress is tracked separately from calculator functionality: it starts at 0% and reaches 100% only after all 20 visual steps are complete.
 
@@ -86,7 +86,7 @@ Illustrated compendium/catalogue with compact filters and detailed information a
 
 ## 5. Image integration boundary
 
-Real game imagery is intentionally **not wired in Steps 1–7**. Browser-safe integration begins at Step 8 after the visual foundations and illustrated-card contract exist.
+Real game imagery is intentionally **not rendered in Steps 1–8**. Browser-safe asset mapping is established in Step 8, and Step 9 is the first real presentation proof.
 
 Image sequence:
 
@@ -99,10 +99,11 @@ Image sequence:
 
 Image rules:
 
-- resolve by stable promoted IDs;
-- use local files from the existing GameAssetRegistry or a derived safe projection;
+- resolve by stable promoted/source IDs;
+- use local files from the verified asset manifest through the browser-safe projection;
 - never infer associations from display names;
 - never expose RAW imported data to the browser;
+- never expose source image URLs to browser feature code;
 - provide deterministic missing-image fallbacks;
 - optimise thumbnail and large-artwork use separately where practical.
 
@@ -203,6 +204,21 @@ The system provides:
 
 Step 7 still has no access to GameAssetRegistry or external URLs. See `docs/illustrated-cards.md`.
 
+### Browser-safe asset projection — Step 8
+
+Step 8 derives a deliberately narrow browser projection from `public/assets/wuwa/manifest.json` instead of exposing the source manifest directly.
+
+The generated V1 projection contains only:
+
+- `characters`, `weapons`, or `echoes` category;
+- exact stable source ID;
+- exact normalized asset role;
+- same-origin content-addressed `/assets/wuwa/objects/<sha>.(png|jpg|webp)` path.
+
+It excludes names, source URLs, source prose, MIME metadata, byte counts, formulas, stats, RAW payloads and combat data. IDs remain values rather than browser object keys. Runtime validation rejects unknown fields, external/traversal paths, duplicates and count mismatches. Future image resolution uses exact IDs and explicit roles only, never fuzzy/display-name matching.
+
+The projection is regenerated before development and all production/Cloudflare build or deployment commands, and is exposed through `/api/wuwa/ui-assets`. Step 8 still renders no real artwork; Step 9 is the first visual proof. See `docs/ui-asset-projection.md`.
+
 ## 7. Twenty-step redesign roadmap
 
 Each completed step represents **5%** of the visual redesign.
@@ -214,7 +230,7 @@ Each completed step represents **5%** of the visual redesign.
 - [x] **05 — Global shell.** Rebuild navigation, page frame and footer. **Checkpoint passed.**
 - [x] **06 — Background / texture system.** Implement restrained paper, grain and decorative treatment with accessibility/performance constraints.
 - [x] **07 — Illustrated card system.** Create reusable image-led cards for Resonators, weapons and Echoes with the less-boxed editorial shape language.
-- [ ] **08 — Safe UI asset projection.** Expose only local stable-ID image mappings required by browser UI.
+- [x] **08 — Safe UI asset projection.** Expose only local stable-ID image mappings required by browser UI; no real artwork is rendered yet.
 - [ ] **09 — Asset presentation proof.** Validate crop, fallback, sizing and loading on a small cross-category sample. **Checkpoint.**
 - [ ] **10 — Character Box layout.** Recompose the page before final imagery polish.
 - [ ] **11 — Character imagery.** Integrate real local Resonator portraits/artwork into Character Box.
@@ -248,4 +264,4 @@ In particular:
 
 ---
 
-**Visual redesign progress after Step 7: 35%.**
+**Visual redesign progress after Step 8: 40%.**
