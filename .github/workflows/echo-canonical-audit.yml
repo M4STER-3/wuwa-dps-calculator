@@ -1,0 +1,198 @@
+name: Canonical Echo selection audit
+
+on:
+  push:
+    branches:
+      - "audit/echo-cost-release-20260817"
+    paths:
+      - ".github/echo-canonical.trigger"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Verify current Release canonical Echo filter
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify dependency signatures and importer boundary
+        run: |
+          set -euo pipefail
+          npm audit signatures
+          npm audit --audit-level=high
+          npm run game-data:test-security
+
+      - name: Import current Encore Release into ephemeral runner storage
+        run: npm run game-data:import
+
+      - name: Audit canonical Echo candidate filter
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/echo-canonical-audit
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { readFile, writeFile } from 'node:fs/promises';
+          import path from 'node:path';
+
+          const root = 'data/sources/encore/release';
+          const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
+          const entities = manifest?.resources?.echoes?.entities;
+          if (manifest?.sourceProvider !== 'encore' || manifest?.dataset !== 'Release' || manifest?.language !== 'en') {
+            throw new Error('Unexpected source boundary.');
+          }
+          if (!Array.isArray(entities) || entities.length === 0 || entities.length > 1000) {
+            throw new Error('Unexpected Echo entity collection.');
+          }
+
+          const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+          const textHash = (value) => createHash('sha256').update(value, 'utf8').digest('hex');
+          const counts = () => Object.create(null);
+          const add = (target, key) => { target[key] = (target[key] ?? 0) + 1; };
+          const addCross = (target, outer, inner) => {
+            target[outer] ??= counts();
+            add(target[outer], inner);
+          };
+          const label = (value) => {
+            if (value === undefined) return '<missing>';
+            if (value === null) return '<null>';
+            if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+            if (typeof value !== 'string') return `<${typeof value}>`;
+            if (value.length > 120 || /[\u0000-\u001f\u007f-\u009f]/.test(value)) throw new Error('Unsafe summary label.');
+            return value;
+          };
+
+          const allRandGroups = counts();
+          const canonicalRandGroups = counts();
+          const canonicalIntensity = counts();
+          const canonicalRandToIntensity = counts();
+          const canonicalRarity = counts();
+          const canonicalPhantomType = counts();
+          const canonicalQuality = counts();
+          const excludedByPhantomQuality = counts();
+          const canonicalSourceIds = new Set();
+          const canonicalItemIds = new Set();
+          const canonicalNameHashes = new Map();
+          let canonicalCount = 0;
+          let canonicalMissingItemId = 0;
+          let canonicalDuplicateSourceId = 0;
+          let canonicalDuplicateItemId = 0;
+          let canonicalDuplicateNameCount = 0;
+          let canonicalInvalidRandGroup = 0;
+          let verifiedBytes = 0;
+
+          for (const [index, entity] of entities.entries()) {
+            if (!entity || typeof entity.sourceId !== 'string' || !/^[a-f0-9]{32}\.json$/.test(entity.detailFile ?? '')) {
+              throw new Error(`Invalid Echo manifest metadata at ${index}.`);
+            }
+            if (typeof entity.detailSha256 !== 'string' || !/^[a-f0-9]{64}$/.test(entity.detailSha256)) {
+              throw new Error(`Invalid Echo detail hash at ${index}.`);
+            }
+            const bytes = await readFile(path.join(root, 'echoes', 'details', entity.detailFile));
+            verifiedBytes += bytes.length;
+            if (bytes.length <= 0 || bytes.length > 8 * 1024 * 1024 || sha256(bytes) !== entity.detailSha256) {
+              throw new Error(`Echo ${entity.sourceId} detail integrity failed.`);
+            }
+            const detail = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+            if (String(detail.MonsterId) !== entity.sourceId) throw new Error(`Echo ${entity.sourceId} ID mismatch.`);
+            const rand = label(detail.MainProp?.RandGroupId);
+            add(allRandGroups, rand);
+
+            const isCanonical = detail.PhantomType === 1 && detail.QualityId === 5;
+            if (!isCanonical) {
+              add(excludedByPhantomQuality, `${label(detail.PhantomType)}:${label(detail.QualityId)}`);
+              continue;
+            }
+
+            canonicalCount += 1;
+            if (canonicalSourceIds.has(entity.sourceId)) canonicalDuplicateSourceId += 1;
+            canonicalSourceIds.add(entity.sourceId);
+
+            if (detail.ItemId === undefined || detail.ItemId === null || detail.ItemId === '') {
+              canonicalMissingItemId += 1;
+            } else {
+              const itemId = String(detail.ItemId);
+              if (!/^\d+$/.test(itemId) || itemId.length > 30) throw new Error(`Canonical Echo ${entity.sourceId} has invalid ItemId.`);
+              if (canonicalItemIds.has(itemId)) canonicalDuplicateItemId += 1;
+              canonicalItemIds.add(itemId);
+            }
+
+            if (typeof detail.MonsterName !== 'string' || detail.MonsterName.trim().length === 0 || detail.MonsterName.length > 500) {
+              throw new Error(`Canonical Echo ${entity.sourceId} has invalid MonsterName.`);
+            }
+            const nameHash = textHash(detail.MonsterName.trim());
+            const previousNameCount = canonicalNameHashes.get(nameHash) ?? 0;
+            canonicalNameHashes.set(nameHash, previousNameCount + 1);
+            if (previousNameCount > 0) canonicalDuplicateNameCount += 1;
+
+            if (![501, 502, 503].includes(detail.MainProp?.RandGroupId)) canonicalInvalidRandGroup += 1;
+            add(canonicalRandGroups, rand);
+            add(canonicalIntensity, label(detail.Handbook?.Intensity));
+            addCross(canonicalRandToIntensity, rand, label(detail.Handbook?.Intensity));
+            add(canonicalRarity, label(detail.Rarity));
+            add(canonicalPhantomType, label(detail.PhantomType));
+            add(canonicalQuality, label(detail.QualityId));
+          }
+
+          const sortObject = (value) => Object.fromEntries(
+            Object.entries(value)
+              .sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true }))
+              .map(([key, inner]) => [key, inner && typeof inner === 'object' && !Array.isArray(inner)
+                ? Object.fromEntries(Object.entries(inner).sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true })))
+                : inner]),
+          );
+          const duplicateNameGroups = [...canonicalNameHashes.values()].filter((count) => count > 1);
+          const summary = {
+            rawEchoCount: entities.length,
+            verifiedDetailBytes: verifiedBytes,
+            filter: { PhantomType: 1, QualityId: 5 },
+            canonicalCount,
+            canonicalUniqueSourceIds: canonicalSourceIds.size,
+            canonicalUniqueItemIds: canonicalItemIds.size,
+            canonicalMissingItemId,
+            canonicalDuplicateSourceId,
+            canonicalDuplicateItemId,
+            canonicalDuplicateNameOccurrences: canonicalDuplicateNameCount,
+            canonicalDuplicateNameGroups: duplicateNameGroups.length,
+            canonicalInvalidRandGroup,
+            allRandGroups: sortObject(allRandGroups),
+            canonicalRandGroups: sortObject(canonicalRandGroups),
+            canonicalHandbookIntensity: sortObject(canonicalIntensity),
+            canonicalRandGroupToIntensity: sortObject(canonicalRandToIntensity),
+            canonicalRarity: sortObject(canonicalRarity),
+            canonicalPhantomType: sortObject(canonicalPhantomType),
+            canonicalQualityId: sortObject(canonicalQuality),
+            excludedPhantomTypeQualityId: sortObject(excludedByPhantomQuality),
+          };
+          const serialized = `${JSON.stringify(summary, null, 2)}\n`;
+          if (Buffer.byteLength(serialized) > 256 * 1024) throw new Error('Canonical audit summary too large.');
+          if (/https?:\/\/|sourceUrl|<script|MonsterName|characters"\s*:\s*\[|weapons"\s*:\s*\[|echoes"\s*:\s*\[/i.test(serialized)) {
+            throw new Error('Canonical audit leaked raw data.');
+          }
+          await writeFile('.tmp/echo-canonical-audit/summary.json', serialized, 'utf8');
+          console.log(`WUWA_ECHO_CANONICAL_AUDIT=${JSON.stringify(summary)}`);
+          NODE
+
+      - name: Upload summary only
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: echo-canonical-selection-summary
+          path: .tmp/echo-canonical-audit/summary.json
+          if-no-files-found: error
+          retention-days: 3
