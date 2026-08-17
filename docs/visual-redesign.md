@@ -1,6 +1,6 @@
 # WUWA LAB visual redesign
 
-Status: **Step 2 / 20 — design tokens defined**
+Status: **Step 3 / 20 — typography system defined**
 
 This document is the visual source of truth for the WUWA LAB redesign. The redesign progress is tracked separately from the calculator's functional progress: it starts at 0% and reaches 100% only when all 20 steps below are complete.
 
@@ -146,13 +146,62 @@ The spacing scale is fixed from `4px` through `64px`, with `24px` as the current
 
 New redesign components should consume `--wuwa-*` tokens directly. Existing `--background`, `--panel`, `--accent`, and related legacy variables remain temporary compatibility aliases only and should not be used by new redesign primitives.
 
-## 7. Twenty-step redesign roadmap
+## 7. Typography contract
+
+Step 3 adds `src/app/typography.css` and imports it from the global stylesheet. The typography system is intentionally opt-in until the shared primitives and global shell migrate in Steps 4–5.
+
+### Font roles
+
+- `--wuwa-font-display`: a system serif stack used for editorial hero titles, page titles, section headings and very large DPS/result numbers.
+- `--wuwa-font-ui`: the native system sans-serif stack used for body copy, controls, navigation, labels and dense technical information.
+- `--wuwa-font-data`: a stable sans-serif data stack used for statistics and numeric tables with tabular numerals.
+
+No external font download or hosted font dependency is introduced in Step 3. This keeps rendering deterministic, avoids layout shifts and keeps the redesign independent from third-party font delivery.
+
+### Hierarchy
+
+The system defines dedicated scales for:
+
+- hero identity;
+- page titles;
+- section headings;
+- card titles;
+- body copy;
+- controls;
+- uppercase labels and eyebrows;
+- small/micro metadata;
+- hero DPS/results;
+- large and medium statistics.
+
+Display text uses tighter tracking and restrained line height. Technical UI text uses compact but readable line height. Labels/eyebrows use intentional uppercase tracking rather than oversized font weight.
+
+### Numeric rule
+
+DPS values, statistics and table-oriented data use `tabular-nums` and `lining-nums` through the typography primitives. Large result numbers may use the display serif for visual hierarchy, but values in dense tables and stat rows remain in the data stack for alignment and scanning.
+
+### Utility primitives
+
+Step 3 exposes opt-in classes including:
+
+- `.wuwa-type-hero`;
+- `.wuwa-type-page-title`;
+- `.wuwa-type-section`;
+- `.wuwa-type-card-title`;
+- `.wuwa-type-body`;
+- `.wuwa-type-control`;
+- `.wuwa-type-label` / `.wuwa-type-eyebrow`;
+- `.wuwa-type-stat-hero`, `.wuwa-type-stat-lg`, `.wuwa-type-stat-md`;
+- `.wuwa-type-data`.
+
+These classes intentionally do **not** impose redesign colours or surfaces. Step 4 composes them with the new visual tokens inside reusable components.
+
+## 8. Twenty-step redesign roadmap
 
 Each completed step represents **5% of the visual redesign**.
 
 - [x] **01 — Lock art direction.** Establish the reference language, non-goals and product principles in this document.
 - [x] **02 — Design tokens.** Define colour, surface, border, radius, shadow and spacing tokens.
-- [ ] **03 — Typography system.** Define heading, body, stat, label and numeric hierarchy.
+- [x] **03 — Typography system.** Define heading, body, stat, label and numeric hierarchy.
 - [ ] **04 — Shared UI primitives.** Build panels, cards, buttons, tabs, fields, badges, stat rows, dividers and tooltips.
 - [ ] **05 — Global shell.** Rebuild navigation, page frame and footer in the new language. **Checkpoint.**
 - [ ] **06 — Background / texture system.** Implement restrained paper, grain and decorative treatment with accessibility/performance constraints.
@@ -171,11 +220,11 @@ Each completed step represents **5% of the visual redesign**.
 - [ ] **19 — Game Data redesign.** Build the unified illustrated catalogue for Resonators, weapons, Echoes and Sonata.
 - [ ] **20 — Final visual QA.** Desktop/tablet/mobile, accessibility, loading/error states, image performance, consistency and production build verification.
 
-## 8. Checkpoint rule
+## 9. Checkpoint rule
 
 Steps 5, 9, 13, 16 and 18 are explicit visual checkpoints. At those points, the next block should not be rushed if the direction is visibly wrong. Fixing the shared language at a checkpoint is preferred over carrying a weak pattern into later pages.
 
-## 9. Architecture boundary during the redesign
+## 10. Architecture boundary during the redesign
 
 The redesign is presentation work unless a step explicitly requires a safe UI projection. It must not silently change combat semantics.
 
@@ -188,4 +237,4 @@ In particular:
 
 ---
 
-**Visual redesign progress after Step 2: 10%.**
+**Visual redesign progress after Step 3: 15%.**
