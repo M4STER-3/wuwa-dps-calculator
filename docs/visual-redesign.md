@@ -1,6 +1,6 @@
 # WUWA LAB visual redesign V2
 
-Status: **Step 1 / 15 — global background asset checkpoint in progress**
+Status: **Step 1 / 15 — exact global background asset validated**
 
 The visual redesign is tracked separately from calculator functionality. This V2 roadmap restarts visual progress at **0%** and reaches **100% only after all 15 steps are visually validated**.
 
@@ -51,7 +51,7 @@ A visual step is not considered validated merely because CI is green. If the use
 
 Each completed and visually validated step represents **6.67%** of the V2 visual redesign (the final step closes the remaining rounding difference to 100%).
 
-- [ ] **01 — Exact global background asset.** Add the approved source image unchanged as a local asset and provide a clean full-screen validation route.
+- [x] **01 — Exact global background asset.** Add the approved source image unchanged as a local asset and provide a clean full-screen validation route.
 - [ ] **02 — Responsive background behaviour.** Define desktop/tablet/mobile sizing, anchoring and fallback without distorting the source artwork.
 - [ ] **03 — Interactive left navigation.** Overlay the five real routes on the five image navigation rows: Home, Character Box, Personal DPS, Team DPS, Data.
 - [ ] **04 — Navigation states.** Add hover, active, focus and labels above the immutable background without repainting it.
@@ -79,4 +79,4 @@ The redesign must not silently alter combat semantics.
 
 ---
 
-**V2 visual progress: 0% until Step 1 is visually validated.**
+**V2 visual progress after Step 1: 6.67%.**
