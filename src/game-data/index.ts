@@ -16,12 +16,24 @@ export {
   resolveGameAssetByRole,
 } from "./asset-roles";
 export type { GameAssetSemanticRole } from "./asset-roles";
+export { reviewedEchoStatTableV1 } from "./echo-stats-v1";
+export { resolveEchoLoadoutV1 } from "./echo-loadout";
+export type {
+  EchoLoadoutV1,
+  EchoPermanentStatContributions,
+  EquippedEchoSubstatV1,
+  EquippedEchoV1,
+  ResolvedEchoLoadoutV1,
+} from "./echo-loadout";
 export type {
   CharacterCatalogEntry,
   EchoCatalogEntry,
   EchoCost,
+  EchoMainStatDefinition,
+  EchoStatApplication,
   EchoStatRollDefinition,
   EchoStatTableCatalog,
+  EchoStatTarget,
   ExternalIdMap,
   GameDatabaseManifest,
   GameDatabaseV1,

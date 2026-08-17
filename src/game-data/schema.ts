@@ -113,15 +113,49 @@ export interface SonataSetCatalogEntry extends GameEntityIdentity {
   }[];
 }
 
+export type EchoStatApplication = "flat" | "base-percent" | "percentage-point";
+
+export type EchoStatTarget =
+  | "hp"
+  | "attack"
+  | "defense"
+  | "critRate"
+  | "critDamage"
+  | "energyRegen"
+  | "healingBonus"
+  | `elementalDamageBonus:${Element}`
+  | "damageTypeBonus:basicAttack"
+  | "damageTypeBonus:heavyAttack"
+  | "damageTypeBonus:resonanceSkill"
+  | "damageTypeBonus:resonanceLiberation";
+
+export interface EchoMainStatDefinition {
+  id: string;
+  stat: EchoStatTarget;
+  application: EchoStatApplication;
+  /** Exact known values only. Missing levels remain unsupported. */
+  progression: NumericStatProgression;
+}
+
 export interface EchoStatRollDefinition {
   statId: string;
+  stat: EchoStatTarget;
+  application: EchoStatApplication;
   values: readonly number[];
 }
 
 export interface EchoStatTableCatalog {
-  mainStatsByCost: Readonly<Partial<Record<EchoCost, readonly string[]>>>;
-  mainStatProgression: Readonly<Record<string, NumericStatProgression>>;
+  /** V1 is intentionally limited to the reviewed endgame rarity. */
+  supportedRarity: 5;
+  primaryMainStatsByCost: Readonly<Record<EchoCost, readonly EchoMainStatDefinition[]>>;
+  fixedSecondaryMainStatByCost: Readonly<Record<EchoCost, EchoMainStatDefinition>>;
   substatRolls: readonly EchoStatRollDefinition[];
+  source: {
+    kind: "curated-multi-source";
+    verifiedAt: string;
+    sources: readonly string[];
+    notes?: string;
+  };
 }
 
 export interface GameDatabaseManifest {
