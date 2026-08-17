@@ -40,7 +40,7 @@ Paper-backed information card for equipment summaries and catalogue entries. Opt
 
 ### `feature`
 
-Larger split-layout card for selected Resonator / weapon / Echo presentations. On narrow screens it reflows to a normal stacked card rather than maintaining a cramped side-by-side layout.
+Large layered card for selected Resonator / weapon / Echo presentations. The media and information sheet overlap slightly instead of forming a rigid 50/50 dashboard grid. On narrow screens it reflows to a stacked composition.
 
 ## Components
 
@@ -73,18 +73,24 @@ The card itself must never accept arbitrary source URLs as a data-resolution mec
 
 ## Visual language
 
-The cards follow the locked reference direction:
+The cards follow the locked reference direction while avoiding a rigid dashboard silhouette:
 
 - ink/charcoal media stage;
-- thin warm borders;
-- restrained antique-gold corner framing;
-- minimal radius;
+- thin warm borders rather than heavy framed boxes;
+- clipped/asymmetric corner cuts instead of generic rounded rectangles;
+- partial corner framing rather than a complete rectangle around artwork;
+- a small information sheet that overlaps the lower media edge;
+- feature cards built from layered planes rather than equal rectangular columns;
+- restrained antique-gold rules and marks;
 - paper surfaces for structured data;
 - darker compact gallery mode;
-- selected state expressed by a warm border plus a visible marker;
+- selected state expressed by a warm rule/border plus a visible marker;
+- metadata grouped with a single editorial rule instead of repeated boxed rows;
 - no neon cyan glow;
 - no oversized pill treatment;
 - no animated background or game-like RGB effect.
+
+The intended result is more editorial and slightly irregular while remaining precise enough for a technical calculator. Decorative asymmetry must never make values harder to scan.
 
 ## Metadata
 
@@ -109,8 +115,14 @@ The primitive does not decide which game fields belong there. Feature code owns 
 - title remains text even when imagery becomes available;
 - reduced-motion removes hover translation;
 - higher-contrast mode removes decorative shade/shadow;
-- forced-colours mode removes decorative framing and restores system colours;
+- forced-colours mode removes decorative clipping/framing and restores system colours;
 - media imagery can never be the only source of identity.
+
+## Generated-art boundary
+
+Generated decorative imagery is not required to achieve the target shape language. Geometry, overlap, borders, hierarchy and colour are implemented in CSS/components first.
+
+If custom generated artwork is introduced later, it should be limited to optional brand ornamentation or original non-game decorative motifs. Actual Resonator, weapon and Echo identity images continue to come from the verified local asset pipeline.
 
 ## Architecture boundary
 
