@@ -1,0 +1,173 @@
+name: Promote validated WuWa assets
+
+on:
+  push:
+    branches:
+      - "asset-promotion/**"
+    paths:
+      - ".github/asset-promotion.trigger"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: wuwa-asset-promotion
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Re-fetch, verify, and prepare asset PR
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout promotion branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Confirm trusted promotion branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${GITHUB_REF_NAME}" in
+            asset-promotion/*) ;;
+            *)
+              echo "Refusing asset promotion from unexpected branch ${GITHUB_REF_NAME}" >&2
+              exit 1
+              ;;
+          esac
+          if [ -n "$(git status --porcelain)" ]; then
+            echo 'Checkout must start clean.' >&2
+            git status --short >&2
+            exit 1
+          fi
+
+          git fetch --no-tags --depth=1 origin main
+          unexpected_base="$({ git diff --name-only origin/main...HEAD | grep -vE '^\.github/asset-promotion\.trigger$'; } || true)"
+          if [ -n "${unexpected_base}" ]; then
+            echo 'Promotion branches must start from main with only the one-shot trigger changed:' >&2
+            printf '%s\n' "${unexpected_base}" >&2
+            exit 1
+          fi
+
+      - name: Re-run asset policy and hostile-input tests
+        run: |
+          set -euo pipefail
+          node scripts/test-wuwa-asset-sync-policy.mjs
+          node scripts/test-wuwa-assets-security.mjs
+          node scripts/test-wuwa-asset-verifier.mjs
+
+      - name: Synchronize fresh Release image bytes
+        run: node scripts/run-safe-wuwa-assets.mjs --force
+
+      - name: Independently verify every promoted object
+        run: node scripts/verify-wuwa-assets.mjs
+
+      - name: Bound GitHub promotion footprint
+        shell: bash
+        run: |
+          set -euo pipefail
+          object_count="$(find public/assets/wuwa/objects -maxdepth 1 -type f -printf '.' | wc -c)"
+          physical_bytes="$(du -sb public/assets/wuwa/objects | cut -f1)"
+          if [ "${object_count}" -gt 5000 ]; then
+            echo "Refusing to promote ${object_count} physical objects; cap is 5000." >&2
+            exit 1
+          fi
+          if [ "${physical_bytes}" -gt 268435456 ]; then
+            echo "Refusing to promote ${physical_bytes} physical bytes; cap is 256 MiB." >&2
+            exit 1
+          fi
+          echo "Promotion footprint: ${object_count} objects, ${physical_bytes} bytes."
+
+      - name: Restrict generated changes to the asset tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          unexpected="$({ git status --porcelain=v1 | awk '{print $2}' | grep -vE '^public/assets/wuwa/' | grep -vE '^\.github/asset-promotion\.trigger$'; } || true)"
+          if [ -n "${unexpected}" ]; then
+            echo 'Promotion changed files outside the reviewed asset tree:' >&2
+            printf '%s\n' "${unexpected}" >&2
+            exit 1
+          fi
+
+      - name: Remove one-shot trigger and prepare commit
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/asset-promotion.trigger
+          git add -A -- public/assets/wuwa .github/asset-promotion.trigger
+
+          staged="$({ git diff --cached --name-only; } || true)"
+          unexpected="$({ printf '%s\n' "${staged}" | grep -vE '^public/assets/wuwa/' | grep -vE '^\.github/asset-promotion\.trigger$'; } || true)"
+          if [ -n "${unexpected}" ]; then
+            echo 'Refusing to stage files outside the reviewed promotion boundary:' >&2
+            printf '%s\n' "${unexpected}" >&2
+            exit 1
+          fi
+
+          if git diff --quiet origin/main -- public/assets/wuwa; then
+            echo 'asset_changes=false' >> "${GITHUB_OUTPUT}"
+          else
+            echo 'asset_changes=true' >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Commit verified assets to promotion branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'promote verified WuWa assets'
+          gh auth setup-git
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Open asset promotion pull request
+        if: steps.prepare.outputs.asset_changes == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh pr view "${GITHUB_REF_NAME}" --json number --jq '.number' >/dev/null 2>&1; then
+            echo 'Promotion pull request already exists.'
+            exit 0
+          fi
+
+          cat >"${RUNNER_TEMP}/asset-promotion-pr.md" <<EOF
+          ## Automated validated asset promotion
+
+          This pull request contains only the locally materialized WuWa asset tree generated from Encore.moe Release data.
+
+          Before this branch was pushed, the workflow:
+          - required the promotion branch to match main except for its one-shot trigger;
+          - reran the asset policy and hostile-input tests;
+          - re-fetched live image bytes with --force;
+          - independently re-read every generated object and verified its MIME signature, byte size, SHA-256, content-addressed path, trusted Encore source URL, required semantic roles, deduplication and orphan-free object store;
+          - enforced a 5000-object / 256 MiB GitHub promotion ceiling;
+          - rejected changes outside public/assets/wuwa.
+
+          Source workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          The promotion never writes directly to main; normal PR validation still runs before merge.
+          EOF
+
+          gh pr create \
+            --base main \
+            --head "${GITHUB_REF_NAME}" \
+            --title 'promote verified WuWa assets' \
+            --body-file "${RUNNER_TEMP}/asset-promotion-pr.md"
+
+      - name: Report no asset changes
+        if: steps.prepare.outputs.asset_changes != 'true'
+        run: echo 'Live verification succeeded and the promoted asset tree is already identical to main.'
