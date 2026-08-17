@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
-const SYNC_SCRIPT = path.join(REPO_ROOT, "scripts", "sync-wuwa-assets.mjs");
+const SYNC_SCRIPT = path.join(REPO_ROOT, "scripts", "sync-wuwa-assets-v2.mjs");
 const SAFE_WRAPPER = path.join(REPO_ROOT, "scripts", "run-safe-wuwa-assets.mjs");
 const MOCK_FETCH = path.join(REPO_ROOT, "scripts", "test-fixtures", "mock-encore-fetch.mjs");
 
@@ -52,6 +52,12 @@ function mockedSyncArgs(extra = []) {
   return ["--import", pathToFileURL(MOCK_FETCH).href, SYNC_SCRIPT, ...extra];
 }
 
+async function readManifest(cwd) {
+  return JSON.parse(
+    await readFile(path.join(cwd, "public", "assets", "wuwa", "manifest.json"), "utf8"),
+  );
+}
+
 async function testSafeSync() {
   await withTempDirectory(async (cwd) => {
     const result = await runNode(mockedSyncArgs(), {
@@ -61,13 +67,14 @@ async function testSafeSync() {
     assert.equal(result.signal, null);
     assert.equal(result.code, 0, `${result.stdout}\n${result.stderr}`);
 
-    const manifestPath = path.join(cwd, "public", "assets", "wuwa", "manifest.json");
-    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    const manifest = await readManifest(cwd);
     assert.equal(manifest.schemaVersion, 2);
     assert.equal(manifest.gameVersion, "Release");
     assert.equal(manifest.security.maxImageBytes, 8 * 1024 * 1024);
     assert.equal(manifest.security.maxRemoteBytesPerRun, 1024 * 1024 * 1024);
     assert.equal(manifest.security.maxAssetsPerRun, 10_000);
+    assert.equal(manifest.security.maxImagesPerEntity, 96);
+    assert.equal(manifest.security.optionalMissingHttp404, 0);
 
     const characterAssets = manifest.entities.characters["1"].assets;
     assert.ok(characterAssets["list-roleheadicon"]);
@@ -91,6 +98,36 @@ async function testSafeSync() {
     const objectFiles = await readdir(path.join(cwd, "public", "assets", "wuwa", "objects"));
     assert.equal(objectFiles.length, 1);
     assert.match(objectFiles[0], /^[a-f0-9]{64}\.png$/);
+  });
+}
+
+async function testOptionalMissingAssetIsOmittedButUniversalCoverageSurvives() {
+  await withTempDirectory(async (cwd) => {
+    const result = await runNode(mockedSyncArgs(), {
+      cwd,
+      env: { MOCK_ENCORE_CASE: "optional-404" },
+    });
+    assert.equal(result.signal, null);
+    assert.equal(result.code, 0, `${result.stdout}\n${result.stderr}`);
+    assert.match(`${result.stdout}\n${result.stderr}`, /optional-missing.*detail-roleportrait.*404/i);
+
+    const manifest = await readManifest(cwd);
+    const characterAssets = manifest.entities.characters["1"].assets;
+    assert.ok(characterAssets["list-roleheadicon"], "universal character head icon remains mandatory");
+    assert.equal(characterAssets["detail-roleportrait"], undefined);
+    assert.equal(manifest.security.optionalMissingHttp404, 1);
+  });
+}
+
+async function testRequiredMissingAssetFailsClosed() {
+  await withTempDirectory(async (cwd) => {
+    const result = await runNode(mockedSyncArgs(), {
+      cwd,
+      env: { MOCK_ENCORE_CASE: "required-404" },
+    });
+    assert.equal(result.code, 1);
+    assert.match(`${result.stdout}\n${result.stderr}`, /list-roleheadicon failed.*HTTP 404/i);
+    assert.equal(await exists(path.join(cwd, "public", "assets", "wuwa", "manifest.json")), false);
   });
 }
 
@@ -157,6 +194,8 @@ async function testSymlinkGuards() {
 
 async function main() {
   await testSafeSync();
+  await testOptionalMissingAssetIsOmittedButUniversalCoverageSurvives();
+  await testRequiredMissingAssetFailsClosed();
   await testDangerousSourceId();
   await testBadImagePreservesManifestAuthority();
   await testUnknownArgumentFailsBeforeNetwork();
