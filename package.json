@@ -21,6 +21,8 @@
     "game-data:test-security": "node scripts/test-wuwa-game-data-import-security.mjs",
     "game-data:normalize": "node scripts/normalize-wuwa-game-data.mjs",
     "game-data:test-normalizer-security": "node scripts/test-wuwa-game-data-normalizer-security.mjs",
+    "game-data:readiness": "node scripts/analyze-wuwa-game-data-readiness.mjs",
+    "game-data:test-readiness-security": "node scripts/test-wuwa-game-data-readiness-security.mjs",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run --passWithNoTests",
