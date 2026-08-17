@@ -1,0 +1,71 @@
+name: Encore normalizer live once
+
+on:
+  push:
+    branches:
+      - audit/encore-normalizer-live-once-20260817
+
+permissions:
+  contents: read
+
+concurrency:
+  group: encore-normalizer-live-once
+  cancel-in-progress: false
+
+jobs:
+  normalize:
+    name: Import and normalize Encore Release once
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify npm registry signatures and provenance
+        run: npm audit signatures
+
+      - name: Run importer and normalizer attack tests
+        run: |
+          npm run game-data:test-security
+          npm run game-data:test-normalizer-security
+
+      - name: Import live Encore Release into ephemeral workspace
+        run: npm run game-data:import
+
+      - name: Normalize live RAW snapshot offline
+        run: npm run game-data:normalize
+
+      - name: Validate normalized output remains inert
+        shell: bash
+        run: |
+          set -euo pipefail
+          file='.tmp/wuwa-game-data-normalized/normalized-source.json'
+          test -s "${file}"
+          if grep -Eqi 'https?://|<script|javascript:|data:[[:space:]]*text/html|on[a-z]+[[:space:]]*=' "${file}"; then
+            echo 'Normalized output contains a forbidden URL/script-like token.' >&2
+            exit 1
+          fi
+          if grep -Eqi '<[^>]{1,512}>' "${file}"; then
+            echo 'Normalized output still contains markup-like text.' >&2
+            exit 1
+          fi
+
+      - name: Upload sanitized normalized preview only
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: encore-normalized-preview
+          path: .tmp/wuwa-game-data-normalized/normalized-source.json
+          if-no-files-found: error
+          retention-days: 3
