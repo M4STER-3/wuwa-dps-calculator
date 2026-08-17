@@ -6,6 +6,8 @@ import type {
 } from "./models";
 import { damageTypes, elements, skillTypes } from "./models";
 
+export const MAX_CHARACTER_BOX_SERIALIZED_LENGTH = 1_000_000;
+
 export const emptyCharacterBox = (): CharacterBox => ({
   schemaVersion: 1,
   builds: [],
@@ -83,13 +85,17 @@ function isNonNegativeNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
+function isSafeString(value: unknown, maxLength = 200): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= maxLength;
+}
+
 export function isValidBuild(build: unknown): build is UserBuild {
   if (!build || typeof build !== "object") return false;
   const value = build as Partial<UserBuild>;
   if (
-    typeof value.id !== "string" ||
-    typeof value.resonatorId !== "string" ||
-    typeof value.sourcePresetId !== "string" ||
+    !isSafeString(value.id) ||
+    !isSafeString(value.resonatorId) ||
+    !isSafeString(value.sourcePresetId) ||
     typeof value.characterLevel !== "number" ||
     !Number.isInteger(value.characterLevel) ||
     value.characterLevel < 1 ||
@@ -110,7 +116,7 @@ export function isValidBuild(build: unknown): build is UserBuild {
   )
     return false;
   if (
-    typeof value.weapon.weaponId !== "string" ||
+    !isSafeString(value.weapon.weaponId) ||
     !Number.isInteger(value.weapon.level) ||
     value.weapon.level < 1 ||
     value.weapon.level > 90 ||
@@ -119,6 +125,8 @@ export function isValidBuild(build: unknown): build is UserBuild {
     value.weapon.rank > 5
   )
     return false;
+  if (value.sonataId !== undefined && !isSafeString(value.sonataId)) return false;
+  if (value.mainEchoId !== undefined && !isSafeString(value.mainEchoId)) return false;
   const stats = value.finalStats;
   const baseStats = [
     stats.hp,
@@ -144,7 +152,7 @@ export function isValidBuild(build: unknown): build is UserBuild {
   )
     return false;
   return (
-    typeof value.createdAt === "string" && typeof value.updatedAt === "string"
+    isSafeString(value.createdAt, 100) && isSafeString(value.updatedAt, 100)
   );
 }
 
@@ -154,8 +162,31 @@ export function assertValidBuild(build: unknown): asserts build is UserBuild {
   }
 }
 
+function sanitizeValidatedBuild(build: UserBuild): UserBuild {
+  return {
+    id: build.id,
+    resonatorId: build.resonatorId,
+    sourcePresetId: build.sourcePresetId,
+    characterLevel: build.characterLevel,
+    sequence: build.sequence,
+    skillLevels: { ...build.skillLevels },
+    weapon: { ...build.weapon },
+    finalStats: {
+      ...build.finalStats,
+      elementalDamageBonus: { ...build.finalStats.elementalDamageBonus },
+      damageTypeBonus: { ...build.finalStats.damageTypeBonus },
+    },
+    ...(build.sonataId !== undefined ? { sonataId: build.sonataId } : {}),
+    ...(build.mainEchoId !== undefined ? { mainEchoId: build.mainEchoId } : {}),
+    createdAt: build.createdAt,
+    updatedAt: build.updatedAt,
+  };
+}
+
 export function parseCharacterBox(serialized: string | null): CharacterBox {
-  if (!serialized) return emptyCharacterBox();
+  if (!serialized || serialized.length > MAX_CHARACTER_BOX_SERIALIZED_LENGTH) {
+    return emptyCharacterBox();
+  }
   try {
     const candidate: unknown = JSON.parse(serialized);
     if (!candidate || typeof candidate !== "object") return emptyCharacterBox();
@@ -163,39 +194,42 @@ export function parseCharacterBox(serialized: string | null): CharacterBox {
     // V0.2 adds a permanent stat without discarding otherwise valid V0.1 boxes.
     const normalizedBuilds = Array.isArray(rawBox.builds)
       ? rawBox.builds.map((build: unknown) => {
-        if (
-          build &&
-          typeof build === "object" &&
-          "finalStats" in build &&
-          build.finalStats &&
-          typeof build.finalStats === "object" &&
-          !("tuneBreakBoost" in build.finalStats)
-        ) {
-          const record = build as Record<string, unknown>;
-          return {
-            ...record,
-            finalStats: {
-              ...(record.finalStats as Record<string, unknown>),
-              tuneBreakBoost: record.resonatorId === "aemeath" ? 10 : 0,
-            },
-          };
-        }
-        return build;
-      })
+          if (
+            build &&
+            typeof build === "object" &&
+            "finalStats" in build &&
+            build.finalStats &&
+            typeof build.finalStats === "object" &&
+            !("tuneBreakBoost" in build.finalStats)
+          ) {
+            const record = build as Record<string, unknown>;
+            return {
+              ...record,
+              finalStats: {
+                ...(record.finalStats as Record<string, unknown>),
+                tuneBreakBoost: record.resonatorId === "aemeath" ? 10 : 0,
+              },
+            };
+          }
+          return build;
+        })
       : rawBox.builds;
-    const box = { ...rawBox, builds: normalizedBuilds } as Partial<CharacterBox>;
     if (
-      box.schemaVersion !== 1 ||
-      !Array.isArray(box.builds) ||
-      !box.builds.every(isValidBuild)
+      rawBox.schemaVersion !== 1 ||
+      !Array.isArray(normalizedBuilds) ||
+      !normalizedBuilds.every(isValidBuild)
     )
       return emptyCharacterBox();
+    const validatedBuilds = normalizedBuilds as UserBuild[];
     if (
-      new Set(box.builds.map((build) => build.resonatorId)).size !==
-      box.builds.length
+      new Set(validatedBuilds.map((build) => build.resonatorId)).size !==
+      validatedBuilds.length
     )
       return emptyCharacterBox();
-    return box as CharacterBox;
+    return {
+      schemaVersion: 1,
+      builds: validatedBuilds.map(sanitizeValidatedBuild),
+    };
   } catch {
     return emptyCharacterBox();
   }
