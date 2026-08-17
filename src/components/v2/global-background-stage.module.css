@@ -1,0 +1,69 @@
+.viewport {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  overflow: hidden;
+  background: #070705;
+}
+
+.canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background-color: #070705;
+  background-image: url("/assets/ui/wuwa-lab-global-background-4k.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: cover;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 100%;
+}
+
+/*
+ * The approved artwork is landscape 16:9. In portrait viewports we keep that
+ * exact geometry at viewport height rather than compressing or stretching it.
+ * The user can scroll horizontally to inspect the full composition. Mobile
+ * navigation reflow is intentionally deferred to later V2 steps.
+ */
+@media (orientation: portrait) {
+  .viewport {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+  }
+
+  .canvas {
+    width: calc(100dvh * 16 / 9);
+    min-width: calc(100dvh * 16 / 9);
+    height: 100dvh;
+    min-height: 100dvh;
+    background-position: left top;
+    background-size: 100% 100%;
+  }
+}
+
+@supports not (height: 100dvh) {
+  @media (orientation: portrait) {
+    .canvas {
+      width: calc(100vh * 16 / 9);
+      min-width: calc(100vh * 16 / 9);
+      height: 100vh;
+      min-height: 100vh;
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  .viewport,
+  .canvas {
+    background-color: Canvas;
+  }
+}
