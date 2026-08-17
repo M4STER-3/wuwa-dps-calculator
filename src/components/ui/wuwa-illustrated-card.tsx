@@ -19,7 +19,7 @@ export interface WuwaIllustratedCardMeta {
 
 interface IllustratedCardContentProps {
   kind: WuwaIllustratedCardKind;
-  density: WuwaIllustratedCardDensity;
+  density?: WuwaIllustratedCardDensity;
   title: ReactNode;
   subtitle?: ReactNode;
   eyebrow?: ReactNode;
@@ -40,7 +40,7 @@ const fallbackMark: Record<WuwaIllustratedCardKind, string> = {
 
 function IllustratedCardContent({
   kind,
-  density,
+  density = "standard",
   title,
   subtitle,
   eyebrow,
