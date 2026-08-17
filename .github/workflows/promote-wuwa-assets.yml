@@ -50,6 +50,14 @@ jobs:
             exit 1
           fi
 
+          git fetch --no-tags --depth=1 origin main
+          unexpected_base="$({ git diff --name-only origin/main...HEAD | grep -vE '^\.github/asset-promotion\.trigger$'; } || true)"
+          if [ -n "${unexpected_base}" ]; then
+            echo 'Promotion branches must start from main with only the one-shot trigger changed:' >&2
+            printf '%s\n' "${unexpected_base}" >&2
+            exit 1
+          fi
+
       - name: Re-run asset policy and hostile-input tests
         run: |
           set -euo pipefail
@@ -106,7 +114,6 @@ jobs:
             exit 1
           fi
 
-          git fetch --no-tags --depth=1 origin main
           if git diff --quiet origin/main -- public/assets/wuwa; then
             echo 'asset_changes=false' >> "${GITHUB_OUTPUT}"
           else
@@ -143,6 +150,7 @@ jobs:
           This pull request contains only the locally materialized WuWa asset tree generated from Encore.moe Release data.
 
           Before this branch was pushed, the workflow:
+          - required the promotion branch to match `main` except for its one-shot trigger;
           - reran the asset policy and hostile-input tests;
           - re-fetched live image bytes with `--force`;
           - independently re-read every generated object and verified its MIME signature, byte size, SHA-256, content-addressed path, trusted Encore source URL, required semantic roles, deduplication and orphan-free object store;
