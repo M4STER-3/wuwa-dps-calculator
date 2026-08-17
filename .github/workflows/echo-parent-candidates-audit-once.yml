@@ -1,0 +1,75 @@
+name: Echo parent candidates audit once
+
+on:
+  push:
+    branches:
+      - audit/echo-parent-candidates-20260817
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Inspect canonical Echo parent candidates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+      - name: Verify npm registry signatures and provenance
+        run: npm audit signatures
+      - name: Run importer attack tests
+        run: npm run game-data:test-security
+      - name: Import live Release into ephemeral workspace
+        run: npm run game-data:import
+      - name: Summarize parent-linked canonical Echo candidates
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import path from 'node:path';
+          const root = path.join(process.cwd(), 'data', 'sources', 'encore', 'release');
+          const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
+          const all = [];
+          for (const entity of manifest.resources.echoes.entities) {
+            const detail = JSON.parse(await readFile(path.join(root, 'echoes', 'details', entity.detailFile), 'utf8'));
+            all.push({ sourceId: String(entity.sourceId), detail });
+          }
+          const byId = new Map(all.map(({ sourceId, detail }) => [sourceId, detail]));
+          const candidates = all
+            .filter(({ detail }) =>
+              detail.TypeDescription === 'Echo' &&
+              detail.PhantomType === 1 &&
+              detail.QualityId === 5 &&
+              detail.LevelUpGroupId === 4 &&
+              typeof detail.ParentMonsterId === 'number' &&
+              detail.ParentMonsterId !== 0
+            )
+            .map(({ sourceId, detail }) => {
+              const parentId = String(detail.ParentMonsterId);
+              const parent = byId.get(parentId);
+              return {
+                sourceId,
+                name: typeof detail.MonsterName === 'string' ? detail.MonsterName.slice(0, 120) : null,
+                rarity: detail.Rarity ?? null,
+                parentMonsterId: parentId,
+                parentPresentInEchoDataset: Boolean(parent),
+                parentName: typeof parent?.MonsterName === 'string' ? parent.MonsterName.slice(0, 120) : null,
+                parentTypeDescription: parent?.TypeDescription ?? null,
+                parentPhantomType: parent?.PhantomType ?? null,
+                originMonsterId: detail.OriginMonsterId == null ? null : String(detail.OriginMonsterId),
+                itemId: detail.ItemId == null ? null : String(detail.ItemId),
+              };
+            })
+            .sort((a, b) => a.sourceId.localeCompare(b.sourceId));
+          console.log(`ECHO_PARENT_CANDIDATES=${JSON.stringify({ count: candidates.length, candidates })}`);
+          NODE
