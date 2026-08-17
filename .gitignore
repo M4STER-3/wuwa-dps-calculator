@@ -23,6 +23,9 @@
 # temporary/quarantine import data
 /.tmp/
 
+# build-generated browser projection
+/public/data/wuwa/echo-catalog-v1.json
+
 # misc
 .DS_Store
 *.pem
