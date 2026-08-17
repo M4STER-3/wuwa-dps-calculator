@@ -78,8 +78,16 @@ async function testSafeNormalization() {
     assert.equal(character.element, "Fusion");
     assert.equal(character.weaponType, "Sword");
     assert.equal(character.rarity, 5);
+    assert.equal(character.skills.length, 2);
     assert.equal(character.skills[0].description, "Deal Fusion DMG to the target.");
     assert.equal(character.skills[0].attributes[0].values[0], "100%");
+    assert.equal(character.skills[1].sourceSkillId, "102");
+    assert.equal(character.skills[1].type, "Inherent Skill");
+    assert.equal(
+      character.skills[1].description,
+      "A source skill can contain reviewed descriptive content without a display name.",
+    );
+    assert.equal("name" in character.skills[1], false, "missing source names must not be invented");
     assert.equal(character.resonanceChain.length, 6);
     assert.equal(character.resonanceChain[0].description, "Sequence 1 description.");
     assert.equal(character.properties[0].sourceGrowthValues[0].sourceLevelIndex, 1);
@@ -109,9 +117,15 @@ async function testSafeNormalization() {
     assert.equal(serialized.includes("<script"), false, "script-like source text must not propagate");
     assert.equal(serialized.includes("<color"), false, "source rich-text tags must be converted to inert plain text");
     assert.equal(serialized.includes("Advertisement"), false, "unknown source fields must not propagate");
+    assert.equal(
+      serialized.includes("__WUWA_REVIEWED_SOURCE_NAME_MISSING__"),
+      false,
+      "temporary missing-name sentinels must never persist",
+    );
     assert.ok(normalized.diagnostics.some((entry) => entry.code === "echo-cost-unresolved"));
     assert.ok(normalized.diagnostics.some((entry) => entry.code === "source-growth-index-not-game-level"));
     assert.ok(normalized.diagnostics.some((entry) => entry.code === "sonata-source-lore-raw-only"));
+    assert.ok(normalized.diagnostics.some((entry) => entry.code === "source-skill-name-missing"));
 
     const before = await readFile(
       path.join(cwd, ".tmp", "wuwa-game-data-normalized", "normalized-source.json"),
