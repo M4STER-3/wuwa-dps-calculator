@@ -1,6 +1,73 @@
 @import "tailwindcss";
 
 :root {
+  /*
+   * WUWA LAB visual redesign tokens — Step 2 / 20.
+   *
+   * These tokens define the new ivory / ink / restrained-gold visual system.
+   * They are intentionally NOT mapped onto the legacy variables below yet:
+   * the existing pages keep their current styling until the shared primitives
+   * and global shell are migrated in Steps 4–5.
+   */
+  --wuwa-canvas: #eee8dc;
+  --wuwa-surface-paper: #f6f0e5;
+  --wuwa-surface-paper-raised: #fbf7ef;
+  --wuwa-surface-paper-muted: #e6ddce;
+  --wuwa-surface-ink: #12130f;
+  --wuwa-surface-ink-soft: #1b1c17;
+  --wuwa-surface-ink-raised: #26261f;
+
+  --wuwa-text-ink: #1d1b16;
+  --wuwa-text-ink-muted: #71695d;
+  --wuwa-text-ink-faint: #968b7b;
+  --wuwa-text-on-ink: #f3eddf;
+  --wuwa-text-on-ink-muted: #bdb2a0;
+
+  --wuwa-accent-gold: #9b7a43;
+  --wuwa-accent-gold-strong: #735629;
+  --wuwa-accent-gold-soft: #d3bd91;
+  --wuwa-accent-gold-wash: rgba(155, 122, 67, 0.12);
+
+  --wuwa-line: #c7b9a1;
+  --wuwa-line-soft: #ddd3c3;
+  --wuwa-line-strong: #9e8b6d;
+  --wuwa-line-on-ink: #3c382f;
+
+  --wuwa-success: #466b57;
+  --wuwa-warning: #966c2e;
+  --wuwa-danger: #8d4e47;
+  --wuwa-info: #5f6d76;
+  --wuwa-focus: #8a6935;
+
+  --wuwa-radius-none: 0;
+  --wuwa-radius-xs: 2px;
+  --wuwa-radius-sm: 4px;
+  --wuwa-radius-md: 8px;
+  --wuwa-radius-lg: 12px;
+
+  --wuwa-shadow-xs: 0 1px 2px rgba(37, 31, 23, 0.08);
+  --wuwa-shadow-sm: 0 3px 10px rgba(37, 31, 23, 0.09);
+  --wuwa-shadow-md: 0 8px 24px rgba(37, 31, 23, 0.12);
+  --wuwa-shadow-ink: 0 8px 22px rgba(0, 0, 0, 0.2);
+
+  --wuwa-space-1: 4px;
+  --wuwa-space-2: 8px;
+  --wuwa-space-3: 12px;
+  --wuwa-space-4: 16px;
+  --wuwa-space-5: 20px;
+  --wuwa-space-6: 24px;
+  --wuwa-space-7: 32px;
+  --wuwa-space-8: 40px;
+  --wuwa-space-9: 48px;
+  --wuwa-space-10: 64px;
+
+  --wuwa-page-max: 1800px;
+  --wuwa-page-gutter: 24px;
+  --wuwa-control-height-sm: 32px;
+  --wuwa-control-height-md: 38px;
+  --wuwa-control-height-lg: 44px;
+
+  /* Legacy theme aliases. Removed incrementally during the visual redesign. */
   color-scheme: dark;
   --background: #090b10;
   --panel: #11151d;
