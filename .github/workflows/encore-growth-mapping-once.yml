@@ -168,3 +168,6 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           include-hidden-files: false
+
+      - name: Verify current normalizer against this live Release
+        run: npm run game-data:normalize
