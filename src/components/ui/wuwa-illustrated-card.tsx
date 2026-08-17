@@ -1,6 +1,7 @@
 import type {
   ButtonHTMLAttributes,
   ComponentPropsWithoutRef,
+  CSSProperties,
   ReactNode,
 } from "react";
 
@@ -239,7 +240,7 @@ export function WuwaIllustratedCardGrid({
       style={{
         ...style,
         "--wuwa-illustrated-grid-min": minCardWidth,
-      } as React.CSSProperties}
+      } as CSSProperties}
     />
   );
 }
