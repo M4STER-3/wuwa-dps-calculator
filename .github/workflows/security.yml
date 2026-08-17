@@ -49,8 +49,56 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Build
+      - name: Build Next.js
         run: npm run build
+
+      - name: Smoke-test production security headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          log_file="$(mktemp)"
+          npm run start -- --hostname 127.0.0.1 --port 3000 >"${log_file}" 2>&1 &
+          server_pid=$!
+          trap 'kill "${server_pid}" 2>/dev/null || true' EXIT
+
+          ready=false
+          for _ in $(seq 1 30); do
+            if curl --fail --silent --show-error --output /dev/null http://127.0.0.1:3000/; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "${ready}" != true ]; then
+            cat "${log_file}"
+            exit 1
+          fi
+
+          headers="$(curl --fail --silent --show-error --head http://127.0.0.1:3000/)"
+          require_header() {
+            printf '%s\n' "${headers}" | grep --ignore-case --quiet "^$1:"
+          }
+
+          require_header 'content-security-policy'
+          require_header 'x-content-type-options'
+          require_header 'x-frame-options'
+          require_header 'referrer-policy'
+          require_header 'permissions-policy'
+          require_header 'cross-origin-opener-policy'
+          require_header 'cross-origin-resource-policy'
+          require_header 'strict-transport-security'
+
+          if printf '%s\n' "${headers}" | grep --ignore-case --quiet '^x-powered-by:'; then
+            echo 'X-Powered-By must remain disabled.' >&2
+            exit 1
+          fi
+
+      - name: Build Cloudflare Worker
+        run: npm run build:cloudflare
+
+      - name: Validate Wrangler deployment bundle
+        run: npm exec --offline wrangler -- deploy --dry-run
 
   dependency-review:
     name: Review dependency changes
