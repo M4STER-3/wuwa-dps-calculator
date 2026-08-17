@@ -4,14 +4,14 @@ Step 1 treats the user-approved parchment/ink artwork as an immutable visual ass
 
 Expected repository path:
 
-`public/assets/ui/wuwa-lab-global-background.png`
+`public/assets/ui/wuwa-lab-global-background-4k.png`
 
 Expected source properties:
 
-- dimensions: `1672 × 941`
+- dimensions: `3840 × 2160`
 - source format: PNG
-- file size: `2,677,021` bytes
-- SHA-256: `750a0ffd388778935754e4ebcfdeaf4b3e708517c05cec2406151381bb190f9f`
+- file size: `7,593,171` bytes
+- SHA-256: `950d2ce6914de7c23493e96b19e9985fedb833d36a40d35517176ef292eb1b82`
 
 The file must not be recoloured, regenerated, retouched, destructively cropped, or have navigation states painted into it. Later steps overlay real controls above the artwork.
 
