@@ -21,16 +21,38 @@ The workflow `.github/workflows/promote-wuwa-assets.yml` only reacts to a one-sh
 
 The workflow has `contents: write` and `pull-requests: write` because its only job is to prepare a promotion branch and open a PR. It never pushes to `main`.
 
-A promotion run:
+## Resumable three-batch promotion
 
-1. starts from a clean promotion branch;
-2. reruns the asset policy and hostile-input tests;
-3. performs a fresh `Release` synchronization with `--force`;
-4. runs `scripts/verify-wuwa-assets.mjs` as an independent second verifier;
-5. enforces a GitHub promotion ceiling of 5,000 physical objects and 256 MiB;
-6. rejects any generated change outside `public/assets/wuwa` (apart from deleting the one-shot trigger);
-7. commits the verified asset tree back to the promotion branch;
-8. opens a normal PR against `main` when the asset tree changed.
+A promotion is split into three ordered checkpoints:
+
+1. `characters`;
+2. `weapons`;
+3. `echoes`, followed by global finalization.
+
+The first checkpoint resets the in-progress manifest so a new promotion cannot silently mix old category metadata with the new Release snapshot. Each completed category checkpoint is committed immediately to the promotion branch. The trigger remains in place until finalization.
+
+If a later category fails, the earlier checkpoint commits remain on the promotion branch. Updating the one-shot trigger starts a new workflow run from that checkpoint, so already-completed categories do not need to be downloaded again.
+
+The checkpoints are not three independent asset systems. They all share the same content-addressed object store and build one manifest. The Echo checkpoint performs global required-role validation and prunes objects that are not referenced by the final combined manifest.
+
+The workflow still uses `--force` for the category being processed. That category is freshly fetched from Encore instead of trusting a previous URL mapping. Identical bytes across categories still collapse to the same SHA-256 object file.
+
+## Promotion controls
+
+Before and during promotion, the workflow:
+
+- requires an `asset-promotion/**` branch;
+- rejects branch differences outside `.github/asset-promotion.trigger` and `public/assets/wuwa`;
+- reruns the asset policy and hostile-input tests;
+- only accepts the three explicit categories;
+- permits `--reset-manifest` only for the character checkpoint;
+- permits `--finalize` only for the Echo checkpoint;
+- uses `git status --porcelain=v1 -uall` so thousands of untracked asset files are inspected individually rather than collapsed to a parent directory;
+- commits only `public/assets/wuwa` at intermediate checkpoints;
+- independently verifies the complete final manifest and every referenced binary;
+- enforces a GitHub promotion ceiling of 5,000 physical objects and 256 MiB;
+- removes the one-shot trigger only after final verification;
+- opens a normal PR against `main` rather than writing directly to `main`.
 
 Normal PR CI still runs before merge.
 
@@ -59,3 +81,9 @@ It fails closed unless:
 Promotion keeps the content-addressed storage strategy. Identical bytes always resolve to the same SHA-256 filename, even if multiple IDs or semantic roles reference them. A later refresh therefore reuses unchanged object identities instead of creating filename-based duplicates.
 
 The manifest remains the only mapping from Encore IDs/roles to those local objects. Runtime application code consumes the validated `GameAssetRegistry` and does not receive the remote Encore URL.
+
+## First live promotion observation
+
+The first monolithic promotion attempt on 2026-08-17 successfully completed the live Release download in roughly 28 minutes and also passed the independent binary verifier and repository-footprint cap. It then failed before commit because Git grouped the untracked object tree as `public/assets/`, while the path guard expected individual `public/assets/wuwa/...` paths. No asset was promoted by that failed run.
+
+The batched workflow fixes that path-enumeration bug and preserves successful category checkpoints so a late workflow error cannot discard all previous download work.
