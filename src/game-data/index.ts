@@ -1,5 +1,21 @@
 export { createGameCatalog } from "./catalog";
 export type { GameCatalog, GameDataDiagnostic } from "./catalog";
+export {
+  createGameAssetRegistry,
+  GameAssetManifestError,
+} from "./asset-registry";
+export type {
+  GameAssetCategory,
+  GameAssetContentType,
+  GameAssetEntity,
+  GameAssetRecord,
+  GameAssetRegistry,
+} from "./asset-registry";
+export {
+  getGameAssetSemanticRoleDefinition,
+  resolveGameAssetByRole,
+} from "./asset-roles";
+export type { GameAssetSemanticRole } from "./asset-roles";
 export type {
   CharacterCatalogEntry,
   EchoCatalogEntry,
