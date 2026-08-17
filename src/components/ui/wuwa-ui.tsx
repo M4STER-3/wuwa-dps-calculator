@@ -35,12 +35,7 @@ export function WuwaPanel({
   tone?: WuwaPanelTone;
   compact?: boolean;
 }) {
-  return (
-    <section
-      className={surfaceClasses(tone, compact, className)}
-      {...props}
-    />
-  );
+  return <section className={surfaceClasses(tone, compact, className)} {...props} />;
 }
 
 export function WuwaCard({
@@ -75,6 +70,7 @@ export function WuwaButton({
 }) {
   return (
     <button
+      {...props}
       type={type}
       className={classes(
         "wuwa-button",
@@ -82,7 +78,6 @@ export function WuwaButton({
         `wuwa-control--${size}`,
         className,
       )}
-      {...props}
     />
   );
 }
@@ -103,8 +98,8 @@ export function WuwaBadge({
 }: ComponentPropsWithoutRef<"span"> & { tone?: WuwaBadgeTone }) {
   return (
     <span
-      className={classes("wuwa-badge", `wuwa-badge--${tone}`, className)}
       {...props}
+      className={classes("wuwa-badge", `wuwa-badge--${tone}`, className)}
     />
   );
 }
@@ -116,10 +111,10 @@ export function WuwaTabs({
 }: ComponentPropsWithoutRef<"div"> & { label: string }) {
   return (
     <div
+      {...props}
       role="tablist"
       aria-label={label}
       className={classes("wuwa-tabs", className)}
-      {...props}
     />
   );
 }
@@ -132,11 +127,11 @@ export function WuwaTab({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
   return (
     <button
+      {...props}
       type={type}
       role="tab"
       aria-selected={active}
       className={classes("wuwa-tab", active && "wuwa-tab--active", className)}
-      {...props}
     />
   );
 }
@@ -180,8 +175,8 @@ export function WuwaInput({
 }: InputHTMLAttributes<HTMLInputElement> & { controlSize?: WuwaControlSize }) {
   return (
     <input
-      className={classes("wuwa-input", `wuwa-control--${controlSize}`, className)}
       {...props}
+      className={classes("wuwa-input", `wuwa-control--${controlSize}`, className)}
     />
   );
 }
@@ -197,8 +192,8 @@ export function WuwaSelect({
 }) {
   return (
     <select
-      className={classes("wuwa-select", `wuwa-control--${controlSize}`, className)}
       {...props}
+      className={classes("wuwa-select", `wuwa-control--${controlSize}`, className)}
     >
       {children}
     </select>
@@ -240,8 +235,8 @@ export function WuwaDivider({
 }: ComponentPropsWithoutRef<"hr"> & { inset?: boolean }) {
   return (
     <hr
-      className={classes("wuwa-divider", inset && "wuwa-divider--inset", className)}
       {...props}
+      className={classes("wuwa-divider", inset && "wuwa-divider--inset", className)}
     />
   );
 }
