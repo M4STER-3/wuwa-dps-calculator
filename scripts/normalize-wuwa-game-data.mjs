@@ -1,0 +1,424 @@
+import { randomUUID } from "node:crypto";
+import { lstat, mkdir, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
+import process from "node:process";
+import { sha256 } from "./lib/encore-client.mjs";
+import { normalizeEncoreSourceSnapshot, normalizeSourceId } from "./lib/encore-normalizer.mjs";
+
+const REPO_ROOT = path.resolve(process.cwd());
+const RAW_ROOT = path.join(REPO_ROOT, "data", "sources", "encore", "release");
+const OUTPUT_ROOT = path.join(REPO_ROOT, ".tmp", "wuwa-game-data-normalized");
+const OUTPUT_PATH = path.join(OUTPUT_ROOT, "normalized-source.json");
+const MAX_MANIFEST_BYTES = 4 * 1024 * 1024;
+const MAX_DETAIL_BYTES = 8 * 1024 * 1024;
+const MAX_NORMALIZED_OUTPUT_BYTES = 32 * 1024 * 1024;
+const MAX_JSON_DEPTH = 32;
+const MAX_JSON_NODES = 200_000;
+const MAX_ARRAY_LENGTH = 10_000;
+const MAX_OBJECT_KEYS = 10_000;
+const MAX_KEY_LENGTH = 256;
+const MAX_STRING_LENGTH = 2 * 1024 * 1024;
+const DANGEROUS_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+const RESOURCE_NAMES = ["characters", "weapons", "echoes"];
+const MISSING_SKILL_NAME_SENTINEL = "__WUWA_REVIEWED_SOURCE_NAME_MISSING__";
+const VERIFIED_WEAPON_FRACTIONAL_SOURCE_LEVELS = new Set([20.5, 40.5, 50.5, 60.5, 70.5, 80.5]);
+
+function fail(message) {
+  throw new Error(message);
+}
+
+function assertNoArguments() {
+  if (process.argv.length > 2) fail("Normalizer does not accept filesystem or network arguments");
+}
+
+async function lstatIfPresent(filePath) {
+  try {
+    return await lstat(filePath);
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+async function assertNoSymlinkComponents(targetPath, trustedRoot) {
+  const root = path.resolve(trustedRoot);
+  const target = path.resolve(targetPath);
+  const relative = path.relative(root, target);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) fail(`Path escaped trusted root: ${target}`);
+
+  let current = root;
+  for (const segment of relative ? relative.split(path.sep) : []) {
+    current = path.join(current, segment);
+    const stats = await lstatIfPresent(current);
+    if (!stats) continue;
+    if (stats.isSymbolicLink()) fail(`Symbolic link forbidden in normalized data path: ${current}`);
+  }
+}
+
+function validateJsonTree(root, label) {
+  const stack = [{ value: root, depth: 0, path: "$" }];
+  let visited = 0;
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) continue;
+    visited += 1;
+    if (visited > MAX_JSON_NODES) fail(`${label} exceeded JSON node limit`);
+    if (current.depth > MAX_JSON_DEPTH) fail(`${label} exceeded JSON depth limit`);
+
+    const value = current.value;
+    if (typeof value === "string") {
+      if (value.length > MAX_STRING_LENGTH) fail(`${label} string too long at ${current.path}`);
+      continue;
+    }
+    if (value === null || typeof value !== "object") continue;
+
+    if (Array.isArray(value)) {
+      if (value.length > MAX_ARRAY_LENGTH) fail(`${label} array too large at ${current.path}`);
+      for (let index = value.length - 1; index >= 0; index -= 1) {
+        stack.push({ value: value[index], depth: current.depth + 1, path: `${current.path}[${index}]` });
+      }
+      continue;
+    }
+
+    const keys = Object.keys(value);
+    if (keys.length > MAX_OBJECT_KEYS) fail(`${label} object has too many keys at ${current.path}`);
+    for (const key of keys) {
+      if (key.length > MAX_KEY_LENGTH) fail(`${label} key too long at ${current.path}`);
+      if (DANGEROUS_KEYS.has(key)) fail(`${label} contains forbidden key ${key}`);
+      stack.push({ value: value[key], depth: current.depth + 1, path: `${current.path}.${key}` });
+    }
+  }
+}
+
+async function readJsonFile(filePath, maxBytes, label, expectedHash) {
+  const resolved = path.resolve(filePath);
+  const relative = path.relative(REPO_ROOT, resolved);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) fail(`${label} escaped repository root`);
+  await assertNoSymlinkComponents(resolved, REPO_ROOT);
+  const stats = await lstat(resolved);
+  if (!stats.isFile() || stats.isSymbolicLink()) fail(`${label} must be a regular file`);
+  if (stats.size <= 0 || stats.size > maxBytes) fail(`${label} has invalid size ${stats.size}`);
+  const raw = await readFile(resolved);
+  if (expectedHash && sha256(raw) !== expectedHash) fail(`${label} SHA-256 does not match RAW manifest`);
+  let json;
+  try {
+    json = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(raw));
+  } catch {
+    fail(`${label} is not valid UTF-8 JSON`);
+  }
+  validateJsonTree(json, label);
+  return json;
+}
+
+function validateManifest(manifest) {
+  if (!manifest || typeof manifest !== "object") fail("RAW manifest must be an object");
+  if (manifest.schemaVersion !== 1) fail("Unsupported RAW manifest schema");
+  if (manifest.sourceProvider !== "encore") fail("Unexpected RAW source provider");
+  if (manifest.sourceApi !== "https://api-v2.encore.moe/api/en") fail("Unexpected RAW source API");
+  if (manifest.language !== "en" || manifest.dataset !== "Release") fail("Unexpected RAW language/dataset");
+  if (!manifest.resources || typeof manifest.resources !== "object") fail("RAW manifest resources missing");
+
+  for (const resourceName of RESOURCE_NAMES) {
+    const resource = manifest.resources[resourceName];
+    if (!resource || !Array.isArray(resource.entities)) fail(`RAW manifest ${resourceName} metadata missing`);
+    if (resource.count !== resource.entities.length) fail(`RAW manifest ${resourceName} count mismatch`);
+    const seen = new Set();
+    for (const entity of resource.entities) {
+      if (!entity || typeof entity !== "object") fail(`RAW manifest ${resourceName} entity metadata invalid`);
+      const sourceId = normalizeSourceId(entity.sourceId, `${resourceName} source id`);
+      if (seen.has(sourceId)) fail(`RAW manifest duplicates ${resourceName}:${sourceId}`);
+      seen.add(sourceId);
+      if (typeof entity.detailFile !== "string" || !/^[a-f0-9]{32}\.json$/.test(entity.detailFile)) {
+        fail(`RAW manifest ${resourceName}:${sourceId} has unsafe detail filename`);
+      }
+      if (typeof entity.detailSha256 !== "string" || !/^[a-f0-9]{64}$/.test(entity.detailSha256)) {
+        fail(`RAW manifest ${resourceName}:${sourceId} has invalid detail SHA-256`);
+      }
+    }
+  }
+  return manifest;
+}
+
+async function loadResourceDetails(manifest, resourceName) {
+  const resource = manifest.resources[resourceName];
+  const detailsRoot = path.join(RAW_ROOT, resourceName, "details");
+  const result = [];
+  for (const entity of resource.entities) {
+    const sourceId = normalizeSourceId(entity.sourceId, `${resourceName} source id`);
+    const filePath = path.resolve(detailsRoot, entity.detailFile);
+    const relative = path.relative(detailsRoot, filePath);
+    if (relative.startsWith("..") || path.isAbsolute(relative)) fail(`${resourceName}:${sourceId} detail path escaped resource root`);
+    const detail = await readJsonFile(
+      filePath,
+      MAX_DETAIL_BYTES,
+      `${resourceName}:${sourceId} detail`,
+      entity.detailSha256,
+    );
+    result.push({ sourceId, sourceHash: entity.detailSha256, detail });
+  }
+  return result;
+}
+
+function sourceHashIndex(details) {
+  return Object.fromEntries(
+    [...details]
+      .sort((a, b) => a.sourceId.localeCompare(b.sourceId))
+      .map((entry) => [entry.sourceId, entry.sourceHash]),
+  );
+}
+
+function prepareUnnamedCharacterSkills(characterDetails) {
+  const unnamedSkills = [];
+  for (const character of characterDetails) {
+    const skills = character.detail?.Skills;
+    if (!Array.isArray(skills)) continue;
+    for (let index = 0; index < skills.length; index += 1) {
+      const skill = skills[index];
+      if (!skill || typeof skill !== "object" || Array.isArray(skill)) continue;
+      if (
+        typeof skill.SkillName === "string" &&
+        skill.SkillName.trim() === MISSING_SKILL_NAME_SENTINEL
+      ) {
+        fail(`character ${character.sourceId}.Skills[${index}] collides with internal missing-name sentinel`);
+      }
+      if (typeof skill.SkillName !== "string" || skill.SkillName.trim().length > 0) continue;
+
+      const sourceSkillId = normalizeSourceId(
+        skill.SkillId,
+        `character ${character.sourceId}.Skills[${index}].SkillId`,
+      );
+      const typePresent = typeof skill.SkillType === "string" && skill.SkillType.trim().length > 0;
+      const descriptionPresent =
+        typeof skill.SkillDescribe === "string" && skill.SkillDescribe.trim().length > 0;
+      const attributeCount = Array.isArray(skill.SkillAttributes) ? skill.SkillAttributes.length : 0;
+
+      if (!typePresent) {
+        fail(`character ${character.sourceId}.Skills[${index}] has an unnamed skill without a type`);
+      }
+      if (!descriptionPresent && attributeCount === 0) {
+        fail(
+          `character ${character.sourceId}.Skills[${index}] has an unnamed skill without reviewed descriptive or numeric content`,
+        );
+      }
+
+      skill.SkillName = MISSING_SKILL_NAME_SENTINEL;
+      unnamedSkills.push({
+        characterSourceId: character.sourceId,
+        sourceSkillId,
+      });
+    }
+  }
+  return unnamedSkills.sort((a, b) =>
+    `${a.characterSourceId}:${a.sourceSkillId}`.localeCompare(
+      `${b.characterSourceId}:${b.sourceSkillId}`,
+    ),
+  );
+}
+
+function prepareFractionalWeaponGrowthIndexes(weaponDetails) {
+  const fractionalIndexes = [];
+  for (const weapon of weaponDetails) {
+    const properties = weapon.detail?.Properties;
+    if (!Array.isArray(properties)) continue;
+    for (let propertyIndex = 0; propertyIndex < properties.length; propertyIndex += 1) {
+      const growthValues = properties[propertyIndex]?.GrowthValues;
+      if (!Array.isArray(growthValues)) continue;
+      for (let growthIndex = 0; growthIndex < growthValues.length; growthIndex += 1) {
+        const growth = growthValues[growthIndex];
+        if (!growth || typeof growth !== "object" || Array.isArray(growth)) continue;
+        const hasLower = Object.prototype.hasOwnProperty.call(growth, "level");
+        const hasUpper = Object.prototype.hasOwnProperty.call(growth, "Level");
+        if (hasLower && hasUpper && growth.level !== growth.Level) {
+          fail(
+            `weapon ${weapon.sourceId}.Properties[${propertyIndex}].GrowthValues[${growthIndex}] has conflicting level/Level fields`,
+          );
+        }
+        const rawLevel = hasLower ? growth.level : growth.Level;
+        if (typeof rawLevel !== "number" || !Number.isFinite(rawLevel) || Number.isInteger(rawLevel)) {
+          continue;
+        }
+        if (
+          rawLevel < 0 ||
+          rawLevel > 10_000 ||
+          !Number.isInteger(rawLevel * 2) ||
+          !VERIFIED_WEAPON_FRACTIONAL_SOURCE_LEVELS.has(rawLevel)
+        ) {
+          fail(
+            `weapon ${weapon.sourceId}.Properties[${propertyIndex}].GrowthValues[${growthIndex}] has unreviewed fractional source level ${String(rawLevel)}`,
+          );
+        }
+        const temporarySourceLevelIndex = Math.floor(rawLevel);
+        if (hasLower) growth.level = temporarySourceLevelIndex;
+        else growth.Level = temporarySourceLevelIndex;
+        fractionalIndexes.push({
+          weaponSourceId: weapon.sourceId,
+          propertyIndex,
+          growthIndex,
+          exactSourceLevelIndex: rawLevel,
+          temporarySourceLevelIndex,
+        });
+      }
+    }
+  }
+  return fractionalIndexes;
+}
+
+function removeTemporarySkillNameSentinels(characters, unnamedSkills) {
+  const unnamed = new Set(
+    unnamedSkills.map((entry) => `${entry.characterSourceId}:${entry.sourceSkillId}`),
+  );
+  return characters.map((character) => ({
+    ...character,
+    skills: character.skills.map((skill) => {
+      const key = `${character.sourceId}:${skill.sourceSkillId}`;
+      if (!unnamed.has(key)) return skill;
+      if (skill.name !== MISSING_SKILL_NAME_SENTINEL) {
+        fail(`Unnamed skill sentinel mismatch for ${key}`);
+      }
+      const { name: _temporaryName, ...withoutInventedName } = skill;
+      return withoutInventedName;
+    }),
+  }));
+}
+
+function restoreFractionalWeaponGrowthIndexes(weapons, fractionalIndexes) {
+  const bySourceId = new Map(weapons.map((weapon) => [weapon.sourceId, weapon]));
+  for (const entry of fractionalIndexes) {
+    const weapon = bySourceId.get(entry.weaponSourceId);
+    const growth = weapon?.properties?.[entry.propertyIndex]?.sourceGrowthValues?.[entry.growthIndex];
+    if (!growth) {
+      fail(
+        `Could not restore fractional source level for weapon ${entry.weaponSourceId} property ${entry.propertyIndex} growth ${entry.growthIndex}`,
+      );
+    }
+    if (growth.sourceLevelIndex !== entry.temporarySourceLevelIndex) {
+      fail(
+        `Fractional source-level restoration mismatch for weapon ${entry.weaponSourceId} property ${entry.propertyIndex} growth ${entry.growthIndex}`,
+      );
+    }
+    growth.sourceLevelIndex = entry.exactSourceLevelIndex;
+  }
+  return weapons;
+}
+
+function hardenNormalizedOutput(
+  normalized,
+  {
+    characterDetails,
+    weaponDetails,
+    echoDetails,
+    unnamedSkills,
+    fractionalWeaponGrowthIndexes,
+  },
+) {
+  const diagnostics = [
+    ...normalized.diagnostics,
+    {
+      code: "sonata-source-lore-raw-only",
+      severity: "info",
+      message:
+        "Echo-local Sonata definition lore remains in RAW only because the live source contains duplicated and occasionally mixed-language definition text.",
+    },
+  ];
+  if (unnamedSkills.length > 0) {
+    diagnostics.push({
+      code: "source-skill-name-missing",
+      severity: "warning",
+      message: `${unnamedSkills.length} source skill entr${unnamedSkills.length === 1 ? "y has" : "ies have"} no display name. Their source IDs, types and reviewed content are preserved without inventing names.`,
+    });
+  }
+  if (fractionalWeaponGrowthIndexes.length > 0) {
+    diagnostics.push({
+      code: "weapon-source-growth-half-index-preserved",
+      severity: "info",
+      message: `${fractionalWeaponGrowthIndexes.length} reviewed half-step weapon source growth indexes are preserved exactly as source metadata and are not interpreted as game levels.`,
+    });
+  }
+
+  return {
+    ...normalized,
+    sourceHashes: {
+      characters: sourceHashIndex(characterDetails),
+      weapons: sourceHashIndex(weaponDetails),
+      echoes: sourceHashIndex(echoDetails),
+    },
+    characters: removeTemporarySkillNameSentinels(normalized.characters, unnamedSkills),
+    weapons: restoreFractionalWeaponGrowthIndexes(
+      normalized.weapons,
+      fractionalWeaponGrowthIndexes,
+    ),
+    sonataSets: normalized.sonataSets.map(({ sourceLore: _sourceLore, ...sonata }) => sonata),
+    diagnostics,
+  };
+}
+
+async function writeOutputAtomic(value) {
+  await assertNoSymlinkComponents(OUTPUT_ROOT, REPO_ROOT);
+  await mkdir(OUTPUT_ROOT, { recursive: true, mode: 0o755 });
+  await assertNoSymlinkComponents(OUTPUT_ROOT, REPO_ROOT);
+  const realRepo = await realpath(REPO_ROOT);
+  const realOutput = await realpath(OUTPUT_ROOT);
+  const relative = path.relative(realRepo, realOutput);
+  if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) fail("Normalizer output escaped repository root");
+
+  const tempPath = `${OUTPUT_PATH}.${randomUUID()}.tmp`;
+  const serialized = `${JSON.stringify(value, null, 2)}\n`;
+  const bytes = Buffer.byteLength(serialized);
+  if (bytes > MAX_NORMALIZED_OUTPUT_BYTES) {
+    fail(`Normalized output exceeds ${MAX_NORMALIZED_OUTPUT_BYTES} bytes`);
+  }
+  try {
+    await writeFile(tempPath, serialized, { flag: "wx", mode: 0o644 });
+    await rename(tempPath, OUTPUT_PATH);
+  } catch (error) {
+    await rm(tempPath, { force: true }).catch(() => {});
+    throw error;
+  }
+  return bytes;
+}
+
+async function main() {
+  assertNoArguments();
+  await assertNoSymlinkComponents(RAW_ROOT, REPO_ROOT);
+  const manifest = validateManifest(
+    await readJsonFile(path.join(RAW_ROOT, "manifest.json"), MAX_MANIFEST_BYTES, "RAW manifest"),
+  );
+
+  const [characterDetails, weaponDetails, echoDetails] = await Promise.all([
+    loadResourceDetails(manifest, "characters"),
+    loadResourceDetails(manifest, "weapons"),
+    loadResourceDetails(manifest, "echoes"),
+  ]);
+  const unnamedSkills = prepareUnnamedCharacterSkills(characterDetails);
+  const fractionalWeaponGrowthIndexes = prepareFractionalWeaponGrowthIndexes(weaponDetails);
+
+  const normalized = hardenNormalizedOutput(
+    normalizeEncoreSourceSnapshot({
+      manifest,
+      characterDetails,
+      weaponDetails,
+      echoDetails,
+    }),
+    {
+      characterDetails,
+      weaponDetails,
+      echoDetails,
+      unnamedSkills,
+      fractionalWeaponGrowthIndexes,
+    },
+  );
+  const bytes = await writeOutputAtomic(normalized);
+  console.log(
+    `WUWA_GAME_DATA_NORMALIZE_REPORT=${JSON.stringify({
+      counts: normalized.counts,
+      bytes,
+      output: ".tmp/wuwa-game-data-normalized/normalized-source.json",
+      diagnostics: normalized.diagnostics.map((entry) => entry.code),
+    })}`,
+  );
+}
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+});
