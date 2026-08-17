@@ -1,0 +1,52 @@
+name: Cloudflare preview current main
+
+on:
+  push:
+    branches:
+      - agent/cloudflare-preview-current
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-preview-current
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy current validated main to Cloudflare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Verify Cloudflare credentials are configured
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo 'Cloudflare deployment secrets are not configured for this repository.' >&2
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify npm registry signatures and provenance
+        run: npm audit signatures
+
+      - name: Deploy OpenNext Worker
+        run: npm run deploy
