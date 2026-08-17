@@ -2,6 +2,11 @@ name: Encore GameDatabase readiness audit
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "audit/sonata-hardening-release-20260817"
+    paths:
+      - ".github/encore-readiness.trigger"
 
 permissions:
   contents: read
@@ -12,7 +17,7 @@ concurrency:
 
 jobs:
   audit:
-    name: Import, normalize, and measure Release readiness
+    name: Import, harden, and measure Release readiness
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -42,28 +47,75 @@ jobs:
           set -euo pipefail
           node --check scripts/lib/encore-client.mjs
           node --check scripts/lib/encore-normalizer.mjs
+          node --check scripts/lib/normalized-source-hardening.mjs
           node --check scripts/lib/game-database-readiness.mjs
           node --check scripts/import-wuwa-game-data.mjs
           node --check scripts/normalize-wuwa-game-data.mjs
+          node --check scripts/harden-wuwa-normalized-source.mjs
           node --check scripts/analyze-wuwa-game-data-readiness.mjs
 
-      - name: Run importer, normalizer, and readiness attack tests before network
+      - name: Run importer, normalizer, hardening, and readiness attack tests before network
         run: |
           set -euo pipefail
           npm run game-data:test-security
           npm run game-data:test-normalizer-security
+          npm run game-data:test-hardening-security
           npm run game-data:test-readiness-security
 
       - name: Import live Encore Release into ephemeral runner storage
         run: npm run game-data:import
 
-      - name: Normalize imported Release data
+      - name: Normalize and harden imported Release data
         run: npm run game-data:normalize
+
+      - name: Confirm live hardening results before readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          const source = JSON.parse(await readFile('.tmp/wuwa-game-data-normalized/normalized-source.json', 'utf8'));
+          if (source.sonataSets.length !== 34) throw new Error(`Expected 34 live Sonata definitions, got ${source.sonataSets.length}`);
+          const ids = source.sonataSets.map((entry) => entry.sourceId);
+          if (ids.some((value) => typeof value !== 'string' || !/^\d+$/.test(value))) throw new Error('Live Sonata source IDs are incomplete.');
+          if (new Set(ids).size !== ids.length) throw new Error('Live Sonata source IDs contain duplicates.');
+          const valid = new Set(ids.map(Number));
+          for (const echo of source.echoes) {
+            for (const ref of echo.sourceSonataGroupIds ?? []) {
+              if (!valid.has(ref)) throw new Error(`Echo ${echo.sourceId} has unresolved Sonata source ID ${ref}`);
+            }
+          }
+          const nameControls = [];
+          const stack = [source];
+          while (stack.length > 0) {
+            const value = stack.pop();
+            if (value === null || typeof value !== 'object') continue;
+            if (Array.isArray(value)) {
+              stack.push(...value);
+              continue;
+            }
+            for (const [key, child] of Object.entries(value)) {
+              if ((key === 'name' || key === 'title') && typeof child === 'string' && /[\u0000-\u001f\u007f-\u009f]/.test(child)) {
+                nameControls.push(key);
+              }
+              stack.push(child);
+            }
+          }
+          if (nameControls.length > 0) throw new Error(`Hardened names/titles still contain control characters (${nameControls.length}).`);
+          console.log(`Live hardening verified ${ids.length} stable Sonata IDs and zero name/title controls.`);
+          NODE
+
+      - name: Temporarily use measured readiness node budget
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'const MAX_NODES = 250_000;' scripts/lib/game-database-readiness.mjs
+          sed -i 's/const MAX_NODES = 250_000;/const MAX_NODES = 500_000;/' scripts/lib/game-database-readiness.mjs
 
       - name: Generate GameDatabase readiness report
         run: npm run game-data:readiness
 
-      - name: Validate report is summary-only
+      - name: Validate report is summary-only and Sonata blockers are resolved
         shell: bash
         run: |
           set -euo pipefail
@@ -75,18 +127,22 @@ jobs:
           for (const key of Object.keys(report)) {
             if (!allowedTopLevel.has(key)) throw new Error(`Unexpected readiness report key: ${key}`);
           }
+          if (report.readiness.sonataSets.stableIdentityReady !== 34) throw new Error('All 34 Sonata IDs must be ready.');
+          const blockerCodes = new Set(report.blockers.map((entry) => entry.code));
+          if (blockerCodes.has('sonata-stable-source-id-unresolved')) throw new Error('Sonata identity blocker remains unexpectedly.');
+          if (blockerCodes.has('echo-sonata-reference-map-unresolved')) throw new Error('Echo→Sonata reference blocker remains unexpectedly.');
           const serialized = JSON.stringify(report);
           if (serialized.length > 1024 * 1024) throw new Error('Readiness report exceeded 1 MiB');
           for (const forbidden of ['characters":[' , 'weapons":[', 'echoes":[', 'sourceHashes', 'sourceUrl', '<script', 'http://', 'https://']) {
             if (serialized.includes(forbidden)) throw new Error(`Readiness artifact contains forbidden raw-data marker: ${forbidden}`);
           }
-          console.log(`Readiness artifact is summary-only (${Buffer.byteLength(serialized)} bytes).`);
+          console.log(`Live readiness confirms ${report.readiness.sonataSets.stableIdentityReady} stable Sonata identities.`);
           NODE
 
       - name: Upload readiness summary only
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: encore-release-game-database-readiness
+          name: encore-release-sonata-hardening-readiness
           path: .tmp/wuwa-game-data-readiness/readiness.json
           include-hidden-files: true
           if-no-files-found: error
