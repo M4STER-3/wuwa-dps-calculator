@@ -1,6 +1,6 @@
 # WUWA LAB visual redesign
 
-Status: **Step 1 / 20 — direction locked**
+Status: **Step 2 / 20 — design tokens defined**
 
 This document is the visual source of truth for the WUWA LAB redesign. The redesign progress is tracked separately from the calculator's functional progress: it starts at 0% and reaches 100% only when all 20 steps below are complete.
 
@@ -47,7 +47,7 @@ In particular, the redesign should remove or strongly reduce:
 - text-only equipment selection when images are available and useful;
 - decorative glow as a primary means of hierarchy.
 
-Existing teal/cyan code does **not** need to be deleted in Step 1. It will be replaced incrementally by the following steps.
+Existing teal/cyan code does **not** need to be deleted immediately. It is replaced incrementally by the following steps.
 
 ## 3. Product principles
 
@@ -89,7 +89,16 @@ A catalogue / compendium presentation with image-backed cards, compact filters a
 
 ## 5. Image integration boundary
 
-Images are intentionally **not wired in Step 1**. Their integration starts only after the common visual foundations exist.
+Images are intentionally **not wired in Steps 1–7**. Their browser-safe integration begins at Step 8, after the visual foundations and illustrated-card contract exist.
+
+Image implementation sequence:
+
+- **Step 8:** create the safe UI asset projection from stable promoted IDs to local assets;
+- **Step 9:** prove image rendering with a small cross-category sample of Resonators, weapons and Echoes;
+- **Step 11:** integrate real Resonator portraits/artwork into Character Box;
+- **Step 12:** integrate real weapon imagery into Character Box and weapon selection;
+- **Step 15:** integrate real Echo imagery into the five-slot Echo editor;
+- **Steps 17–19:** reuse the established imagery system in Home, DPS surfaces and Game Data.
 
 When image work begins:
 
@@ -100,12 +109,49 @@ When image work begins:
 - provide deterministic fallbacks for missing or invalid imagery;
 - optimise thumbnails separately from large selected-character artwork where practical.
 
-## 6. Twenty-step redesign roadmap
+## 6. Design token contract
+
+Step 2 introduces the `--wuwa-*` token namespace in `src/app/globals.css`. These variables are the new visual foundation, but are deliberately **not yet mapped onto the legacy dark/cyan aliases**. That migration happens through the shared primitives and global shell in Steps 4–5, avoiding a half-redesigned production UI.
+
+### Surfaces
+
+- `--wuwa-canvas`: warm page background.
+- `--wuwa-surface-paper`: standard editorial panel.
+- `--wuwa-surface-paper-raised`: higher-contrast light surface.
+- `--wuwa-surface-paper-muted`: subdued light grouping surface.
+- `--wuwa-surface-ink`: primary black/charcoal contrast surface.
+- `--wuwa-surface-ink-soft`: secondary dark surface.
+- `--wuwa-surface-ink-raised`: elevated dark card surface.
+
+### Text and accent
+
+- ink text is separated into primary, muted and faint levels;
+- on-ink text has dedicated primary and muted values;
+- antique gold has standard, strong, soft and translucent wash variants;
+- gameplay element colours are **not** encoded as brand tokens and remain reserved for gameplay meaning.
+
+### Lines and states
+
+Thin warm-neutral borders have soft, standard, strong and on-ink variants. Semantic success, warning, danger and info colours are intentionally muted so status does not become RGB decoration. A warm focus token is reserved for accessible keyboard focus during the component migration.
+
+### Shape and depth
+
+Radii are intentionally restrained: `0`, `2px`, `4px`, `8px`, `12px`. The system must not drift back toward oversized rounded SaaS panels. Shadows are subtle and warm on paper, with a separate restrained dark-card shadow.
+
+### Spacing and sizing
+
+The spacing scale is fixed from `4px` through `64px`, with `24px` as the current desktop page gutter and `1800px` as the maximum wide workspace. Control-height tokens provide compact `32px`, standard `38px` and prominent `44px` variants.
+
+### Migration rule
+
+New redesign components should consume `--wuwa-*` tokens directly. Existing `--background`, `--panel`, `--accent`, and related legacy variables remain temporary compatibility aliases only and should not be used by new redesign primitives.
+
+## 7. Twenty-step redesign roadmap
 
 Each completed step represents **5% of the visual redesign**.
 
 - [x] **01 — Lock art direction.** Establish the reference language, non-goals and product principles in this document.
-- [ ] **02 — Design tokens.** Define colour, surface, border, radius, shadow and spacing tokens.
+- [x] **02 — Design tokens.** Define colour, surface, border, radius, shadow and spacing tokens.
 - [ ] **03 — Typography system.** Define heading, body, stat, label and numeric hierarchy.
 - [ ] **04 — Shared UI primitives.** Build panels, cards, buttons, tabs, fields, badges, stat rows, dividers and tooltips.
 - [ ] **05 — Global shell.** Rebuild navigation, page frame and footer in the new language. **Checkpoint.**
@@ -125,11 +171,11 @@ Each completed step represents **5% of the visual redesign**.
 - [ ] **19 — Game Data redesign.** Build the unified illustrated catalogue for Resonators, weapons, Echoes and Sonata.
 - [ ] **20 — Final visual QA.** Desktop/tablet/mobile, accessibility, loading/error states, image performance, consistency and production build verification.
 
-## 7. Checkpoint rule
+## 8. Checkpoint rule
 
 Steps 5, 9, 13, 16 and 18 are explicit visual checkpoints. At those points, the next block should not be rushed if the direction is visibly wrong. Fixing the shared language at a checkpoint is preferred over carrying a weak pattern into later pages.
 
-## 8. Architecture boundary during the redesign
+## 9. Architecture boundary during the redesign
 
 The redesign is presentation work unless a step explicitly requires a safe UI projection. It must not silently change combat semantics.
 
@@ -142,4 +188,4 @@ In particular:
 
 ---
 
-**Visual redesign progress after Step 1: 5%.**
+**Visual redesign progress after Step 2: 10%.**
