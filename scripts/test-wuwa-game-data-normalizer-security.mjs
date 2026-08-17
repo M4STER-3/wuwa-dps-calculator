@@ -68,6 +68,9 @@ async function testSafeNormalization() {
     const normalized = await loadNormalized(cwd);
     assert.equal(normalized.schemaVersion, 1);
     assert.deepEqual(normalized.counts, { characters: 1, weapons: 1, echoes: 1, sonataSets: 1 });
+    assert.match(normalized.sourceHashes.characters["1"], /^[a-f0-9]{64}$/);
+    assert.match(normalized.sourceHashes.weapons["2"], /^[a-f0-9]{64}$/);
+    assert.match(normalized.sourceHashes.echoes["3"], /^[a-f0-9]{64}$/);
 
     const character = normalized.characters[0];
     assert.equal(character.sourceId, "1");
@@ -99,6 +102,7 @@ async function testSafeNormalization() {
     assert.equal(sonata.name, "Molten Rift");
     assert.deepEqual(sonata.bonuses.map((bonus) => bonus.pieces), [2, 5]);
     assert.equal(sonata.bonuses[1].description, "Fusion DMG + 30% for 15s after releasing Resonance Skill.");
+    assert.equal("sourceLore" in sonata, false, "Echo-local Sonata lore must remain RAW-only");
 
     const serialized = JSON.stringify(normalized);
     assert.equal(serialized.includes("evil.example"), false, "unknown remote URLs must not propagate into normalized data");
@@ -107,6 +111,7 @@ async function testSafeNormalization() {
     assert.equal(serialized.includes("Advertisement"), false, "unknown source fields must not propagate");
     assert.ok(normalized.diagnostics.some((entry) => entry.code === "echo-cost-unresolved"));
     assert.ok(normalized.diagnostics.some((entry) => entry.code === "source-growth-index-not-game-level"));
+    assert.ok(normalized.diagnostics.some((entry) => entry.code === "sonata-source-lore-raw-only"));
 
     const before = await readFile(
       path.join(cwd, ".tmp", "wuwa-game-data-normalized", "normalized-source.json"),
