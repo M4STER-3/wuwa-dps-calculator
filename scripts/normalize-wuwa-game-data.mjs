@@ -151,9 +151,38 @@ async function loadResourceDetails(manifest, resourceName) {
       `${resourceName}:${sourceId} detail`,
       entity.detailSha256,
     );
-    result.push({ sourceId, detail });
+    result.push({ sourceId, sourceHash: entity.detailSha256, detail });
   }
   return result;
+}
+
+function sourceHashIndex(details) {
+  return Object.fromEntries(
+    [...details]
+      .sort((a, b) => a.sourceId.localeCompare(b.sourceId))
+      .map((entry) => [entry.sourceId, entry.sourceHash]),
+  );
+}
+
+function hardenNormalizedOutput(normalized, { characterDetails, weaponDetails, echoDetails }) {
+  return {
+    ...normalized,
+    sourceHashes: {
+      characters: sourceHashIndex(characterDetails),
+      weapons: sourceHashIndex(weaponDetails),
+      echoes: sourceHashIndex(echoDetails),
+    },
+    sonataSets: normalized.sonataSets.map(({ sourceLore: _sourceLore, ...sonata }) => sonata),
+    diagnostics: [
+      ...normalized.diagnostics,
+      {
+        code: "sonata-source-lore-raw-only",
+        severity: "info",
+        message:
+          "Echo-local Sonata definition lore remains in RAW only because the live source contains duplicated and occasionally mixed-language definition text.",
+      },
+    ],
+  };
 }
 
 async function writeOutputAtomic(value) {
@@ -190,12 +219,15 @@ async function main() {
     loadResourceDetails(manifest, "echoes"),
   ]);
 
-  const normalized = normalizeEncoreSourceSnapshot({
-    manifest,
-    characterDetails,
-    weaponDetails,
-    echoDetails,
-  });
+  const normalized = hardenNormalizedOutput(
+    normalizeEncoreSourceSnapshot({
+      manifest,
+      characterDetails,
+      weaponDetails,
+      echoDetails,
+    }),
+    { characterDetails, weaponDetails, echoDetails },
+  );
   const bytes = await writeOutputAtomic(normalized);
   console.log(
     `WUWA_GAME_DATA_NORMALIZE_REPORT=${JSON.stringify({
