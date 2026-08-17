@@ -2,6 +2,11 @@ name: Encore GameDatabase readiness audit
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "audit/encore-readiness-release-20260817"
+    paths:
+      - ".github/encore-readiness.trigger"
 
 permissions:
   contents: read
