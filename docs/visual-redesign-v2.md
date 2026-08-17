@@ -1,6 +1,6 @@
 # WUWA LAB visual redesign V2
 
-Status: **Step 1 / 15 — approved 4K global background installed**
+Status: **Step 2 / 15 — responsive background behaviour implemented, awaiting visual validation**
 
 The visual redesign V2 is tracked independently from calculator functionality. It starts at 0% and reaches 100% after all 15 visual steps are completed and validated.
 
@@ -19,6 +19,17 @@ Verified source contract:
 
 The artwork must not be recoloured, redrawn, filtered or baked together with later UI changes. Navigation, hover/selection states and content are layered above it.
 
+## Responsive background contract — Step 2
+
+The responsive layer must preserve the approved image geometry rather than stretching the artwork.
+
+- Landscape / desktop: fill the viewport with the 16:9 artwork using `cover`, anchored to the left so the navigation artwork remains stable.
+- Portrait / mobile: preserve the exact 16:9 artwork at viewport height and allow horizontal scrolling instead of compressing the image.
+- The source PNG is never edited for responsive behaviour.
+- No navigation reflow is introduced yet; mobile navigation behaviour belongs to later steps.
+- The reusable presentation component is `src/components/v2/global-background-stage.tsx`.
+- `/visual-test/background` remains the dedicated visual test route.
+
 ## Navigation model
 
 The left artwork column becomes the main navigation surface for:
@@ -36,7 +47,7 @@ Echoes are not a top-level navigation destination. The Echo loadout/editor is in
 Each completed step is worth 1/15 of the V2 visual redesign.
 
 - [x] **01 — Install approved global background.** Store and verify the immutable 4K local source plus a clean visual-test route.
-- [ ] **02 — Responsive background behaviour.** Preserve the artwork composition across target desktop/tablet/mobile viewports without distortion.
+- [ ] **02 — Responsive background behaviour.** Preserve the artwork composition across target desktop/tablet/mobile viewports without distortion. **Implemented; awaiting visual approval.**
 - [ ] **03 — Interactive left navigation.** Map the five artwork slots to the final top-level routes.
 - [ ] **04 — Navigation states.** Add hover, active, focus and labels as independent UI overlays without editing the background.
 - [ ] **05 — Retire legacy shell styling.** Remove conflicting old header/sidebar/content framing and let the approved background become the real site frame. **Checkpoint.**
@@ -68,4 +79,4 @@ The redesign remains presentation work unless a step explicitly introduces a saf
 
 ---
 
-**V2 visual redesign progress after Step 1: 6.67%.**
+**V2 visual redesign: 6.67% validated; Step 2 awaiting visual approval.**
