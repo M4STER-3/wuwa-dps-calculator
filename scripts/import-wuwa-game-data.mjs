@@ -20,6 +20,12 @@ import {
   getEncoreEntityId,
   sha256,
 } from "./lib/encore-client.mjs";
+import {
+  collectFieldInventory,
+  createFieldInventoryAccumulator,
+  fieldInventoryLimits,
+  serializeFieldInventory,
+} from "./lib/encore-field-inventory.mjs";
 
 const REPO_ROOT = path.resolve(process.cwd());
 const RAW_ROOT = path.join(REPO_ROOT, "data", "sources", "encore", "release");
@@ -202,7 +208,7 @@ function buildDiff(previousManifest, nextResources) {
   return { blockedByRemovals: blocked, resources: diff };
 }
 
-async function writeAuditOutputs(manifest, schemaReport) {
+async function writeAuditOutputs(manifest, schemaReport, fieldInventoryReport) {
   await assertNoSymlinkComponents(AUDIT_OUTPUT_ROOT, REPO_ROOT);
   await rm(AUDIT_OUTPUT_ROOT, { recursive: true, force: true });
   await mkdir(AUDIT_OUTPUT_ROOT, { recursive: true, mode: 0o755 });
@@ -214,6 +220,11 @@ async function writeAuditOutputs(manifest, schemaReport) {
   await writeFile(
     path.join(AUDIT_OUTPUT_ROOT, "schema-report.json"),
     `${JSON.stringify(schemaReport, null, 2)}\n`,
+    { flag: "wx", mode: 0o644 },
+  );
+  await writeFile(
+    path.join(AUDIT_OUTPUT_ROOT, "field-inventory.json"),
+    `${JSON.stringify(fieldInventoryReport, null, 2)}\n`,
     { flag: "wx", mode: 0o644 },
   );
 }
@@ -252,6 +263,7 @@ async function main() {
   const runRoot = path.join(TEMP_ROOT, randomUUID());
   const stageRoot = path.join(runRoot, "release");
   const schemaPaths = new Map();
+  const fieldInventory = createFieldInventoryAccumulator();
   const files = [];
   const resources = {};
 
@@ -271,6 +283,7 @@ async function main() {
         sourceUrl: listResult.url,
       });
       collectSchemaPaths(listResult.json, `${resourceName}.list`, schemaPaths);
+      collectFieldInventory(listResult.json, `${resourceName}.list`, fieldInventory);
 
       const listEntities = getEncoreCollection(listResult.json, resourceName);
       if (listEntities.length > MAX_ENTITIES_PER_RESOURCE) {
@@ -290,6 +303,7 @@ async function main() {
         const detailPath = path.join(resourceRoot, "details", detailFile);
         await writeRawFile(detailPath, detailResult.raw);
         collectSchemaPaths(detailResult.json, `${resourceName}.detail`, schemaPaths);
+        collectFieldInventory(detailResult.json, `${resourceName}.detail`, fieldInventory);
         files.push({
           path: relativeRepoPath(path.join(RAW_ROOT, resourceName, "details", detailFile)),
           sha256: detailResult.sha256,
@@ -321,6 +335,23 @@ async function main() {
       observedAt: importedAt,
       paths: serializeSchemaReport(schemaPaths),
     };
+    const fieldInventoryReport = {
+      schemaVersion: 1,
+      sourceProvider: "encore",
+      dataset: ENCORE_DATASET,
+      observedAt: importedAt,
+      security: {
+        rawUrlSamples: "host-only",
+        scriptLikeSamples: "omitted",
+        htmlLikeSamples: "omitted",
+        maxPaths: fieldInventoryLimits.maxPaths,
+        maxDepth: fieldInventoryLimits.maxDepth,
+        maxArrayItemsPerNode: fieldInventoryLimits.maxArrayItemsPerNode,
+        maxSamplesPerPath: fieldInventoryLimits.maxSamplesPerPath,
+        maxSampleLength: fieldInventoryLimits.maxSampleLength,
+      },
+      fields: serializeFieldInventory(fieldInventory),
+    };
     const manifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
       sourceProvider: "encore",
@@ -345,6 +376,10 @@ async function main() {
       flag: "wx",
       mode: 0o644,
     });
+    await writeFile(path.join(stageRoot, "field-inventory.json"), `${JSON.stringify(fieldInventoryReport, null, 2)}\n`, {
+      flag: "wx",
+      mode: 0o644,
+    });
     await writeFile(path.join(stageRoot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, {
       flag: "wx",
       mode: 0o644,
@@ -357,6 +392,7 @@ async function main() {
       counts: Object.fromEntries(Object.entries(resources).map(([key, value]) => [key, value.count])),
       diff,
       schemaPathCount: schemaReport.paths.length,
+      fieldInventoryPathCount: fieldInventoryReport.fields.length,
       auditReportPath: auditOnly ? relativeRepoPath(AUDIT_OUTPUT_ROOT) : null,
       promoted: !auditOnly && !diff.blockedByRemovals,
     };
@@ -367,7 +403,7 @@ async function main() {
     }
 
     if (auditOnly) {
-      await writeAuditOutputs(manifest, schemaReport);
+      await writeAuditOutputs(manifest, schemaReport, fieldInventoryReport);
       return;
     }
     await promoteSnapshot(stageRoot);

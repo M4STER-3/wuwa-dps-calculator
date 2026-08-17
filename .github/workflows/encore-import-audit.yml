@@ -37,6 +37,7 @@ jobs:
       - name: Validate importer syntax
         run: |
           node --check scripts/lib/encore-client.mjs
+          node --check scripts/lib/encore-field-inventory.mjs
           node --check scripts/import-wuwa-game-data.mjs
           node --check scripts/test-wuwa-game-data-import-security.mjs
 
@@ -46,13 +47,14 @@ jobs:
       - name: Audit live Encore Release data without promoting it
         run: npm run game-data:import:audit
 
-      - name: Upload schema and manifest audit only
+      - name: Upload safe audit reports only
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: encore-release-audit
           path: |
             .tmp/wuwa-game-data-audit/manifest.json
             .tmp/wuwa-game-data-audit/schema-report.json
+            .tmp/wuwa-game-data-audit/field-inventory.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 3

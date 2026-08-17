@@ -12,7 +12,7 @@ V1 acquires the current Encore `Release` dataset for:
 
 The current Encore API documentation exposes these resources under `https://api-v2.encore.moe/api/{lang}`. The importer fixes the language to `en` and the dataset to `Release`.
 
-Sonata sets and detailed stat/progression normalization are deliberately not guessed in this first network step. Their real source shapes will be derived from the schema audit produced by the live audit workflow before normalized mappings are implemented.
+Sonata sets and detailed stat/progression normalization are deliberately not guessed in this first network step. Their real source shapes will be derived from the schema and field-inventory audits produced by the live audit workflow before normalized mappings are implemented.
 
 ## Commands
 
@@ -24,12 +24,15 @@ npm run game-data:import
 
 `game-data:test-security` uses a mocked transport and never contacts Encore.
 
-`game-data:import:audit` contacts Encore but never promotes RAW data into `data/`. It leaves only two non-RAW audit files in the ignored `.tmp/wuwa-game-data-audit/` directory:
+`game-data:import:audit` contacts Encore but never promotes RAW data into `data/`. It leaves only three non-RAW audit files in the ignored `.tmp/wuwa-game-data-audit/` directory:
 
 - `manifest.json` — request hashes, sizes, source IDs, counts and diff metadata;
-- `schema-report.json` — observed JSON paths and value types, without copying arbitrary source values into logs.
+- `schema-report.json` — observed JSON paths and value types;
+- `field-inventory.json` — bounded observations for scalar text/number/boolean fields so reviewed mappings can be designed from real data.
 
-`game-data:import` performs the same acquisition and validation and promotes the fully validated snapshot to `data/sources/encore/release/` only after the complete run succeeds.
+`field-inventory.json` is deliberately safer than copying the RAW payload into an artifact. Normal text samples are whitespace-normalized and capped at 240 characters. HTTP(S) values are represented by scheme + hostname only. Strings that look like HTML or script-bearing content are counted and flagged but their raw value is omitted from samples.
+
+`game-data:import` performs the same acquisition and validation and promotes the fully validated snapshot to `data/sources/encore/release/` only after the complete run succeeds. The promoted RAW snapshot also contains the schema and field-inventory reports for reproducible local normalization work.
 
 ## Network boundary
 
@@ -75,9 +78,21 @@ Before replacing an existing snapshot, the importer compares source IDs with the
 
 Promotion uses a staged directory and a recoverable directory swap so an incomplete network run cannot progressively overwrite the current RAW snapshot.
 
-## Schema discovery before normalization
+## Field discovery before normalization
 
-`schema-report.json` records observed JSON paths and value types up to a bounded depth. This is the source for the next implementation step:
+`schema-report.json` records observed JSON paths and value types up to a bounded depth.
+
+`field-inventory.json` adds bounded scalar observations that are useful for mapping actual game information:
+
+- string occurrence count and min/max length;
+- up to three safe, capped text samples per path;
+- URL-like, HTML-like, script-like and control-character counts;
+- numeric occurrence count, integer count and min/max values;
+- boolean true/false counts.
+
+This lets the next implementation step identify candidate fields for character names/descriptions, skills, sequences, weapon passives/ranks, Echo costs/skills, Sonata references and stat progressions without guessing from display names or executing source text.
+
+The next flow is:
 
 `RAW snapshot -> reviewed field mapping -> normalized generated Game Database`
 
@@ -87,6 +102,6 @@ The mapping must be explicit. Unknown fields can remain in RAW data, but only re
 
 `.github/workflows/encore-import-audit.yml` is manual-only (`workflow_dispatch`). It has read-only repository permissions, no deployment secrets, no write permission to `main`, installs locked dependencies with lifecycle scripts disabled, verifies npm signatures/provenance, runs the mock attack tests, then performs `game-data:import:audit`.
 
-Only the audit manifest and schema report are uploaded as a short-lived GitHub artifact. RAW payloads are not uploaded by this workflow.
+Only the audit manifest, schema report and safe field inventory are uploaded as a short-lived GitHub artifact. RAW payloads are not uploaded by this workflow.
 
-The purpose of this first live run is to inspect the real Release schema safely before implementing the normalizer for characters, weapons, Echoes, Sonata sets and stat progression.
+The purpose of the live run is to inspect the real Release schema and textual/numeric field inventory safely before implementing the normalizer for characters, weapons, Echoes, Sonata sets and stat progression.
