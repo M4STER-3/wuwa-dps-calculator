@@ -4,61 +4,78 @@ import {
   assertReviewedWeaponGrowth,
 } from "./game-stat-progression.mjs";
 
-const RESOLVED_GROWTH_BLOCKERS = new Set([
-  "character-growth-level-map-unresolved",
-  "weapon-growth-level-map-unresolved",
-]);
+const CHARACTER_GROWTH_BLOCKER = "character-growth-level-map-unresolved";
+const WEAPON_GROWTH_BLOCKER = "weapon-growth-level-map-unresolved";
 
-function freezeReadiness(base, characterCount, weaponCount) {
+function canReviewAll(entries, reviewer, label) {
+  if (!Array.isArray(entries) || entries.length === 0) return false;
+  try {
+    for (let index = 0; index < entries.length; index += 1) {
+      reviewer(entries[index]?.properties, `${label}[${index}].properties`);
+    }
+    return true;
+  } catch {
+    // Readiness remains diagnostic for incomplete technical fixtures. The
+    // generator independently rejects any non-empty production progression
+    // that fails the reviewed mapping.
+    return false;
+  }
+}
+
+function freezeReadiness(base, characterReady, weaponReady, characterCount, weaponCount) {
   return Object.freeze({
     ...base,
     characters: Object.freeze({
       ...base.characters,
-      statProgressionReady: characterCount,
+      statProgressionReady: characterReady ? characterCount : base.characters.statProgressionReady,
     }),
     weapons: Object.freeze({
       ...base.weapons,
-      statProgressionReady: weaponCount,
+      statProgressionReady: weaponReady ? weaponCount : base.weapons.statProgressionReady,
     }),
   });
 }
 
 /**
  * Extends the structural readiness validator with the independently reviewed
- * 96-point Encore Release level/ascension mapping. Any future source drift is
- * rejected before the historical unresolved blockers are removed.
+ * 96-point Encore Release level/ascension mapping. Historical/incomplete test
+ * fixtures remain explicitly unresolved; real snapshots are only promoted to
+ * ready when every entity passes the reviewed signature.
  */
 export function analyzeReviewedGameDatabaseReadiness(snapshot) {
   const structural = analyzeStructuralReadiness(snapshot);
   const characters = snapshot.characters ?? [];
   const weapons = snapshot.weapons ?? [];
+  const characterReady = canReviewAll(
+    characters,
+    assertReviewedCharacterGrowth,
+    "characters",
+  );
+  const weaponReady = canReviewAll(
+    weapons,
+    assertReviewedWeaponGrowth,
+    "weapons",
+  );
 
-  for (let index = 0; index < characters.length; index += 1) {
-    assertReviewedCharacterGrowth(
-      characters[index]?.properties,
-      `characters[${index}].properties`,
-    );
-  }
-  for (let index = 0; index < weapons.length; index += 1) {
-    assertReviewedWeaponGrowth(
-      weapons[index]?.properties,
-      `weapons[${index}].properties`,
-    );
-  }
+  const blockers = structural.blockers.filter((entry) => {
+    if (entry.code === CHARACTER_GROWTH_BLOCKER) return !characterReady;
+    if (entry.code === WEAPON_GROWTH_BLOCKER) return !weaponReady;
+    return true;
+  });
 
   return Object.freeze({
     ...structural,
     readiness: freezeReadiness(
       structural.readiness,
+      characterReady,
+      weaponReady,
       characters.length,
       weapons.length,
     ),
-    blockers: Object.freeze(
-      structural.blockers.filter((entry) => !RESOLVED_GROWTH_BLOCKERS.has(entry.code)),
-    ),
+    blockers: Object.freeze(blockers),
     reviewedMappings: Object.freeze({
-      characterGrowth: "encore-release-96-point-pre-post-ascension-v1",
-      weaponGrowth: "encore-release-96-point-half-step-ascension-v1",
+      characterGrowth: characterReady ? "encore-release-96-point-pre-post-ascension-v1" : "unresolved",
+      weaponGrowth: weaponReady ? "encore-release-96-point-half-step-ascension-v1" : "unresolved",
     }),
   });
 }
