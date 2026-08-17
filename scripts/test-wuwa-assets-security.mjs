@@ -101,6 +101,84 @@ async function testSafeSync() {
   });
 }
 
+async function testBatchedPromotionCheckpoints() {
+  await withTempDirectory(async (cwd) => {
+    const env = { MOCK_ENCORE_CASE: "safe" };
+
+    const characters = await runNode(
+      mockedSyncArgs(["--category=characters", "--reset-manifest"]),
+      { cwd, env },
+    );
+    assert.equal(characters.code, 0, `${characters.stdout}\n${characters.stderr}`);
+    assert.match(characters.stdout, /"category":"characters"/);
+    let manifest = await readManifest(cwd);
+    assert.deepEqual(Object.keys(manifest.entities.characters), ["1"]);
+    assert.deepEqual(Object.keys(manifest.entities.weapons), []);
+    assert.deepEqual(Object.keys(manifest.entities.echoes), []);
+    const characterHash = manifest.entities.characters["1"].assets["list-roleheadicon"].sha256;
+
+    const weapons = await runNode(mockedSyncArgs(["--category=weapons"]), { cwd, env });
+    assert.equal(weapons.code, 0, `${weapons.stdout}\n${weapons.stderr}`);
+    assert.match(weapons.stdout, /"category":"weapons"/);
+    manifest = await readManifest(cwd);
+    assert.deepEqual(Object.keys(manifest.entities.characters), ["1"]);
+    assert.deepEqual(Object.keys(manifest.entities.weapons), ["2"]);
+    assert.deepEqual(Object.keys(manifest.entities.echoes), []);
+    assert.equal(
+      manifest.entities.characters["1"].assets["list-roleheadicon"].sha256,
+      characterHash,
+      "characters checkpoint must survive the weapons batch unchanged",
+    );
+
+    const echoes = await runNode(
+      mockedSyncArgs(["--category=echoes", "--finalize"]),
+      { cwd, env },
+    );
+    assert.equal(echoes.code, 0, `${echoes.stdout}\n${echoes.stderr}`);
+    assert.match(echoes.stdout, /"category":"echoes"/);
+    assert.match(echoes.stdout, /"finalize":true/);
+    manifest = await readManifest(cwd);
+    assert.deepEqual(Object.keys(manifest.entities.characters), ["1"]);
+    assert.deepEqual(Object.keys(manifest.entities.weapons), ["2"]);
+    assert.deepEqual(Object.keys(manifest.entities.echoes), ["3"]);
+
+    const logicalPaths = [];
+    for (const category of Object.values(manifest.entities)) {
+      for (const entity of Object.values(category)) {
+        for (const asset of Object.values(entity.assets)) logicalPaths.push(asset.path);
+      }
+    }
+    assert.equal(new Set(logicalPaths).size, 1, "batch finalization must preserve global SHA-256 deduplication");
+    const objectFiles = await readdir(path.join(cwd, "public", "assets", "wuwa", "objects"));
+    assert.equal(objectFiles.length, 1, "finalization must prune objects not referenced by the global manifest");
+  });
+}
+
+async function testBatchArgumentGuards() {
+  await withTempDirectory(async (cwd) => {
+    const invalidReset = await runNode(
+      mockedSyncArgs(["--category=weapons", "--reset-manifest"]),
+      { cwd, env: { MOCK_ENCORE_CASE: "safe" } },
+    );
+    assert.equal(invalidReset.code, 1);
+    assert.match(invalidReset.stderr, /reset from the characters checkpoint/i);
+
+    const invalidFinalize = await runNode(
+      mockedSyncArgs(["--category=characters", "--finalize"]),
+      { cwd, env: { MOCK_ENCORE_CASE: "safe" } },
+    );
+    assert.equal(invalidFinalize.code, 1);
+    assert.match(invalidFinalize.stderr, /finalize only on the echoes checkpoint/i);
+
+    const invalidCategory = await runNode(
+      [SAFE_WRAPPER, "--category=not-a-category"],
+      { cwd },
+    );
+    assert.equal(invalidCategory.code, 1);
+    assert.match(invalidCategory.stderr, /unsupported asset-sync category/i);
+  });
+}
+
 async function testOptionalMissingAssetIsOmittedButUniversalCoverageSurvives() {
   await withTempDirectory(async (cwd) => {
     const result = await runNode(mockedSyncArgs(), {
@@ -194,6 +272,8 @@ async function testSymlinkGuards() {
 
 async function main() {
   await testSafeSync();
+  await testBatchedPromotionCheckpoints();
+  await testBatchArgumentGuards();
   await testOptionalMissingAssetIsOmittedButUniversalCoverageSurvives();
   await testRequiredMissingAssetFailsClosed();
   await testDangerousSourceId();

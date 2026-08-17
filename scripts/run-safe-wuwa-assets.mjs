@@ -10,14 +10,24 @@ const OUTPUT_ROOT = path.join(PUBLIC_ROOT, "assets", "wuwa");
 const OBJECTS_ROOT = path.join(OUTPUT_ROOT, "objects");
 const MANIFEST_PATH = path.join(OUTPUT_ROOT, "manifest.json");
 const SYNC_SCRIPT = fileURLToPath(new URL("./sync-wuwa-assets-v2.mjs", import.meta.url));
-const ALLOWED_ARGS = new Set(["--dry-run", "--force"]);
+const ALLOWED_FLAGS = new Set(["--dry-run", "--force", "--reset-manifest", "--finalize"]);
+const ALLOWED_CATEGORIES = new Set(["characters", "weapons", "echoes"]);
 
 function assertAllowedArguments(args) {
+  let categoryCount = 0;
   for (const arg of args) {
-    if (!ALLOWED_ARGS.has(arg)) {
-      throw new Error(`Unsupported asset-sync argument: ${arg}`);
+    if (ALLOWED_FLAGS.has(arg)) continue;
+    if (arg.startsWith("--category=")) {
+      categoryCount += 1;
+      const category = arg.slice("--category=".length);
+      if (!ALLOWED_CATEGORIES.has(category)) {
+        throw new Error(`Unsupported asset-sync category: ${category}`);
+      }
+      continue;
     }
+    throw new Error(`Unsupported asset-sync argument: ${arg}`);
   }
+  if (categoryCount > 1) throw new Error("Asset sync accepts at most one --category option");
 }
 
 async function assertRegularFile(filePath, label) {

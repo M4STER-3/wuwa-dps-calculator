@@ -17,23 +17,23 @@ concurrency:
 
 jobs:
   promote:
-    name: Re-fetch, verify, and prepare asset PR
+    name: Re-fetch, checkpoint, verify, and prepare asset PR
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - name: Checkout promotion branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
 
-      - name: Confirm trusted promotion branch
+      - name: Confirm trusted promotion branch boundary
         shell: bash
         run: |
           set -euo pipefail
@@ -44,16 +44,16 @@ jobs:
               exit 1
               ;;
           esac
-          if [ -n "$(git status --porcelain)" ]; then
+          if [ -n "$(git status --porcelain=v1 -uall)" ]; then
             echo 'Checkout must start clean.' >&2
-            git status --short >&2
+            git status --short -uall >&2
             exit 1
           fi
 
-          git fetch --no-tags --depth=1 origin main
-          unexpected_base="$({ git diff --name-only origin/main...HEAD | grep -vE '^\.github/asset-promotion\.trigger$'; } || true)"
+          git fetch --no-tags origin main
+          unexpected_base="$({ git diff --name-only origin/main...HEAD | grep -vE '^\.github/asset-promotion\.trigger$' | grep -vE '^public/assets/wuwa/'; } || true)"
           if [ -n "${unexpected_base}" ]; then
-            echo 'Promotion branches must start from main with only the one-shot trigger changed:' >&2
+            echo 'Promotion branches may differ from main only by the trigger and checkpointed WuWa assets:' >&2
             printf '%s\n' "${unexpected_base}" >&2
             exit 1
           fi
@@ -65,10 +65,108 @@ jobs:
           node scripts/test-wuwa-assets-security.mjs
           node scripts/test-wuwa-asset-verifier.mjs
 
-      - name: Synchronize fresh Release image bytes
-        run: node scripts/run-safe-wuwa-assets.mjs --force
+      - name: Inspect existing promotion checkpoint
+        id: checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="$({ node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
 
-      - name: Independently verify every promoted object
+          let manifest;
+          try {
+            manifest = JSON.parse(await readFile('public/assets/wuwa/manifest.json', 'utf8'));
+          } catch (error) {
+            if (error && typeof error === 'object' && error.code === 'ENOENT') {
+              console.log('none');
+              process.exit(0);
+            }
+            throw error;
+          }
+
+          const entities = manifest?.entities;
+          if (!entities || typeof entities !== 'object' || Array.isArray(entities)) {
+            throw new Error('Existing promotion manifest has no valid entities object.');
+          }
+          const counts = Object.fromEntries(
+            ['characters', 'weapons', 'echoes'].map((category) => {
+              const value = entities[category];
+              if (!value || typeof value !== 'object' || Array.isArray(value)) {
+                throw new Error(`Existing promotion manifest category ${category} is invalid.`);
+              }
+              return [category, Object.keys(value).length];
+            }),
+          );
+
+          if (counts.echoes > 0 && (counts.characters === 0 || counts.weapons === 0)) {
+            throw new Error('Echo checkpoint exists without all prerequisite categories.');
+          }
+          if (counts.weapons > 0 && counts.characters === 0) {
+            throw new Error('Weapon checkpoint exists without characters.');
+          }
+
+          if (counts.echoes > 0) console.log('echoes');
+          else if (counts.weapons > 0) console.log('weapons');
+          else if (counts.characters > 0) console.log('characters');
+          else console.log('none');
+          NODE
+          } )"
+          echo "stage=${stage}" >> "${GITHUB_OUTPUT}"
+          echo "Resuming from checkpoint: ${stage}"
+
+      - name: Synchronize characters checkpoint
+        if: steps.checkpoint.outputs.stage == 'none'
+        run: node scripts/run-safe-wuwa-assets.mjs --force --category=characters --reset-manifest
+
+      - name: Commit characters checkpoint
+        if: steps.checkpoint.outputs.stage == 'none'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          unexpected="$({ git status --porcelain=v1 -uall | awk '{print $2}' | grep -vE '^public/assets/wuwa/'; } || true)"
+          if [ -n "${unexpected}" ]; then
+            echo 'Characters checkpoint changed files outside public/assets/wuwa:' >&2
+            printf '%s\n' "${unexpected}" >&2
+            exit 1
+          fi
+          git add -A -- public/assets/wuwa
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'checkpoint verified WuWa character assets'
+          gh auth setup-git
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Synchronize weapons checkpoint
+        if: steps.checkpoint.outputs.stage != 'weapons' && steps.checkpoint.outputs.stage != 'echoes'
+        run: node scripts/run-safe-wuwa-assets.mjs --force --category=weapons
+
+      - name: Commit weapons checkpoint
+        if: steps.checkpoint.outputs.stage != 'weapons' && steps.checkpoint.outputs.stage != 'echoes'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          unexpected="$({ git status --porcelain=v1 -uall | awk '{print $2}' | grep -vE '^public/assets/wuwa/'; } || true)"
+          if [ -n "${unexpected}" ]; then
+            echo 'Weapons checkpoint changed files outside public/assets/wuwa:' >&2
+            printf '%s\n' "${unexpected}" >&2
+            exit 1
+          fi
+          git add -A -- public/assets/wuwa
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'checkpoint verified WuWa weapon assets'
+          gh auth setup-git
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Synchronize and finalize Echo assets
+        if: steps.checkpoint.outputs.stage != 'echoes'
+        run: node scripts/run-safe-wuwa-assets.mjs --force --category=echoes --finalize
+
+      - name: Independently verify every final promoted object
         run: node scripts/verify-wuwa-assets.mjs
 
       - name: Bound GitHub promotion footprint
@@ -87,18 +185,18 @@ jobs:
           fi
           echo "Promotion footprint: ${object_count} objects, ${physical_bytes} bytes."
 
-      - name: Restrict generated changes to the asset tree
+      - name: Restrict final generated changes to the asset tree
         shell: bash
         run: |
           set -euo pipefail
-          unexpected="$({ git status --porcelain=v1 | awk '{print $2}' | grep -vE '^public/assets/wuwa/' | grep -vE '^\.github/asset-promotion\.trigger$'; } || true)"
+          unexpected="$({ git status --porcelain=v1 -uall | awk '{print $2}' | grep -vE '^public/assets/wuwa/' | grep -vE '^\.github/asset-promotion\.trigger$'; } || true)"
           if [ -n "${unexpected}" ]; then
             echo 'Promotion changed files outside the reviewed asset tree:' >&2
             printf '%s\n' "${unexpected}" >&2
             exit 1
           fi
 
-      - name: Remove one-shot trigger and prepare commit
+      - name: Remove one-shot trigger and prepare final commit
         id: prepare
         shell: bash
         run: |
@@ -120,7 +218,7 @@ jobs:
             echo 'asset_changes=true' >> "${GITHUB_OUTPUT}"
           fi
 
-      - name: Commit verified assets to promotion branch
+      - name: Commit verified final assets to promotion branch
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -149,13 +247,12 @@ jobs:
 
           This pull request contains only the locally materialized WuWa asset tree generated from Encore.moe Release data.
 
-          Before this branch was pushed, the workflow:
-          - required the promotion branch to match main except for its one-shot trigger;
-          - reran the asset policy and hostile-input tests;
-          - re-fetched live image bytes with --force;
-          - independently re-read every generated object and verified its MIME signature, byte size, SHA-256, content-addressed path, trusted Encore source URL, required semantic roles, deduplication and orphan-free object store;
-          - enforced a 5000-object / 256 MiB GitHub promotion ceiling;
-          - rejected changes outside public/assets/wuwa.
+          The workflow promoted the data through resumable category checkpoints:
+          - characters;
+          - weapons;
+          - Echoes, followed by global finalization and pruning.
+
+          Each completed checkpoint was committed to the promotion branch so a later category failure does not require re-downloading earlier categories. Before the final commit, the workflow independently re-read every generated object and verified MIME signature, byte size, SHA-256, content-addressed path, trusted Encore source URL, required semantic roles, deduplication and orphan-free storage.
 
           Source workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
 
