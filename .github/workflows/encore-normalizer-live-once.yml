@@ -44,6 +44,27 @@ jobs:
       - name: Import live Encore Release into ephemeral workspace
         run: npm run game-data:import
 
+      - name: Inspect unnamed skill metadata without source text
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import path from 'node:path';
+          const root = path.join(process.cwd(), 'data', 'sources', 'encore', 'release');
+          const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
+          const character = manifest.resources.characters.entities.find((entry) => String(entry.sourceId) === '1305');
+          if (!character) throw new Error('Character 1305 not found in manifest');
+          const detail = JSON.parse(await readFile(path.join(root, 'characters', 'details', character.detailFile), 'utf8'));
+          const summary = (detail.Skills ?? []).map((skill, index) => ({
+            index,
+            sourceSkillId: skill?.SkillId == null ? null : String(skill.SkillId),
+            nameEmpty: typeof skill?.SkillName !== 'string' || skill.SkillName.trim().length === 0,
+            skillType: typeof skill?.SkillType === 'string' ? skill.SkillType.slice(0, 120) : null,
+            hasDescription: typeof skill?.SkillDescribe === 'string' && skill.SkillDescribe.trim().length > 0,
+            attributeCount: Array.isArray(skill?.SkillAttributes) ? skill.SkillAttributes.length : null,
+          })).filter((entry) => entry.nameEmpty);
+          console.log(`UNNAMED_SKILL_METADATA=${JSON.stringify(summary)}`);
+          NODE
+
       - name: Normalize live RAW snapshot offline
         run: npm run game-data:normalize
 
