@@ -91,7 +91,21 @@ function validLoadout(): EchoLoadoutV1 {
   };
 }
 
-const mutableClone = <T,>(value: T): T => structuredClone(value);
+type MutableLoadout = {
+  mainEchoId?: string;
+  echoes: Array<{
+    echoId: string;
+    sonataSetId: string;
+    rarity: number;
+    level: number;
+    primaryMainStatId: string;
+    substats: Array<{ statId: string; value: number }>;
+  }>;
+};
+
+const mutableLoadout = (): MutableLoadout => structuredClone(validLoadout()) as unknown as MutableLoadout;
+const resolveMutable = (loadout: MutableLoadout) =>
+  resolveEchoLoadoutV1(database, loadout as unknown as EchoLoadoutV1);
 
 describe("resolveEchoLoadoutV1", () => {
   it("resolves an exact 4-3-3-1-1 endgame loadout without touching finalStats", () => {
@@ -111,60 +125,54 @@ describe("resolveEchoLoadoutV1", () => {
   });
 
   it("rejects impossible cost, main-stat, Sonata and roll combinations", () => {
-    const overCost = mutableClone(validLoadout());
+    const overCost = mutableLoadout();
     overCost.echoes[4] = {
       ...overCost.echoes[4]!,
       echoId: "echo:4002",
       primaryMainStatId: "echo-main-4-attack-percent",
     };
-    expect(() => resolveEchoLoadoutV1(database, overCost)).toThrow(/cost exceeds 12/);
+    expect(() => resolveMutable(overCost)).toThrow(/cost exceeds 12/);
 
-    const badMain = mutableClone(validLoadout());
+    const badMain = mutableLoadout();
     badMain.echoes[3]!.primaryMainStatId = "echo-main-4-crit-rate";
-    expect(() => resolveEchoLoadoutV1(database, badMain)).toThrow(/invalid 1-cost main stat/);
+    expect(() => resolveMutable(badMain)).toThrow(/invalid 1-cost main stat/);
 
-    const badSonata = mutableClone(validLoadout());
+    const badSonata = mutableLoadout();
     badSonata.echoes[0]!.sonataSetId = "sonata-set:999";
-    expect(() => resolveEchoLoadoutV1(database, badSonata)).toThrow(/cannot have/);
+    expect(() => resolveMutable(badSonata)).toThrow(/cannot have/);
 
-    const impossibleRoll = mutableClone(validLoadout());
+    const impossibleRoll = mutableLoadout();
     impossibleRoll.echoes[0]!.substats[0]!.value = 20.9;
-    expect(() => resolveEchoLoadoutV1(database, impossibleRoll)).toThrow(/impossible roll/);
+    expect(() => resolveMutable(impossibleRoll)).toThrow(/impossible roll/);
   });
 
   it("rejects duplicated Echo types and duplicated substats in V1", () => {
-    const duplicateEcho = mutableClone(validLoadout());
+    const duplicateEcho = mutableLoadout();
     duplicateEcho.echoes[4] = {
       ...duplicateEcho.echoes[4]!,
       echoId: "echo:1001",
     };
-    expect(() => resolveEchoLoadoutV1(database, duplicateEcho)).toThrow(/duplicates Echo/);
+    expect(() => resolveMutable(duplicateEcho)).toThrow(/duplicates Echo/);
 
-    const duplicateSubstat = mutableClone(validLoadout());
+    const duplicateSubstat = mutableLoadout();
     duplicateSubstat.echoes[0]!.substats = [
       { statId: "echo-sub-crit-rate", value: 10.5 },
       { statId: "echo-sub-crit-rate", value: 9.9 },
     ];
-    expect(() => resolveEchoLoadoutV1(database, duplicateSubstat)).toThrow(/duplicates substat/);
+    expect(() => resolveMutable(duplicateSubstat)).toThrow(/duplicates substat/);
   });
 
   it("rejects unsupported rarity/level and a main Echo that is not equipped", () => {
-    const badLevel = mutableClone(validLoadout()) as unknown as {
-      echoes: Array<Record<string, unknown>>;
-      mainEchoId?: string;
-    };
+    const badLevel = mutableLoadout();
     badLevel.echoes[0]!.level = 20;
-    expect(() => resolveEchoLoadoutV1(database, badLevel as unknown as EchoLoadoutV1)).toThrow(/unsupported level/);
+    expect(() => resolveMutable(badLevel)).toThrow(/unsupported level/);
 
-    const badRarity = mutableClone(validLoadout()) as unknown as {
-      echoes: Array<Record<string, unknown>>;
-      mainEchoId?: string;
-    };
+    const badRarity = mutableLoadout();
     badRarity.echoes[0]!.rarity = 4;
-    expect(() => resolveEchoLoadoutV1(database, badRarity as unknown as EchoLoadoutV1)).toThrow(/unsupported rarity/);
+    expect(() => resolveMutable(badRarity)).toThrow(/unsupported rarity/);
 
-    const badMainEcho = mutableClone(validLoadout());
+    const badMainEcho = mutableLoadout();
     badMainEcho.mainEchoId = "echo:9999";
-    expect(() => resolveEchoLoadoutV1(database, badMainEcho)).toThrow(/is not equipped/);
+    expect(() => resolveMutable(badMainEcho)).toThrow(/is not equipped/);
   });
 });
