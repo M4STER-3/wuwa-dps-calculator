@@ -23,6 +23,8 @@ const MAX_URL_LENGTH = 4096;
 const REQUEST_TIMEOUT_MS = 15_000;
 
 const DANGEROUS_OBJECT_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+const FORBIDDEN_REMOTE_IMAGE_PATH_PATTERN =
+  /(?:^|[._-])(?:ad|ads|advert|advertisement|advertising|sponsor|sponsored|tracking|tracker|pixel|promo|promotion)(?:[._-]|$)/i;
 
 const ALLOWED_IMAGE_TYPES = new Map([
   ["image/png", "png"],
@@ -105,7 +107,8 @@ function parseTrustedUrl(rawUrl, { api = false } = {}) {
   return url;
 }
 
-function looksLikeImageField(key, value) {
+function looksLikeImageField(fieldPath, key, value) {
+  if (FORBIDDEN_REMOTE_IMAGE_PATH_PATTERN.test(fieldPath)) return false;
   if (typeof value !== "string") return false;
   let url;
   try {
@@ -143,7 +146,7 @@ function collectImageUrls(value, prefix = "root") {
 
     for (const [key, child] of Object.entries(current.value)) {
       const fieldPath = `${current.prefix}.${key}`;
-      if (looksLikeImageField(key, child)) {
+      if (looksLikeImageField(fieldPath, key, child)) {
         if (found.size >= MAX_IMAGES_PER_ENTITY) throw new Error(`Entity exceeded ${MAX_IMAGES_PER_ENTITY} image fields`);
         found.set(fieldPath, parseTrustedUrl(child).toString());
       } else if (child && typeof child === "object") {
