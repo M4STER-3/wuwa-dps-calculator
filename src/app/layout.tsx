@@ -3,6 +3,7 @@ import { SiteShell } from "@/components/site-shell";
 import "./globals.css";
 import "./site-shell.css";
 import "./background-system.css";
+import "./illustrated-card.css";
 import "./site-shell-focus.css";
 
 export const metadata: Metadata = {

@@ -1,6 +1,6 @@
 # WUWA LAB visual redesign
 
-Status: **Step 6 / 20 — background / texture system defined**
+Status: **Step 7 / 20 — illustrated card system defined**
 
 This document is the visual source of truth for the WUWA LAB redesign. Visual-redesign progress is tracked separately from calculator functionality: it starts at 0% and reaches 100% only after all 20 visual steps are complete.
 
@@ -14,7 +14,7 @@ The supplied visual reference establishes this direction:
 - **Contrast surfaces:** deep charcoal / ink-black navigation, selected states and image-led cards.
 - **Accents:** restrained antique gold / warm beige. Gameplay colours are reserved for actual gameplay meaning.
 - **Borders:** thin, precise, slightly warm neutral lines.
-- **Shape language:** rectangular and editorial, with restrained corner radii.
+- **Shape language:** editorial and slightly irregular rather than box-driven. Use partial frames, restrained cut corners, layered planes, overlap and directional separators before adding another complete rectangle.
 - **Texture:** subtle paper / grain / ink treatment may add atmosphere but never reduce data readability.
 - **Typography:** editorial display hierarchy plus compact technical UI/data typography.
 - **Density:** information-rich but ordered, closer to a technical field guide than a spacious SaaS dashboard.
@@ -22,6 +22,18 @@ The supplied visual reference establishes this direction:
 - **Motion:** restrained and functional. No RGB glow, animated grain or attention-seeking motion.
 
 This is a visual direction, not a request to reproduce the official Wuthering Waves UI or the reference image pixel-for-pixel.
+
+### Shape-composition rule
+
+A section should not automatically become a bordered rectangle. Prefer, in order:
+
+1. alignment and spacing;
+2. typography and contrast;
+3. a directional rule or partial frame;
+4. overlapping paper/ink planes;
+5. a restrained cut-corner container only when a real boundary is useful.
+
+Avoid repeated nested rectangles, equal-width dashboard grids, large generic rounded cards, and perfect geometric repetition when the content can remain clear with a more editorial composition. Decorative asymmetry must stay subtle enough that technical values still scan quickly.
 
 ## 2. Legacy styling to remove progressively
 
@@ -32,6 +44,7 @@ The redesign should progressively remove or strongly reduce:
 - full-screen black/blue as the default content surface;
 - cyan as the dominant brand colour;
 - large generic rounded SaaS panels;
+- repeated complete rectangular frames around every content group;
 - excessive pill badges;
 - oversized empty spacing around technical data;
 - controls visually dominating the content;
@@ -46,9 +59,10 @@ Legacy CSS can remain temporarily where a feature has not reached its dedicated 
 2. **Game imagery should improve recognition and navigation.**
 3. **Permanent and runtime state must remain visually understandable.**
 4. **Dense does not mean cluttered: alignment, type and separators should do more work than giant containers.**
-5. **Character Box, Echoes, Personal DPS, Team DPS and Game Data must share one visual grammar.**
-6. **Mobile is a reflow of the same product, not a separate visual system.**
-7. **Only local verified imagery is used in the future image pipeline.**
+5. **Composition should do more work than boxes: use layering, overlap, partial lines and asymmetric balance before complete frames.**
+6. **Character Box, Echoes, Personal DPS, Team DPS and Game Data must share one visual grammar.**
+7. **Mobile is a reflow of the same product, not a separate visual system.**
+8. **Only local verified gameplay imagery is used in the future image pipeline.**
 
 ## 4. Page-level targets
 
@@ -56,10 +70,10 @@ Legacy CSS can remain temporarily where a feature has not reached its dedicated 
 Editorial WUWA LAB hero, restrained character artwork, compact database counters and strong dark module navigation.
 
 ### Character Box
-Compact Resonator gallery, selected-character presentation, weapon, permanent stats and build summary in one structured editorial composition.
+Compact Resonator gallery, selected-character presentation, weapon, permanent stats and build summary in one structured editorial composition. The page should avoid a wall of equally weighted panels: selected character artwork and build identity must create a clear dominant plane.
 
 ### Echo editor
-Five coherent image-led Echo cards with Main Echo, cost, Sonata, main stats and substats readable without a wall of selects.
+Five coherent image-led Echo cards with Main Echo, cost, Sonata, main stats and substats readable without a wall of selects. The loadout should read as one composition rather than five unrelated form boxes.
 
 ### Personal DPS
 Build identity and result lead visually: DPS, duration, total damage, breakdown and rotation timeline. Diagnostics and sandbox controls become secondary.
@@ -91,6 +105,8 @@ Image rules:
 - never expose RAW imported data to the browser;
 - provide deterministic missing-image fallbacks;
 - optimise thumbnail and large-artwork use separately where practical.
+
+Generated decorative imagery is optional, not required for the redesign. Shape language, layering, colour and layout must work in CSS/components first. If original generated decorative assets are introduced later, they should be limited to WUWA LAB-specific ornamentation/background motifs, while actual Resonator, weapon and Echo identity imagery remains sourced from the verified local game-asset pipeline.
 
 ## 6. Foundation contracts
 
@@ -136,6 +152,8 @@ No external font dependency or hosted font request is introduced.
 
 They contain no game, persistence, remote-data or combat logic.
 
+These primitives are building blocks, not a mandate to wrap every section in a panel. Later feature pages should prefer the shape-composition rule above.
+
 ### Global shell — Step 5 checkpoint
 
 The previous horizontal SaaS header was replaced with the first fully migrated product frame:
@@ -166,6 +184,25 @@ There are no raster texture assets, data-URI textures, remote resources, animate
 
 Texture is decorative only. `prefers-contrast: more` and `forced-colors: active` remove it. See `docs/background-system.md`.
 
+### Illustrated card system — Step 7
+
+`src/components/ui/wuwa-illustrated-card.tsx` and `src/app/illustrated-card.css` define the image-led presentation contract before real game assets are exposed to browser UI.
+
+The system provides:
+
+- explicit `resonator`, `weapon`, and `echo` kinds;
+- `gallery`, `standard`, and `feature` densities;
+- deterministic CSS-only R/W/E fallbacks;
+- subtle cut-corner silhouettes instead of generic rounded rectangles;
+- partial artwork frames rather than complete nested boxes;
+- slightly overlapping information planes;
+- layered feature composition rather than rigid equal columns;
+- native selectable button semantics with `aria-pressed`;
+- explicit unavailable state;
+- reduced-motion, high-contrast, and forced-colours fallbacks.
+
+Step 7 still has no access to GameAssetRegistry or external URLs. See `docs/illustrated-cards.md`.
+
 ## 7. Twenty-step redesign roadmap
 
 Each completed step represents **5%** of the visual redesign.
@@ -176,7 +213,7 @@ Each completed step represents **5%** of the visual redesign.
 - [x] **04 — Shared UI primitives.** Build panels, cards, buttons, tabs, fields, badges, stat rows, dividers and tooltips.
 - [x] **05 — Global shell.** Rebuild navigation, page frame and footer. **Checkpoint passed.**
 - [x] **06 — Background / texture system.** Implement restrained paper, grain and decorative treatment with accessibility/performance constraints.
-- [ ] **07 — Illustrated card system.** Create reusable image-led cards for Resonators, weapons and Echoes.
+- [x] **07 — Illustrated card system.** Create reusable image-led cards for Resonators, weapons and Echoes with the less-boxed editorial shape language.
 - [ ] **08 — Safe UI asset projection.** Expose only local stable-ID image mappings required by browser UI.
 - [ ] **09 — Asset presentation proof.** Validate crop, fallback, sizing and loading on a small cross-category sample. **Checkpoint.**
 - [ ] **10 — Character Box layout.** Recompose the page before final imagery polish.
@@ -195,6 +232,8 @@ Each completed step represents **5%** of the visual redesign.
 
 Steps 5, 9, 13, 16 and 18 are explicit visual checkpoints. If the direction looks wrong at a checkpoint, fix the shared language before carrying it into additional pages.
 
+The Step 9 checkpoint must explicitly assess whether the result remains too geometric/box-driven once real imagery is present. If so, shape, overlap and framing must be corrected there before Character Box layout work begins.
+
 ## 9. Architecture boundary during the redesign
 
 The redesign is presentation work unless a step explicitly requires a safe UI projection. It must not silently change combat semantics.
@@ -209,4 +248,4 @@ In particular:
 
 ---
 
-**Visual redesign progress after Step 6: 30%.**
+**Visual redesign progress after Step 7: 35%.**
