@@ -32,6 +32,12 @@ The safe field inventory observed:
 
 These counts are important because they confirm that remote strings cannot be treated as presentation-ready trusted HTML even when the source is behaving normally.
 
+### Risky content is not the same as detected malicious content
+
+The audited Release sample did **not** contain a confirmed malicious payload under the current detectors. No script-like source string was detected, no disallowed control-character string was detected, no source value caused the importer to follow an external URL, and no source content was executed.
+
+The URL-like, rich-text and expression-like values above are therefore classified as **attack surface / latent risk**, not evidence that Encore was attacking the importer. They become dangerous only if future code incorrectly treats them as executable markup, trusted navigation targets or executable expressions. The security boundary exists so that a future compromised or malformed source still fails closed rather than turning that risk into execution.
+
 ### Embedded URLs
 
 Encore payloads contain many URL-like values, largely associated with images and other source metadata. The game-data importer does not follow URLs discovered in payload values. Network destinations are constructed only by the reviewed Encore client from its fixed endpoint family.
@@ -107,7 +113,7 @@ Confirmed fields include:
 - Echo skill detail under `Skill`, including plain summary, formatted description, cooldown and structured damage evidence;
 - `FetterGroupDetails` / `FetterDetails`, which expose Sonata names, descriptive text, set-effect descriptions and observed activation keys such as 2 and 5 pieces.
 
-The audit also shows some duplicated/source-internal Sonata representation and occasional mixed-language source definition text. Normalization must select reviewed stable fields and deduplicate Sonata definitions rather than copying every repeated Echo-local representation.
+The audit also shows some duplicated/source-internal Sonata representation and occasional mixed-language source definition text. Normalization must select reviewed stable fields and deduplicate Sonata definitions rather than copying every repeated Echo-local representation. Echo-local Sonata definition lore remains RAW-only in the normalized preview.
 
 Echo `Rarity`, `QualityId`, `LevelUpGroupId` and handbook intensity are source concepts that must not be guessed into player Echo cost/quality semantics without explicit validation.
 
@@ -141,7 +147,7 @@ The first normalizer must therefore:
 - reject duplicate source IDs and conflicting Sonata definitions;
 - convert browser-facing strings to bounded inert plain text;
 - exclude arbitrary URLs, internal Unreal asset paths and unknown fields from normalized catalog output;
-- preserve source hashes/provenance separately;
+- preserve source hashes/provenance separately for every character, weapon and Echo source entity;
 - keep ambiguous progression/cost mappings unsupported instead of guessing;
 - keep source damage conditions/formulas out of executable combat runtime;
 - produce deterministic output and diagnostics;
@@ -149,6 +155,6 @@ The first normalizer must therefore:
 
 ## Conclusion
 
-The importer is suitable to proceed to reviewed normalization under the controls above. The live audit did **not** reveal evidence of script payloads in the current Release sample, but it did prove that URLs, markup and expression-like source data are common enough that the trust boundary must remain permanent.
+The importer is suitable to proceed to reviewed normalization under the controls above. The live audit did **not** reveal evidence of script payloads or another confirmed malicious payload in the current Release sample, but it did prove that URLs, markup and expression-like source data are common enough that the trust boundary must remain permanent.
 
 This review does not authorize unattended auto-merge or direct source-to-production updates. Generated data changes remain reviewable until the normalization, diff and regression layers are mature.
