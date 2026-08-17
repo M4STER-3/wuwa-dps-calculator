@@ -18,9 +18,11 @@ function jsonResponse(value) {
 }
 
 function imageResponse(url) {
-  const bytes = testCase === "bad-image" && url.pathname.includes("character")
-    ? badImageBytes
-    : pngBytes;
+  const bytes =
+    (testCase === "bad-image" && url.pathname.includes("character")) ||
+    url.pathname.includes("advertisement")
+      ? badImageBytes
+      : pngBytes;
   return new Response(bytes, {
     status: 200,
     headers: {
@@ -37,6 +39,9 @@ function characterList() {
         Id: testCase === "dangerous-id" ? "__proto__" : 1,
         Name: "Security Fixture Character",
         RoleHeadIcon: "https://cdn.encore.moe/character.png",
+        Advertisement: {
+          Image: "https://cdn.encore.moe/advertisement.png",
+        },
       },
     ],
   };
