@@ -1,0 +1,172 @@
+name: Echo cost semantics audit
+
+on:
+  push:
+    branches:
+      - "audit/echo-cost-release-20260817"
+    paths:
+      - ".github/echo-cost.trigger"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Cross-check live Echo cost semantics
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify dependency signatures and audit
+        run: |
+          set -euo pipefail
+          npm audit signatures
+          npm audit --audit-level=high
+
+      - name: Test importer boundary before network
+        run: npm run game-data:test-security
+
+      - name: Import current Encore Release into ephemeral runner storage
+        run: npm run game-data:import
+
+      - name: Cross-check Cost, Intensity, and RandGroupId
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/echo-cost-audit
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { readFile, writeFile } from 'node:fs/promises';
+          import path from 'node:path';
+
+          const root = 'data/sources/encore/release';
+          const manifestRaw = await readFile(path.join(root, 'manifest.json'));
+          const manifest = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(manifestRaw));
+          if (manifest?.sourceProvider !== 'encore' || manifest?.dataset !== 'Release' || manifest?.language !== 'en') {
+            throw new Error('Unexpected source manifest boundary.');
+          }
+          const entities = manifest?.resources?.echoes?.entities;
+          if (!Array.isArray(entities) || entities.length === 0 || entities.length > 1000) {
+            throw new Error('Unexpected Echo collection.');
+          }
+
+          const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+          const counts = () => Object.create(null);
+          const add = (map, key) => { map[key] = (map[key] ?? 0) + 1; };
+          const addCross = (map, outer, inner) => {
+            map[outer] ??= counts();
+            add(map[outer], inner);
+          };
+          const safeLabel = (value) => {
+            if (value === undefined) return '<missing>';
+            if (value === null) return '<null>';
+            if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+            if (typeof value !== 'string') return `<${typeof value}>`;
+            if (value.length > 120 || /[\u0000-\u001f\u007f-\u009f]/.test(value)) throw new Error('Unsafe audit label.');
+            return value;
+          };
+
+          const rawCost = counts();
+          const intensity = counts();
+          const randGroup = counts();
+          const rarity = counts();
+          const quality = counts();
+          const phantomType = counts();
+          const randGroupToIntensity = counts();
+          const randGroupToRawCost = counts();
+          const intensityToRawCost = counts();
+          const intensityToRarity = counts();
+          const intensityToQuality = counts();
+          let detailBytes = 0;
+
+          for (const [index, entity] of entities.entries()) {
+            if (!entity || typeof entity.sourceId !== 'string' || !/^[a-f0-9]{32}\.json$/.test(entity.detailFile ?? '')) {
+              throw new Error(`Invalid Echo manifest metadata at ${index}.`);
+            }
+            if (typeof entity.detailSha256 !== 'string' || !/^[a-f0-9]{64}$/.test(entity.detailSha256)) {
+              throw new Error(`Invalid Echo detail hash at ${index}.`);
+            }
+            const file = path.join(root, 'echoes', 'details', entity.detailFile);
+            const bytes = await readFile(file);
+            detailBytes += bytes.length;
+            if (bytes.length <= 0 || bytes.length > 8 * 1024 * 1024) throw new Error(`Echo ${entity.sourceId} detail size is invalid.`);
+            if (sha256(bytes) !== entity.detailSha256) throw new Error(`Echo ${entity.sourceId} detail hash mismatch.`);
+            const detail = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+            if (String(detail.MonsterId) !== entity.sourceId) throw new Error(`Echo ${entity.sourceId} detail ID mismatch.`);
+
+            const costLabel = safeLabel(detail.Cost);
+            const intensityLabel = safeLabel(detail.Handbook?.Intensity);
+            const randLabel = safeLabel(detail.MainProp?.RandGroupId);
+            const rarityLabel = safeLabel(detail.Rarity);
+            const qualityLabel = safeLabel(detail.QualityId);
+            const phantomLabel = safeLabel(detail.PhantomType);
+
+            add(rawCost, costLabel);
+            add(intensity, intensityLabel);
+            add(randGroup, randLabel);
+            add(rarity, rarityLabel);
+            add(quality, qualityLabel);
+            add(phantomType, phantomLabel);
+            addCross(randGroupToIntensity, randLabel, intensityLabel);
+            addCross(randGroupToRawCost, randLabel, costLabel);
+            addCross(intensityToRawCost, intensityLabel, costLabel);
+            addCross(intensityToRarity, intensityLabel, rarityLabel);
+            addCross(intensityToQuality, intensityLabel, qualityLabel);
+          }
+
+          const sortedObject = (value) => Object.fromEntries(
+            Object.entries(value)
+              .sort(([left], [right]) => left.localeCompare(right, 'en', { numeric: true }))
+              .map(([key, inner]) => [
+                key,
+                inner && typeof inner === 'object' && !Array.isArray(inner)
+                  ? Object.fromEntries(Object.entries(inner).sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true })))
+                  : inner,
+              ]),
+          );
+
+          const summary = {
+            echoCount: entities.length,
+            verifiedDetailBytes: detailBytes,
+            rawCost: sortedObject(rawCost),
+            handbookIntensity: sortedObject(intensity),
+            mainPropRandGroupId: sortedObject(randGroup),
+            rarity: sortedObject(rarity),
+            qualityId: sortedObject(quality),
+            phantomType: sortedObject(phantomType),
+            randGroupToIntensity: sortedObject(randGroupToIntensity),
+            randGroupToRawCost: sortedObject(randGroupToRawCost),
+            intensityToRawCost: sortedObject(intensityToRawCost),
+            intensityToRarity: sortedObject(intensityToRarity),
+            intensityToQuality: sortedObject(intensityToQuality),
+          };
+          const serialized = `${JSON.stringify(summary, null, 2)}\n`;
+          if (Buffer.byteLength(serialized) > 256 * 1024) throw new Error('Audit summary unexpectedly large.');
+          if (/https?:\/\/|<script|sourceUrl|characters"\s*:\s*\[|weapons"\s*:\s*\[|echoes"\s*:\s*\[/i.test(serialized)) {
+            throw new Error('Audit summary contains a forbidden raw-data marker.');
+          }
+          await writeFile('.tmp/echo-cost-audit/summary.json', serialized, 'utf8');
+          console.log(`WUWA_ECHO_COST_AUDIT=${JSON.stringify(summary)}`);
+          NODE
+
+      - name: Upload summary only
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: echo-cost-semantics-summary
+          path: .tmp/echo-cost-audit/summary.json
+          if-no-files-found: error
+          retention-days: 3
