@@ -2,6 +2,9 @@ name: Encore import audit
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - audit/encore-release-once-20260817
 
 permissions:
   contents: read
