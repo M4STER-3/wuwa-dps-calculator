@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
+import { SiteShell } from "@/components/site-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Wuthering Waves — Character Box",
-  description: "Planifiez et conservez les builds de vos Resonators.",
+  title: "WUWA LAB — Wuthering Waves DPS Calculator",
+  description:
+    "Planifiez vos builds Wuthering Waves, comparez vos dégâts et préparez vos équipes avec des données structurées et vérifiées.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        <SiteShell>{children}</SiteShell>
+      </body>
     </html>
   );
 }
