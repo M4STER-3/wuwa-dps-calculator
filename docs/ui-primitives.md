@@ -28,6 +28,12 @@ Supported tones:
 
 Use light paper surfaces for most technical content. Ink panels are reserved for selected/high-contrast modules and future image-led cards. `compact` reduces padding for dense data areas.
 
+### `WuwaCard`
+
+Semantic `article` surface using the same tone system as `WuwaPanel`, with `paper-raised` as its default. It is the generic content-card primitive for module summaries, result cards and future compact catalogue entries.
+
+Step 7 will build the dedicated illustrated Resonator / weapon / Echo card system on top of this shared surface contract rather than mixing image behaviour into the generic Step 4 primitive.
+
 ### `WuwaButton`
 
 Button variants:
