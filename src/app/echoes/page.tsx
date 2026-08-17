@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 const slots = [
-  ["Main Echo", "4-cost", "Slot principal"],
-  ["Echo 2", "3-cost", "Libre"],
-  ["Echo 3", "3-cost", "Libre"],
-  ["Echo 4", "1-cost", "Libre"],
-  ["Echo 5", "1-cost", "Libre"],
+  ["Main Echo", "Slot principal"],
+  ["Echo 2", "Libre"],
+  ["Echo 3", "Libre"],
+  ["Echo 4", "Libre"],
+  ["Echo 5", "Libre"],
 ] as const;
 
 export default function EchoesPage() {
@@ -29,13 +29,13 @@ export default function EchoesPage() {
         <section className="rounded-2xl border border-white/10 bg-[#11151d]/85 p-5 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div><p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">Loadout</p><h2 className="mt-1 text-xl font-bold text-white">5 emplacements</h2></div>
-            <span className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs font-bold text-[var(--muted)]">Coût prévu : 12 / 12 max</span>
+            <span className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs font-bold text-[var(--muted)]">Coût actuel : 0 / 12 max</span>
           </div>
 
           <div className="mt-6 grid gap-3 md:grid-cols-2 2xl:grid-cols-5">
-            {slots.map(([name, cost, role], index) => (
+            {slots.map(([name, role], index) => (
               <article key={name} className={`min-h-60 rounded-2xl border p-4 ${index === 0 ? "border-[var(--accent-strong)]/50 bg-[var(--accent)]/5" : "border-white/10 bg-black/15"}`}>
-                <div className="flex items-center justify-between gap-2"><span className="text-xs font-black text-[var(--accent)]">0{index + 1}</span><span className="rounded-full border border-white/10 px-2 py-1 text-[10px] font-bold text-[var(--muted)]">{cost}</span></div>
+                <div className="flex items-center justify-between gap-2"><span className="text-xs font-black text-[var(--accent)]">0{index + 1}</span><span className="rounded-full border border-white/10 px-2 py-1 text-[10px] font-bold text-[var(--muted)]">Coût —</span></div>
                 <div className="mt-6 grid h-16 w-16 place-items-center rounded-2xl border border-dashed border-white/15 bg-black/20 text-2xl text-[var(--muted)]">✦</div>
                 <h3 className="mt-5 font-bold text-white">{name}</h3>
                 <p className="mt-1 text-xs text-[var(--muted)]">{role}</p>
