@@ -1,0 +1,156 @@
+:root {
+  /* WUWA LAB typography system — Step 3 / 20. */
+  --wuwa-font-display: Georgia, Cambria, "Times New Roman", Times, serif;
+  --wuwa-font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wuwa-font-data: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --wuwa-type-hero: clamp(3rem, 6vw, 5.75rem);
+  --wuwa-type-page-title: clamp(2.1rem, 4vw, 3.75rem);
+  --wuwa-type-stat-hero: clamp(2.6rem, 5vw, 4.6rem);
+  --wuwa-type-section: 1.125rem;
+  --wuwa-type-card-title: 0.9375rem;
+  --wuwa-type-body: 0.875rem;
+  --wuwa-type-control: 0.8125rem;
+  --wuwa-type-label: 0.6875rem;
+  --wuwa-type-small: 0.75rem;
+  --wuwa-type-micro: 0.625rem;
+  --wuwa-type-stat-lg: 1.5rem;
+  --wuwa-type-stat-md: 1rem;
+
+  --wuwa-leading-display: 0.98;
+  --wuwa-leading-title: 1.08;
+  --wuwa-leading-tight: 1.2;
+  --wuwa-leading-body: 1.55;
+  --wuwa-leading-compact: 1.35;
+
+  --wuwa-track-display: -0.035em;
+  --wuwa-track-title: -0.018em;
+  --wuwa-track-ui: 0;
+  --wuwa-track-label: 0.075em;
+  --wuwa-track-eyebrow: 0.16em;
+
+  --wuwa-weight-regular: 400;
+  --wuwa-weight-medium: 500;
+  --wuwa-weight-semibold: 600;
+  --wuwa-weight-bold: 700;
+}
+
+/*
+ * Typography primitives are intentionally opt-in during Steps 3–4.
+ * Legacy pages keep their existing font rules until the shared shell migrates.
+ */
+.wuwa-type-hero,
+.wuwa-type-page-title,
+.wuwa-type-stat-hero {
+  font-family: var(--wuwa-font-display);
+  font-weight: var(--wuwa-weight-regular);
+  text-rendering: optimizeLegibility;
+}
+
+.wuwa-type-hero {
+  margin: 0;
+  font-size: var(--wuwa-type-hero);
+  line-height: var(--wuwa-leading-display);
+  letter-spacing: var(--wuwa-track-display);
+}
+
+.wuwa-type-page-title {
+  margin: 0;
+  font-size: var(--wuwa-type-page-title);
+  line-height: var(--wuwa-leading-title);
+  letter-spacing: var(--wuwa-track-title);
+}
+
+.wuwa-type-section {
+  margin: 0;
+  font-family: var(--wuwa-font-display);
+  font-size: var(--wuwa-type-section);
+  font-weight: var(--wuwa-weight-semibold);
+  line-height: var(--wuwa-leading-tight);
+  letter-spacing: var(--wuwa-track-title);
+}
+
+.wuwa-type-card-title {
+  margin: 0;
+  font-family: var(--wuwa-font-display);
+  font-size: var(--wuwa-type-card-title);
+  font-weight: var(--wuwa-weight-semibold);
+  line-height: var(--wuwa-leading-tight);
+}
+
+.wuwa-type-body {
+  font-family: var(--wuwa-font-ui);
+  font-size: var(--wuwa-type-body);
+  font-weight: var(--wuwa-weight-regular);
+  line-height: var(--wuwa-leading-body);
+  letter-spacing: var(--wuwa-track-ui);
+}
+
+.wuwa-type-control {
+  font-family: var(--wuwa-font-ui);
+  font-size: var(--wuwa-type-control);
+  font-weight: var(--wuwa-weight-medium);
+  line-height: var(--wuwa-leading-compact);
+}
+
+.wuwa-type-label,
+.wuwa-type-eyebrow {
+  font-family: var(--wuwa-font-ui);
+  font-weight: var(--wuwa-weight-semibold);
+  line-height: var(--wuwa-leading-compact);
+  text-transform: uppercase;
+}
+
+.wuwa-type-label {
+  font-size: var(--wuwa-type-label);
+  letter-spacing: var(--wuwa-track-label);
+}
+
+.wuwa-type-eyebrow {
+  font-size: var(--wuwa-type-small);
+  letter-spacing: var(--wuwa-track-eyebrow);
+}
+
+.wuwa-type-small {
+  font-family: var(--wuwa-font-ui);
+  font-size: var(--wuwa-type-small);
+  line-height: var(--wuwa-leading-compact);
+}
+
+.wuwa-type-micro {
+  font-family: var(--wuwa-font-ui);
+  font-size: var(--wuwa-type-micro);
+  line-height: var(--wuwa-leading-compact);
+}
+
+.wuwa-type-stat-hero {
+  margin: 0;
+  font-size: var(--wuwa-type-stat-hero);
+  line-height: 0.95;
+  letter-spacing: var(--wuwa-track-display);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.wuwa-type-stat-lg,
+.wuwa-type-stat-md,
+.wuwa-type-data {
+  font-family: var(--wuwa-font-data);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.wuwa-type-stat-lg {
+  font-size: var(--wuwa-type-stat-lg);
+  font-weight: var(--wuwa-weight-semibold);
+  line-height: var(--wuwa-leading-tight);
+}
+
+.wuwa-type-stat-md {
+  font-size: var(--wuwa-type-stat-md);
+  font-weight: var(--wuwa-weight-semibold);
+  line-height: var(--wuwa-leading-tight);
+}
+
+.wuwa-type-data {
+  font-size: var(--wuwa-type-body);
+  line-height: var(--wuwa-leading-compact);
+}
