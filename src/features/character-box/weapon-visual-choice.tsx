@@ -1,30 +1,28 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState } from "react";
+import { WuwaProjectedAssetMedia } from "@/components/ui/wuwa-projected-asset-media";
 import type { Weapon } from "@/domain/models";
-import { getWeaponUiIconPath } from "@/game-data/weapon-ui-asset-ids";
+import { getWeaponUiAssetId } from "@/game-data/weapon-ui-asset-ids";
 
 import styles from "./weapon-visual-choice.module.css";
 
 type RarityFilter = Weapon["rarity"] | "all";
+const WEAPON_ICON_ROLES = ["list-icon"] as const;
 
 function WeaponIcon({ weapon, size }: { weapon: Weapon; size: "summary" | "card" }) {
-  const iconPath = getWeaponUiIconPath(weapon.id);
   return (
     <span className={styles.media} data-size={size}>
-      {iconPath ? (
-        <Image
-          src={iconPath}
-          alt=""
-          fill
-          sizes={size === "summary" ? "88px" : "68px"}
-          unoptimized
-          className={styles.image}
-        />
-      ) : (
-        <span className={styles.fallback}>WU</span>
-      )}
+      <WuwaProjectedAssetMedia
+        category="weapons"
+        assetId={getWeaponUiAssetId(weapon.id)}
+        preferredRoles={WEAPON_ICON_ROLES}
+        alt=""
+        role="weapon"
+        fallbackLabel="WU"
+        className={styles.projectedMedia}
+        sizes={size === "summary" ? "88px" : "68px"}
+      />
     </span>
   );
 }
@@ -44,8 +42,6 @@ export function WeaponVisualChoice({
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
   const [expanded, setExpanded] = useState(false);
 
-  // Character Box already limits `options` to the Resonator's compatible weapon type.
-  // Search + rarity filters keep that reduced catalogue fast even when it grows to dozens of entries.
   const rarities = useMemo(
     () => [...new Set(options.map((weapon) => weapon.rarity))].sort((a, b) => b - a),
     [options],
