@@ -1,9 +1,7 @@
 name: Cloudflare preview 10R1
 
 on:
-  push:
-    branches:
-      - v4-ui-step-10r1
+  pull_request:
     paths:
       - ".github/workflows/cloudflare-preview-10r1.yml"
   workflow_dispatch:
