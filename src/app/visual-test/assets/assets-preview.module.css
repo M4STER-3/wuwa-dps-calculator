@@ -64,20 +64,6 @@
   background: transparent;
 }
 
-/*
- * Keep lead Resonator artwork sizing and centering generic. The stage grows
- * symmetrically around the card center instead of being pushed toward one
- * edge, so future character assets inherit the same neutral framing rule.
- */
-.identityArtwork > span {
-  inset: -7% 3%;
-}
-
-.identityArtwork img {
-  object-position: center center;
-  transform: none;
-}
-
 .sectionGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -192,10 +178,6 @@
 
   .identityMedia {
     min-height: 220px;
-  }
-
-  .identityArtwork > span {
-    inset: -4% 5%;
   }
 
   .sectionGrid,
