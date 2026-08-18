@@ -4,16 +4,16 @@
   "presets": [
     {
       "resonatorId": "augusta",
-      "name": "Standard CD Build",
-      "author": "thundertooth",
+      "name": "WUWA LAB Balanced · Crown of Valor",
+      "author": "WUWA LAB · community-guided",
       "sourceBlobSha": "0f33fb8333fee4d251ee7e787454a0742dc3dec4",
-      "promotionStatus": "blocked-invalid-roll",
-      "promotionNote": "Source contains HP_FLAT=50, which is not an allowed reviewed five-star Echo HP flat roll. Kept as source evidence only; no correction is inferred.",
+      "promotionStatus": "curated-balanced",
+      "promotionNote": "Community preset skeleton retained, with impossible HP_FLAT=50 replaced by the legal reviewed HP_FLAT=320 roll. Prydwen build guidance confirms Crown of Valor + The False Sovereign and Crit/Electro/ATK priorities.",
       "echoes": [
         {"cost":4,"echo":"TheFalseSovereign","sonata":"CrownofValor","mainStat":"CritDMG","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["HeavyAttackDMGBonus",8.6]]},
         {"cost":3,"echo":"NightmareVioletFeatheredHeron","sonata":"CrownofValor","mainStat":"Electro","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["HeavyAttackDMGBonus",8.6]]},
         {"cost":3,"echo":"Hurriclaw","sonata":"CrownofValor","mainStat":"Electro","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["DEF_FLAT",50],["DEF",10.9]]},
-        {"cost":1,"echo":"TrafficIlluminator","sonata":"VoidThunder","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["DEF",10.9],["HP_FLAT",50]]},
+        {"cost":1,"echo":"TrafficIlluminator","sonata":"VoidThunder","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["DEF",10.9],["HP_FLAT",320]]},
         {"cost":1,"echo":"FusionWarrior","sonata":"VoidThunder","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["DEF_FLAT",50],["HP",8.6]]}
       ],
       "mainEcho": "TheFalseSovereign"
@@ -33,17 +33,33 @@
       ]
     },
     {
+      "resonatorId": "calcharo",
+      "name": "WUWA LAB Balanced · Void Thunder",
+      "author": "WUWA LAB · Prydwen-guided",
+      "sourceBlobSha": "accaeb3348f15686177da90e861dd24e3bdd92d9",
+      "promotionStatus": "curated-balanced",
+      "promotionNote": "Curated 43311 endgame preset following Prydwen's Void Thunder, Nightmare: Thundering Mephis, Crit/Electro/ATK and ER/Crit/ATK/Liberation priorities. Legal mid-quality reviewed rolls are used consistently.",
+      "echoes": [
+        {"cost":4,"echo":"NightmareThunderingMephis","sonata":"VoidThunder","mainStat":"CritRate","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["EnergyRegen",9.2],["ResonanceLiberationDMGBonus",8.6]]},
+        {"cost":3,"echo":"VioletFeatheredHeron","sonata":"VoidThunder","mainStat":"Electro","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["EnergyRegen",9.2],["ResonanceLiberationDMGBonus",8.6]]},
+        {"cost":3,"echo":"Flautist","sonata":"VoidThunder","mainStat":"Electro","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["EnergyRegen",9.2],["ATK_FLAT",50]]},
+        {"cost":1,"echo":"AeroPredator","sonata":"VoidThunder","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["EnergyRegen",9.2],["HP",8.6]]},
+        {"cost":1,"echo":"BabyViridblazeSaurian","sonata":"VoidThunder","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["EnergyRegen",9.2],["DEF",10.9]]}
+      ],
+      "mainEcho": "NightmareThunderingMephis"
+    },
+    {
       "resonatorId": "cantarella",
-      "name": "Standard CR Build",
-      "author": "thundertooth",
+      "name": "WUWA LAB Balanced · Midnight Veil",
+      "author": "WUWA LAB · community-guided",
       "sourceBlobSha": "be1b610b7774d6b2611ee242b51c8840c8439a08",
-      "promotionStatus": "blocked-invalid-roll",
-      "promotionNote": "Source contains HP_FLAT=50, which is not an allowed reviewed five-star Echo HP flat roll. Kept as source evidence only; no correction is inferred.",
+      "promotionStatus": "curated-balanced",
+      "promotionNote": "Community preset skeleton retained, with impossible HP_FLAT=50 replaced by legal HP_FLAT=320. Prydwen guidance confirms Midnight Veil + Lorelei and Crit/Havoc/ATK with sufficient ER.",
       "echoes": [
         {"cost":4,"echo":"Lorelei","sonata":"MidnightVeil","mainStat":"CritRate","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["BasicAttackDMGBonus",8.6]]},
         {"cost":3,"echo":"AbyssalGladius","sonata":"MidnightVeil","mainStat":"Havoc","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["BasicAttackDMGBonus",8.6]]},
-        {"cost":3,"echo":"QuestlessKnight","sonata":"MidnightVeil","mainStat":"Havoc","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["HP_FLAT",50],["HP",8.6]]},
-        {"cost":1,"echo":"ElectroDrake","sonata":"MidnightVeil","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["HP_FLAT",50],["DEF",10.9]]},
+        {"cost":3,"echo":"QuestlessKnight","sonata":"MidnightVeil","mainStat":"Havoc","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["HP_FLAT",320],["HP",8.6]]},
+        {"cost":1,"echo":"ElectroDrake","sonata":"MidnightVeil","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["HP_FLAT",320],["DEF",10.9]]},
         {"cost":1,"echo":"FaeIgnis","sonata":"MidnightVeil","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["DEF_FLAT",50],["DEF",10.9],["HP",8.6]]}
       ],
       "mainEcho": "Lorelei"
@@ -63,6 +79,22 @@
       ]
     },
     {
+      "resonatorId": "cartethyia",
+      "name": "WUWA LAB Balanced · 44111 Windward Pilgrimage",
+      "author": "WUWA LAB · WutheringTools/Prydwen-guided",
+      "sourceBlobSha": "e95ca1e9d5d4332fea58c8d25adcdb06d509d679",
+      "promotionStatus": "curated-balanced",
+      "promotionNote": "Curated from WutheringTools' Standard 44111 Windward Pilgrimage preset and cross-checked against Prydwen: Reminiscence: Fleurdelys main, double 4-cost Crit, triple HP% 1-cost, with ER/Crit/HP/Basic priorities. Legal reviewed rolls only.",
+      "echoes": [
+        {"cost":4,"echo":"ReminiscenceFleurdelys","sonata":"WindwardPilgrimage","mainStat":"CritRate","substats":[["CritRate",8.1],["CritDMG",16.2],["HP",8.6],["EnergyRegen",9.2],["BasicAttackDMGBonus",8.6]]},
+        {"cost":4,"echo":"NightmareKelpie","sonata":"WindwardPilgrimage","mainStat":"CritDMG","substats":[["CritRate",8.1],["CritDMG",16.2],["HP",8.6],["EnergyRegen",9.2],["BasicAttackDMGBonus",8.6]]},
+        {"cost":1,"echo":"DevoteesFlesh","sonata":"WindwardPilgrimage","mainStat":"HP","substats":[["CritRate",8.1],["CritDMG",16.2],["HP",8.6],["EnergyRegen",9.2],["HP_FLAT",430]]},
+        {"cost":1,"echo":"FusionDrake","sonata":"WindwardPilgrimage","mainStat":"HP","substats":[["CritRate",8.1],["CritDMG",16.2],["HP",8.6],["EnergyRegen",9.2],["BasicAttackDMGBonus",8.6]]},
+        {"cost":1,"echo":"SpectroDrake","sonata":"WindwardPilgrimage","mainStat":"HP","substats":[["CritRate",8.1],["CritDMG",16.2],["HP",8.6],["EnergyRegen",9.2],["HP_FLAT",430]]}
+      ],
+      "mainEcho": "ReminiscenceFleurdelys"
+    },
+    {
       "resonatorId": "changli",
       "name": "Standard CR Build",
       "author": "lavasnake",
@@ -78,17 +110,17 @@
     },
     {
       "resonatorId": "ciaccona",
-      "name": "Standard CR Build",
-      "author": "thundertooth",
+      "name": "WUWA LAB Balanced · Gusts of Welkin",
+      "author": "WUWA LAB · community-guided",
       "sourceBlobSha": "3bfc3578940a702b5d5a00d92062a9e5f570a6f5",
-      "promotionStatus": "blocked-invalid-roll",
-      "promotionNote": "Source contains HP_FLAT=50, which is not an allowed reviewed five-star Echo HP flat roll. Kept as source evidence only; no correction is inferred.",
+      "promotionStatus": "curated-balanced",
+      "promotionNote": "Community preset skeleton retained, with impossible HP_FLAT=50 replaced by legal HP_FLAT=320. The preset keeps Gusts of Welkin + Nightmare: Kelpie and balanced Crit/Aero/ATK/ER priorities.",
       "echoes": [
         {"cost":4,"echo":"NightmareKelpie","sonata":"GustsofWelkin","mainStat":"CritRate","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["ResonanceLiberationDMGBonus",8.6]]},
         {"cost":3,"echo":"RageAgainsttheStatue","sonata":"GustsofWelkin","mainStat":"Aero","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["ResonanceLiberationDMGBonus",8.6]]},
-        {"cost":3,"echo":"Hurriclaw","sonata":"GustsofWelkin","mainStat":"Aero","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["HP_FLAT",50],["DEF_FLAT",50]]},
+        {"cost":3,"echo":"Hurriclaw","sonata":"GustsofWelkin","mainStat":"Aero","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["HP_FLAT",320],["DEF_FLAT",50]]},
         {"cost":1,"echo":"AeroDrake","sonata":"GustsofWelkin","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["DEF",10.9],["DEF_FLAT",50]]},
-        {"cost":1,"echo":"DevoteesFlesh","sonata":"GustsofWelkin","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["DEF_FLAT",50],["HP",8.6],["HP_FLAT",50]]}
+        {"cost":1,"echo":"DevoteesFlesh","sonata":"GustsofWelkin","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["DEF_FLAT",50],["HP",8.6],["HP_FLAT",320]]}
       ],
       "mainEcho": "NightmareKelpie"
     }
