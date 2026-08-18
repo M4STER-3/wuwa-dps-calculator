@@ -1,0 +1,212 @@
+.frame {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--v4-line-soft);
+  background:
+    radial-gradient(circle at 74% 18%, rgba(118, 88, 214, 0.09), transparent 42%),
+    linear-gradient(145deg, #fbfcff, var(--v4-surface-tinted));
+  color: var(--v4-text-muted);
+  isolation: isolate;
+}
+
+.frame::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+}
+
+.imageStage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+}
+
+.image {
+  image-rendering: auto;
+}
+
+.portrait {
+  aspect-ratio: 4 / 5;
+  border-radius: var(--v4-radius-md);
+}
+
+.portrait .image {
+  object-fit: cover;
+  object-position: center 12%;
+}
+
+.artwork,
+.hero {
+  border-radius: var(--v4-radius-lg);
+  background:
+    radial-gradient(circle at 74% 45%, rgba(53, 102, 232, 0.1), transparent 34%),
+    linear-gradient(115deg, #ffffff 0%, #f7f9fe 52%, #eef4ff 100%);
+}
+
+.artwork {
+  aspect-ratio: 16 / 7;
+}
+
+/*
+ * Prominent Resonator heroes use a tall 3:4 frame. Compared with the previous
+ * 15:14 hero frame, this adds ~43% more height at equal width without CSS
+ * transforms. High-resolution role portraits therefore occupy substantially
+ * more of the card while keeping the same generic center/contain rendering.
+ */
+.hero {
+  aspect-ratio: 3 / 4;
+}
+
+.artwork .image,
+.hero .image {
+  object-fit: contain;
+  object-position: center center;
+}
+
+/*
+ * Character artwork stays inside the real component bounds. The image itself
+ * is centered by object-position; no per-character translate/scale patch is
+ * needed for current or future Resonators.
+ */
+.artwork[data-asset-source-role="detail-roleportrait"] .imageStage,
+.artwork[data-asset-source-role="detail-formationrolecard"] .imageStage,
+.hero[data-asset-source-role="detail-roleportrait"] .imageStage,
+.hero[data-asset-source-role="detail-formationrolecard"] .imageStage {
+  inset: 0;
+}
+
+/*
+ * The 256×256 head icon is a last-resort Resonator fallback. Do not magnify it
+ * to hero size; keep it centered at approximately 2× raster density instead.
+ */
+.artwork[data-asset-source-role="detail-roleheadiconlarge"] .imageStage,
+.hero[data-asset-source-role="detail-roleheadiconlarge"] .imageStage {
+  inset: max(12%, calc((100% - 128px) / 2));
+}
+
+.artwork[data-asset-source-role="detail-roleheadiconlarge"] .image,
+.hero[data-asset-source-role="detail-roleheadiconlarge"] .image {
+  object-position: center;
+}
+
+.weapon,
+.echo,
+.catalogue {
+  aspect-ratio: 1;
+  border-radius: var(--v4-radius-md);
+}
+
+.weapon .imageStage,
+.echo .imageStage,
+.catalogue .imageStage {
+  inset: 9%;
+}
+
+.weapon .image,
+.echo .image,
+.catalogue .image {
+  object-fit: contain;
+}
+
+/*
+ * Promoted weapon list icons and Echo detail/list icons are 256×256 in the
+ * current manifest. Cap them to 128 CSS px in large cards so a 2× display can
+ * render them at native raster density instead of magnifying their edges.
+ * The surrounding validated V4 card geometry stays unchanged.
+ */
+.weapon[data-asset-source-role="list-icon"] .imageStage,
+.echo[data-asset-source-role="detail-icon"] .imageStage,
+.echo[data-asset-source-role="list-icon"] .imageStage,
+.catalogue[data-asset-source-role="detail-icon"] .imageStage,
+.catalogue[data-asset-source-role="list-icon"] .imageStage {
+  inset: max(12%, calc((100% - 128px) / 2));
+}
+
+/*
+ * A 256×256 Resonator head icon is only a fallback for a medium portrait.
+ * Keep it at 2× raster density rather than stretching it to fill the card.
+ */
+.portrait[data-asset-source-role="detail-roleheadiconlarge"] .imageStage {
+  inset: max(12%, calc((100% - 128px) / 2));
+}
+
+.portrait[data-asset-source-role="detail-roleheadiconlarge"] .image {
+  object-fit: contain;
+  object-position: center;
+}
+
+.chip {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 10px;
+}
+
+.chip .image {
+  object-fit: cover;
+  object-position: center 12%;
+}
+
+.fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  text-align: center;
+}
+
+.fallbackMark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #dbe5f6;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--v4-accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.fallbackText {
+  position: absolute;
+  right: 10px;
+  bottom: 9px;
+  left: 10px;
+  overflow: hidden;
+  color: var(--v4-text-muted);
+  font-size: 0.61rem;
+  font-weight: 650;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip .fallbackMark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 0.58rem;
+}
+
+.chip .fallbackText {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  .frame,
+  .fallbackMark {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}
