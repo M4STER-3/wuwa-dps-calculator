@@ -55,13 +55,15 @@ export function ResonatorHeroArtwork({
   );
 
   return (
-    <WuwaAssetMedia
-      src={failed ? undefined : src}
-      alt={`Artwork de ${name}`}
-      role="hero"
-      sourceRole={src ? "detail-roleportrait" : undefined}
-      fallbackLabel={`Artwork de ${name} indisponible`}
-      sizes="(max-width: 780px) 180px, 280px"
-    />
+    <div style={{ width: "min(100%, 280px)", margin: "0 auto 16px" }}>
+      <WuwaAssetMedia
+        src={failed ? undefined : src}
+        alt={`Artwork de ${name}`}
+        role="hero"
+        sourceRole={src ? "detail-roleportrait" : undefined}
+        fallbackLabel={`Artwork de ${name} indisponible`}
+        sizes="(max-width: 780px) 180px, 280px"
+      />
+    </div>
   );
 }
