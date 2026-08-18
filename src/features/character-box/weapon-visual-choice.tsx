@@ -33,13 +33,16 @@ export function WeaponVisualChoice({
   value,
   options,
   onChange,
+  compact = false,
 }: {
   value: string;
   options: readonly Weapon[];
   onChange: (weaponId: string) => void;
+  compact?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
+  const [expanded, setExpanded] = useState(false);
 
   // Character Box already limits `options` to the Resonator's compatible weapon type.
   // Search + rarity filters keep that reduced catalogue fast even when it grows to dozens of entries.
@@ -75,8 +78,19 @@ export function WeaponVisualChoice({
     return <span className={styles.empty}>Aucune arme compatible configurée</span>;
   }
 
+  const catalogueVisible = !compact || expanded || !selectedWeapon;
+
+  const chooseWeapon = (weaponId: string) => {
+    onChange(weaponId);
+    if (compact) {
+      setExpanded(false);
+      setQuery("");
+      setRarityFilter("all");
+    }
+  };
+
   return (
-    <div className={styles.selector}>
+    <div className={styles.selector} data-compact={compact || undefined}>
       {selectedWeapon ? (
         <div className={styles.selectedSummary} aria-label={`Arme équipée : ${selectedWeapon.name}`}>
           <WeaponIcon weapon={selectedWeapon} size="summary" />
@@ -87,109 +101,124 @@ export function WeaponVisualChoice({
               {selectedWeapon.type} · {selectedWeapon.rarity}★
             </span>
           </div>
-          <span className={styles.equippedBadge}>Équipée</span>
+          {compact ? (
+            <button
+              type="button"
+              className={styles.toggleButton}
+              aria-expanded={catalogueVisible}
+              onClick={() => setExpanded((current) => !current)}
+            >
+              {catalogueVisible ? "Fermer" : "Changer"}
+            </button>
+          ) : (
+            <span className={styles.equippedBadge}>Équipée</span>
+          )}
         </div>
       ) : null}
 
-      <div className={styles.toolbar}>
-        <label className={styles.searchField}>
-          <span className={styles.srOnly}>Rechercher une arme</span>
-          <span className={styles.searchIcon} aria-hidden="true">⌕</span>
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Rechercher une arme ou un ID…"
-            autoComplete="off"
-          />
-          {query ? (
-            <button
-              type="button"
-              className={styles.clearSearch}
-              onClick={() => setQuery("")}
-              aria-label="Effacer la recherche"
-            >
-              ×
-            </button>
-          ) : null}
-        </label>
-
-        <div className={styles.rarityFilters} aria-label="Filtrer par rareté">
-          <button
-            type="button"
-            data-active={activeRarity === "all" || undefined}
-            aria-pressed={activeRarity === "all"}
-            onClick={() => setRarityFilter("all")}
-          >
-            Toutes
-          </button>
-          {rarities.map((rarity) => (
-            <button
-              key={rarity}
-              type="button"
-              data-active={activeRarity === rarity || undefined}
-              aria-pressed={activeRarity === rarity}
-              onClick={() => setRarityFilter(rarity)}
-            >
-              {rarity}★
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={styles.resultBar} aria-live="polite">
-        <span>
-          <strong>{visibleWeapons.length}</strong> arme{visibleWeapons.length > 1 ? "s" : ""}
-        </span>
-        <span>Seulement les armes compatibles avec ce Resonator</span>
-      </div>
-
-      {visibleWeapons.length ? (
-        <div className={styles.scrollArea}>
-          <div className={styles.grid} role="radiogroup" aria-label="Arme compatible">
-            {visibleWeapons.map((weapon) => {
-              const selected = weapon.id === value;
-              return (
+      {catalogueVisible ? (
+        <div className={styles.cataloguePanel}>
+          <div className={styles.toolbar}>
+            <label className={styles.searchField}>
+              <span className={styles.srOnly}>Rechercher une arme</span>
+              <span className={styles.searchIcon} aria-hidden="true">⌕</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Rechercher une arme ou un ID…"
+                autoComplete="off"
+              />
+              {query ? (
                 <button
-                  key={weapon.id}
                   type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  aria-label={`Sélectionner ${weapon.name}`}
-                  data-selected={selected || undefined}
-                  className={styles.card}
-                  onClick={() => onChange(weapon.id)}
+                  className={styles.clearSearch}
+                  onClick={() => setQuery("")}
+                  aria-label="Effacer la recherche"
                 >
-                  <WeaponIcon weapon={weapon} size="card" />
-                  <span className={styles.copy}>
-                    <strong>{weapon.name}</strong>
-                    <span>
-                      {weapon.rarity}★ · ID {weapon.id}
-                    </span>
-                  </span>
-                  <span className={styles.check} aria-hidden="true">
-                    {selected ? "✓" : ""}
-                  </span>
+                  ×
                 </button>
-              );
-            })}
+              ) : null}
+            </label>
+
+            <div className={styles.rarityFilters} aria-label="Filtrer par rareté">
+              <button
+                type="button"
+                data-active={activeRarity === "all" || undefined}
+                aria-pressed={activeRarity === "all"}
+                onClick={() => setRarityFilter("all")}
+              >
+                Toutes
+              </button>
+              {rarities.map((rarity) => (
+                <button
+                  key={rarity}
+                  type="button"
+                  data-active={activeRarity === rarity || undefined}
+                  aria-pressed={activeRarity === rarity}
+                  onClick={() => setRarityFilter(rarity)}
+                >
+                  {rarity}★
+                </button>
+              ))}
+            </div>
           </div>
+
+          <div className={styles.resultBar} aria-live="polite">
+            <span>
+              <strong>{visibleWeapons.length}</strong> arme{visibleWeapons.length > 1 ? "s" : ""}
+            </span>
+            <span>Seulement les armes compatibles avec ce Resonator</span>
+          </div>
+
+          {visibleWeapons.length ? (
+            <div className={styles.scrollArea}>
+              <div className={styles.grid} role="radiogroup" aria-label="Arme compatible">
+                {visibleWeapons.map((weapon) => {
+                  const selected = weapon.id === value;
+                  return (
+                    <button
+                      key={weapon.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      aria-label={`Sélectionner ${weapon.name}`}
+                      data-selected={selected || undefined}
+                      className={styles.card}
+                      onClick={() => chooseWeapon(weapon.id)}
+                    >
+                      <WeaponIcon weapon={weapon} size="card" />
+                      <span className={styles.copy}>
+                        <strong>{weapon.name}</strong>
+                        <span>
+                          {weapon.rarity}★ · ID {weapon.id}
+                        </span>
+                      </span>
+                      <span className={styles.check} aria-hidden="true">
+                        {selected ? "✓" : ""}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className={styles.noResults}>
+              <strong>Aucune arme trouvée</strong>
+              <span>Modifie la recherche ou la rareté pour élargir les résultats.</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setRarityFilter("all");
+                }}
+              >
+                Réinitialiser les filtres
+              </button>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className={styles.noResults}>
-          <strong>Aucune arme trouvée</strong>
-          <span>Modifie la recherche ou la rareté pour élargir les résultats.</span>
-          <button
-            type="button"
-            onClick={() => {
-              setQuery("");
-              setRarityFilter("all");
-            }}
-          >
-            Réinitialiser les filtres
-          </button>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
