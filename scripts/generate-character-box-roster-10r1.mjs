@@ -90,14 +90,21 @@ for (const expected of batch) {
   if (character.name !== expected.name || character.element !== expected.element || character.weaponType !== expected.weaponType || character.rarity !== 5) fail(`${expected.name} identity does not match reviewed 10R1 metadata`);
   if (!Array.isArray(character.skills)) fail(`${expected.name}.skills must be an array`);
   const skillNames = {};
+  const observedSkillTypes = new Set();
   for (const [skillIndex, rawSkill] of character.skills.entries()) {
     const skill = record(rawSkill, `${expected.name}.skills[${skillIndex}]`);
-    const semantic = skillTypeMap.get(normalizeSemanticLabel(sourceParametersType(skill, `${expected.name}.skills[${skillIndex}]`)));
+    const sourceType = sourceParametersType(skill, `${expected.name}.skills[${skillIndex}]`);
+    observedSkillTypes.add(sourceType);
+    const semantic = skillTypeMap.get(normalizeSemanticLabel(sourceType));
     if (!semantic) continue;
     if (Object.prototype.hasOwnProperty.call(skillNames, semantic)) fail(`${expected.name} has multiple ${semantic} skill groups`);
     skillNames[semantic] = safeText(skill.name, `${expected.name}.skills[${skillIndex}].name`, 200);
   }
-  for (const semantic of skillTypeMap.values()) if (!Object.prototype.hasOwnProperty.call(skillNames, semantic)) fail(`${expected.name} is missing unambiguous ${semantic} skill data`);
+  for (const semantic of skillTypeMap.values()) {
+    if (!Object.prototype.hasOwnProperty.call(skillNames, semantic)) {
+      fail(`${expected.name} is missing unambiguous ${semantic} skill data; observed types: ${JSON.stringify([...observedSkillTypes].sort())}`);
+    }
+  }
   if (!Array.isArray(character.sequences) || character.sequences.length !== 6) fail(`${expected.name} must have exactly six sequences`);
   const resonanceChain = character.sequences.map((rawSequence, sequenceIndex) => {
     const sequence = record(rawSequence, `${expected.name}.sequences[${sequenceIndex}]`);
