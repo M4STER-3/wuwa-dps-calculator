@@ -1,0 +1,132 @@
+.frame {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--v4-line-soft);
+  background:
+    radial-gradient(circle at 74% 18%, rgba(118, 88, 214, 0.09), transparent 42%),
+    linear-gradient(145deg, #fbfcff, var(--v4-surface-tinted));
+  color: var(--v4-text-muted);
+  isolation: isolate;
+}
+
+.frame::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+}
+
+.image {
+  z-index: 1;
+}
+
+.portrait {
+  aspect-ratio: 4 / 5;
+  border-radius: var(--v4-radius-md);
+}
+
+.portrait .image {
+  object-fit: cover;
+  object-position: center 12%;
+}
+
+.artwork {
+  aspect-ratio: 16 / 7;
+  border-radius: var(--v4-radius-lg);
+  background:
+    radial-gradient(circle at 74% 45%, rgba(53, 102, 232, 0.1), transparent 34%),
+    linear-gradient(115deg, #ffffff 0%, #f7f9fe 52%, #eef4ff 100%);
+}
+
+.artwork .image {
+  object-fit: contain;
+  object-position: right bottom;
+}
+
+.weapon,
+.echo,
+.catalogue {
+  aspect-ratio: 1;
+  border-radius: var(--v4-radius-md);
+}
+
+.weapon .image,
+.echo .image,
+.catalogue .image {
+  object-fit: contain;
+  padding: 9%;
+}
+
+.chip {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 10px;
+}
+
+.chip .image {
+  object-fit: cover;
+  object-position: center 12%;
+}
+
+.fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  text-align: center;
+}
+
+.fallbackMark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #dbe5f6;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--v4-accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.fallbackText {
+  position: absolute;
+  right: 10px;
+  bottom: 9px;
+  left: 10px;
+  overflow: hidden;
+  color: var(--v4-text-muted);
+  font-size: 0.61rem;
+  font-weight: 650;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip .fallbackMark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 0.58rem;
+}
+
+.chip .fallbackText {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  .frame,
+  .fallbackMark {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}
