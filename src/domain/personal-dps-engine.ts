@@ -9,6 +9,10 @@ import {
   type UnsupportedDamageResult,
 } from "./damage-engine";
 import {
+  calculateUncategorizedDamageV1,
+  type UncategorizedDamageResultV1,
+} from "./uncategorized-damage";
+import {
   skillTypes,
   type CombatAction,
   type Element,
@@ -17,12 +21,19 @@ import {
   type TalentLevel,
 } from "./models";
 
+export type PersonalDpsDamageCategoryV1 = DamageType | "uncategorized";
+export type PersonalDpsSupportedActionResultV1 =
+  | StandardDamageResult
+  | UncategorizedDamageResultV1;
+
 export interface PersonalDpsRotationStepV1 {
   actionId: string;
   count?: number;
   talentLevel?: TalentLevel;
   scalingAttribute?: ScalingAttribute;
   effectiveDamageType?: DamageType;
+  /** Use for standard elemental damage with no panel damage-type bonus category. */
+  damageCategory?: "standard" | "uncategorized";
   modifiers?: DamageModifiers;
 }
 
@@ -59,7 +70,7 @@ export interface PersonalDpsResolvedStepV1 {
   actionName: string;
   count: number;
   talentLevel: TalentLevel;
-  result: StandardDamageResult;
+  result: PersonalDpsSupportedActionResultV1;
   subtotal: DamageAmounts;
 }
 
@@ -74,7 +85,9 @@ export interface PersonalDpsUnsupportedStepV1 {
 
 export interface PersonalDpsBreakdownV1 {
   byAction: Readonly<Record<string, DamageAmounts>>;
-  byDamageType: Readonly<Partial<Record<DamageType, DamageAmounts>>>;
+  byDamageType: Readonly<
+    Partial<Record<PersonalDpsDamageCategoryV1, DamageAmounts>>
+  >;
 }
 
 export interface PersonalDpsResultV1 {
@@ -220,6 +233,14 @@ function validateProfile(profile: PersonalDpsProfileV1): void {
           `Rotation ${rotation.id} step ${index} count must be a positive integer.`,
         );
       }
+      if (
+        step.damageCategory === "uncategorized" &&
+        step.effectiveDamageType !== undefined
+      ) {
+        throw new PersonalDpsCalculationError(
+          `Rotation ${rotation.id} step ${index} cannot combine uncategorized damage with an effectiveDamageType override.`,
+        );
+      }
     }
   }
 }
@@ -243,7 +264,9 @@ export function calculatePersonalDpsV1(
   const resolvedSteps: PersonalDpsResolvedStepV1[] = [];
   const unsupportedSteps: PersonalDpsUnsupportedStepV1[] = [];
   const byAction: Record<string, DamageAmounts> = {};
-  const byDamageType: Partial<Record<DamageType, DamageAmounts>> = {};
+  const byDamageType: Partial<
+    Record<PersonalDpsDamageCategoryV1, DamageAmounts>
+  > = {};
   let totals = { ...ZERO };
 
   for (const [index, step] of rotation.steps.entries()) {
@@ -265,7 +288,7 @@ export function calculatePersonalDpsV1(
     }
 
     const modifiers = mergeModifiers(request.globalModifiers, step.modifiers);
-    const result = calculateActionDamage({
+    const commonRequest = {
       action: projected,
       finalStats: request.finalStats,
       attackerLevel: request.attackerLevel,
@@ -273,11 +296,17 @@ export function calculatePersonalDpsV1(
         step.scalingAttribute ?? request.profile.defaultScalingAttribute,
       element: request.profile.element,
       target: request.target,
-      ...(step.effectiveDamageType !== undefined
-        ? { effectiveDamageType: step.effectiveDamageType }
-        : {}),
       ...(modifiers !== undefined ? { modifiers } : {}),
-    });
+    };
+    const result =
+      step.damageCategory === "uncategorized"
+        ? calculateUncategorizedDamageV1(commonRequest)
+        : calculateActionDamage({
+            ...commonRequest,
+            ...(step.effectiveDamageType !== undefined
+              ? { effectiveDamageType: step.effectiveDamageType }
+              : {}),
+          });
 
     if (result.status === "unsupported") {
       unsupportedSteps.push({
