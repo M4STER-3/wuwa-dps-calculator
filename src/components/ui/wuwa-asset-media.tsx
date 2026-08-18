@@ -15,15 +15,11 @@ export const WUWA_RESONATOR_CARD_ROLES = [
 ] as const;
 
 /**
- * Hero/large-artwork contexts must prefer character-specific promoted artwork.
- * `detail-rolestand` is intentionally excluded: the promoted source can be a
- * shared quest illustration rather than an asset unique to the Resonator.
+ * Hero/large-artwork contexts require the character-specific promoted artwork.
+ * Card, head-icon and `detail-rolestand` assets are intentionally excluded:
+ * none of them is a reliable substitute for a true large Resonator portrait.
  */
-export const WUWA_RESONATOR_HERO_ROLES = [
-  "detail-roleportrait",
-  "detail-formationrolecard",
-  "detail-roleheadiconlarge",
-] as const;
+export const WUWA_RESONATOR_HERO_ROLES = ["detail-roleportrait"] as const;
 
 // Backward-compatible name for existing card/portrait call sites.
 export const WUWA_RESONATOR_DISPLAY_ROLES = WUWA_RESONATOR_CARD_ROLES;
