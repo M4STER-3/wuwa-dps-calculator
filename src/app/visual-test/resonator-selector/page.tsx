@@ -4,6 +4,7 @@ import {
   WuwaResonatorSelector,
   type ResonatorSelectorEntry,
 } from "@/components/ui/wuwa-resonator-selector";
+import { requireResonatorUiAssetId } from "@/game-data/resonator-ui-asset-ids";
 
 import styles from "./resonator-selector-preview.module.css";
 
@@ -11,6 +12,7 @@ const selectorEntries: ResonatorSelectorEntry[] = resonators
   .filter((entry) => entry.source.kind !== "technical-fixture")
   .map((entry) => ({
     id: entry.id,
+    assetId: requireResonatorUiAssetId(entry.id),
     name: entry.name,
     element: entry.element,
     weaponType: entry.weaponType,
