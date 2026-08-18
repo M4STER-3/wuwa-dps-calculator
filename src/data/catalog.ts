@@ -12,6 +12,7 @@ import type {
   Sonata,
   Weapon,
 } from "@/domain/models";
+import { generatedCommunityEchoPresets10R1 } from "@/generated/community-echo-presets-10r1";
 import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa";
 import { roster10R1BaselinePresets } from "./roster-10r1-presets";
 import {
@@ -164,10 +165,32 @@ const fixturePreset: RecommendedBuildPreset = {
   source: fixtureSource,
 };
 
+type GeneratedCommunityPreset =
+  (typeof generatedCommunityEchoPresets10R1)[keyof typeof generatedCommunityEchoPresets10R1];
+
+const communityPresetsByResonator = generatedCommunityEchoPresets10R1 as Readonly<
+  Record<string, GeneratedCommunityPreset | undefined>
+>;
+
+const withPromotedEchoLoadout = (
+  preset: RecommendedBuildPreset,
+): RecommendedBuildPreset => {
+  const community = communityPresetsByResonator[preset.resonatorId];
+  if (
+    community?.promotionStatus !== "verified" &&
+    community?.promotionStatus !== "curated-balanced"
+  ) {
+    return preset;
+  }
+  return {
+    ...preset,
+    echoLoadout: community.echoLoadout,
+  };
+};
+
 export const presets: readonly RecommendedBuildPreset[] = [
   aemeathPreset,
   ...roster10R1BaselinePresets,
   chisaPreset,
   verinaPreset,
-  fixturePreset,
-];
+].map(withPromotedEchoLoadout).concat(fixturePreset);
