@@ -26,7 +26,7 @@ function atkAction(input: {
   id: string;
   name: string;
   talent: CombatAction["talent"];
-  damageType: NonNullable<CombatAction["damageType"]>;
+  damageType?: NonNullable<CombatAction["damageType"]>;
   multipliers: readonly MotionValueGroup[];
   path: string;
 }): CombatAction {
@@ -34,7 +34,7 @@ function atkAction(input: {
     id: input.id,
     name: input.name,
     talent: input.talent,
-    damageType: input.damageType,
+    ...(input.damageType !== undefined ? { damageType: input.damageType } : {}),
     level: 10,
     multipliers: input.multipliers,
     castDurationSeconds: unknownTiming(),
@@ -157,14 +157,15 @@ const calcharoActions: readonly CombatAction[] = [
     multipliers: [{ percent: 77.36, hits: 2 }, { percent: 103.14, hits: 1 }],
     path: "src/characters/Calcharo/skillAttacks.ts",
   }),
+  atkAction({
+    id: "calcharo-shadowy-raid",
+    name: "Shadowy Raid DMG",
+    talent: "outroSkill",
+    multipliers: [{ percent: 195.98, hits: 1 }, { percent: 391.96, hits: 1 }],
+    path: "src/characters/Calcharo/outroAttacks.ts",
+  }),
 ];
 
-/**
- * WutheringTools' Prydwen DMx3 preset also ends in Shadowy Raid (Outro).
- * Outro damage intentionally stays outside this V1 profile until the shared
- * Damage Engine has a neutral/untyped damage category; misclassifying it as an
- * existing panel bonus would make equipped-build results wrong.
- */
 export const calcharoPersonalDpsProfile10R1: PersonalDpsProfileV1 = {
   resonatorId: "calcharo",
   element: "electro",
@@ -172,10 +173,10 @@ export const calcharoPersonalDpsProfile10R1: PersonalDpsProfileV1 = {
   defaultScalingAttribute: "attack",
   rotations: [
     rotation({
-      id: "calcharo-prydwen-dmx3-pre-outro-v1",
-      name: "Calcharo · Prydwen DMx3 (avant Outro)",
+      id: "calcharo-prydwen-dmx3-v1",
+      name: "Calcharo · Prydwen DMx3",
       sourceNote:
-        "WutheringTools Prydwen DMx3 action counts, excluding only Shadowy Raid until generic untyped/Outro damage accounting is represented. Source provides no trusted duration here.",
+        "Exact WutheringTools Prydwen DMx3 action counts. Shadowy Raid uses the generic uncategorized damage path, so no Basic/Heavy/Skill/Liberation/Intro panel bonus is fabricated. Source provides no trusted duration here.",
       steps: [
         { actionId: "calcharo-wanted-outlaw" },
         { actionId: "calcharo-phantom-etching" },
@@ -185,6 +186,7 @@ export const calcharoPersonalDpsProfile10R1: PersonalDpsProfileV1 = {
         { actionId: "calcharo-hounds-roar-3", count: 2 },
         { actionId: "calcharo-extermination-order-1" },
         { actionId: "calcharo-extermination-order-2" },
+        { actionId: "calcharo-shadowy-raid", damageCategory: "uncategorized" },
       ],
     }),
   ],
