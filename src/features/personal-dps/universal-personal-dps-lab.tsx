@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { emptyCharacterBox } from "@/domain/character-box";
 import { calculatePersonalDpsV1 } from "@/domain/personal-dps-engine";
 import type { Element, FinalStats } from "@/domain/models";
-import {
-  personalDpsPilotProfiles10R1,
-} from "@/data/personal-dps-pilots-10r1";
+import { personalDpsPilotProfiles10R1 } from "@/data/personal-dps-pilots-10r1";
 import {
   getBrowserCharacterBoxSnapshot,
   subscribeToBrowserCharacterBox,
@@ -16,6 +14,9 @@ import {
 const serverBox = emptyCharacterBox();
 const formatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
 const format = (value: number) => formatter.format(value);
+const supportedIds = new Set(
+  personalDpsPilotProfiles10R1.map((profile) => profile.resonatorId),
+);
 
 const pilotName: Readonly<Record<string, string>> = {
   aemeath: "Aemeath",
@@ -39,10 +40,6 @@ export function UniversalPersonalDpsLab() {
     getBrowserCharacterBoxSnapshot,
     () => serverBox,
   );
-  const supportedIds = useMemo(
-    () => new Set(personalDpsPilotProfiles10R1.map((profile) => profile.resonatorId)),
-    [],
-  );
   const pilotBuilds = box.builds.filter((build) => supportedIds.has(build.resonatorId));
   const [selectedBuildId, setSelectedBuildId] = useState("");
   const build =
@@ -63,22 +60,24 @@ export function UniversalPersonalDpsLab() {
       ? rotationId
       : profile?.rotations[0]?.id ?? "";
 
-  const result = useMemo(() => {
-    if (!build || !profile || !stats || !selectedRotationId) return undefined;
-    const element = pilotElements[profile.resonatorId] ?? profile.element;
-    return calculatePersonalDpsV1({
-      profile,
-      rotationId: selectedRotationId,
-      finalStats: stats,
-      attackerLevel: build.characterLevel,
-      skillLevels: build.skillLevels,
-      target: {
-        level: enemyLevel,
-        elementalResistance: { [element]: enemyResistance },
-        physicalResistance: 0.1,
-      },
-    });
-  }, [build, profile, stats, selectedRotationId, enemyLevel, enemyResistance]);
+  const element = profile
+    ? pilotElements[profile.resonatorId] ?? profile.element
+    : undefined;
+  const result =
+    build && profile && stats && selectedRotationId && element
+      ? calculatePersonalDpsV1({
+          profile,
+          rotationId: selectedRotationId,
+          finalStats: stats,
+          attackerLevel: build.characterLevel,
+          skillLevels: build.skillLevels,
+          target: {
+            level: enemyLevel,
+            elementalResistance: { [element]: enemyResistance },
+            physicalResistance: 0.1,
+          },
+        })
+      : undefined;
 
   const editStat = (
     key: keyof Pick<
