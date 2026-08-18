@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import {
   mainEchoes,
   presets,
@@ -321,7 +322,7 @@ function ModalShell({
   panelClassName?: string;
   children: React.ReactNode;
 }) {
-  return (
+  return createPortal(
     <div
       className={styles.modalBackdrop}
       role="dialog"
@@ -346,7 +347,8 @@ function ModalShell({
         </header>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
