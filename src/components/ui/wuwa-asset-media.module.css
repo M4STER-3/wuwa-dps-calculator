@@ -54,6 +54,34 @@
   object-position: right bottom;
 }
 
+/*
+ * Resonator hero artwork inherits one neutral framing rule everywhere the
+ * reusable media component is used. The stage grows symmetrically around the
+ * center, avoiding per-character translate/scale fixes and keeping future
+ * formation cards and role portraits centered by default.
+ */
+.artwork[data-asset-source-role="detail-formationrolecard"] .imageStage,
+.artwork[data-asset-source-role="detail-roleportrait"] .imageStage {
+  inset: -7% 3%;
+}
+
+.artwork[data-asset-source-role="detail-formationrolecard"] .image,
+.artwork[data-asset-source-role="detail-roleportrait"] .image {
+  object-position: center center;
+}
+
+/*
+ * The 256×256 head icon is a last-resort Resonator fallback. Do not magnify it
+ * to hero size; keep it centered at approximately 2× raster density instead.
+ */
+.artwork[data-asset-source-role="detail-roleheadiconlarge"] .imageStage {
+  inset: max(12%, calc((100% - 128px) / 2));
+}
+
+.artwork[data-asset-source-role="detail-roleheadiconlarge"] .image {
+  object-position: center;
+}
+
 .weapon,
 .echo,
 .catalogue {
@@ -159,6 +187,13 @@
 
 .chip .fallbackText {
   display: none;
+}
+
+@media (max-width: 980px) {
+  .artwork[data-asset-source-role="detail-formationrolecard"] .imageStage,
+  .artwork[data-asset-source-role="detail-roleportrait"] .imageStage {
+    inset: -4% 5%;
+  }
 }
 
 @media (forced-colors: active) {
