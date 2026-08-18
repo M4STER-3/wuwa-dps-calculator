@@ -7,37 +7,24 @@ const outputPath = path.resolve(root, "src/generated/character-box-roster-10r1.t
 const outputDirectory = path.dirname(outputPath);
 const temporaryPath = path.join(outputDirectory, `.character-box-roster-10r1.${process.pid}.tmp`);
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
-const MAX_OUTPUT_BYTES = 512 * 1024;
+const MAX_OUTPUT_BYTES = 768 * 1024;
 const DANGEROUS_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 
 const batch = [
-  ["aemeath", "1210", "Aemeath", "Fusion", "Sword"],
-  ["augusta", "1306", "Augusta", "Electro", "Broadblade"],
-  ["brant", "1206", "Brant", "Fusion", "Sword"],
-  ["calcharo", "1301", "Calcharo", "Electro", "Broadblade"],
-  ["cantarella", "1607", "Cantarella", "Havoc", "Rectifier"],
-  ["carlotta", "1107", "Carlotta", "Glacio", "Pistols"],
-  ["cartethyia", "1409", "Cartethyia", "Aero", "Sword"],
-  ["changli", "1205", "Changli", "Fusion", "Sword"],
-  ["chisa", "1508", "Chisa", "Havoc", "Broadblade"],
-  ["ciaccona", "1407", "Ciaccona", "Aero", "Pistols"],
+  { id: "aemeath", wuwaId: "1210", name: "Aemeath", element: "Fusion", weaponType: "Sword", weapon: { id: "everbright-polestar", wuwaId: "21020076", name: "Everbright Polestar" } },
+  { id: "augusta", wuwaId: "1306", name: "Augusta", element: "Electro", weaponType: "Broadblade", weapon: { id: "thunderflare-dominion", wuwaId: "21010026", name: "Thunderflare Dominion" } },
+  { id: "brant", wuwaId: "1206", name: "Brant", element: "Fusion", weaponType: "Sword", weapon: { id: "unflickering-valor", wuwaId: "21020026", name: "Unflickering Valor" } },
+  { id: "calcharo", wuwaId: "1301", name: "Calcharo", element: "Electro", weaponType: "Broadblade", weapon: { id: "lustrous-razor", wuwaId: "21010015", name: "Lustrous Razor" } },
+  { id: "cantarella", wuwaId: "1607", name: "Cantarella", element: "Havoc", weaponType: "Rectifier", weapon: { id: "whispers-of-sirens", wuwaId: "21050056", name: "Whispers of Sirens" } },
+  { id: "carlotta", wuwaId: "1107", name: "Carlotta", element: "Glacio", weaponType: "Pistols", weapon: { id: "the-last-dance", wuwaId: "21030016", name: "The Last Dance" } },
+  { id: "cartethyia", wuwaId: "1409", name: "Cartethyia", element: "Aero", weaponType: "Sword", weapon: { id: "defiers-thorn", wuwaId: "21020036", name: "Defier's Thorn" } },
+  { id: "changli", wuwaId: "1205", name: "Changli", element: "Fusion", weaponType: "Sword", weapon: { id: "blazing-brilliance", wuwaId: "21020016", name: "Blazing Brilliance" } },
+  { id: "chisa", wuwaId: "1508", name: "Chisa", element: "Havoc", weaponType: "Broadblade", weapon: { id: "kumokiri", wuwaId: "21010056", name: "Kumokiri" } },
+  { id: "ciaccona", wuwaId: "1407", name: "Ciaccona", element: "Aero", weaponType: "Pistols", weapon: { id: "woodland-aria", wuwaId: "21030036", name: "Woodland Aria" } },
 ];
 
-const elementMap = {
-  Aero: "aero",
-  Glacio: "glacio",
-  Electro: "electro",
-  Fusion: "fusion",
-  Havoc: "havoc",
-  Spectro: "spectro",
-};
-const weaponTypeMap = {
-  Broadblade: "broadblade",
-  Gauntlets: "gauntlets",
-  Pistols: "pistols",
-  Rectifier: "rectifier",
-  Sword: "sword",
-};
+const elementMap = { Aero: "aero", Glacio: "glacio", Electro: "electro", Fusion: "fusion", Havoc: "havoc", Spectro: "spectro" };
+const weaponTypeMap = { Broadblade: "broadblade", Gauntlets: "gauntlets", Pistols: "pistols", Rectifier: "rectifier", Sword: "sword" };
 const skillTypeMap = new Map([
   ["Basic Attack", "basicAttack"],
   ["Resonance Skill", "resonanceSkill"],
@@ -46,31 +33,18 @@ const skillTypeMap = new Map([
   ["Intro Skill", "introSkill"],
 ]);
 
-function fail(message) {
-  throw new Error(`Character Box roster 10R1 projection: ${message}`);
-}
+function fail(message) { throw new Error(`Character Box roster 10R1 projection: ${message}`); }
 function assertContained(candidate, label) {
   const relative = path.relative(root, candidate);
-  if (relative === "" || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
-    fail(`${label} escapes repository root`);
-  }
+  if (relative === "" || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) fail(`${label} escapes repository root`);
 }
 async function rejectSymlink(candidate, label, allowMissing = false) {
-  try {
-    const metadata = await lstat(candidate);
-    if (metadata.isSymbolicLink()) fail(`${label} must not be a symlink`);
-  } catch (error) {
-    if (allowMissing && error && typeof error === "object" && "code" in error && error.code === "ENOENT") return;
-    throw error;
-  }
+  try { const metadata = await lstat(candidate); if (metadata.isSymbolicLink()) fail(`${label} must not be a symlink`); }
+  catch (error) { if (allowMissing && error && typeof error === "object" && "code" in error && error.code === "ENOENT") return; throw error; }
 }
 async function assertRealDirectoryContained(directory, label) {
-  const realRoot = await realpath(root);
-  const realDirectory = await realpath(directory);
-  const relative = path.relative(realRoot, realDirectory);
-  if (relative === "" || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
-    fail(`${label} resolves outside repository root`);
-  }
+  const realRoot = await realpath(root); const realDirectory = await realpath(directory); const relative = path.relative(realRoot, realDirectory);
+  if (relative === "" || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) fail(`${label} resolves outside repository root`);
 }
 function record(value, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) fail(`${label} must be an object`);
@@ -84,100 +58,64 @@ function safeText(value, label, max = 100_000) {
   if (/https?:\/\//i.test(value)) fail(`${label} contains an unexpected URL`);
   return value;
 }
-function sourceParametersType(skill, label) {
-  const parameters = record(skill.sourceParameters, `${label}.sourceParameters`);
-  return safeText(parameters.type, `${label}.sourceParameters.type`, 120);
+function sourceParametersType(skill, label) { return safeText(record(skill.sourceParameters, `${label}.sourceParameters`).type, `${label}.sourceParameters.type`, 120); }
+function indexByWuwaId(entries, label) {
+  if (!Array.isArray(entries)) fail(`${label} must be an array`);
+  const index = new Map();
+  for (const [entryIndex, rawEntry] of entries.entries()) {
+    const entry = record(rawEntry, `${label}[${entryIndex}]`); const externalIds = record(entry.externalIds, `${label}[${entryIndex}].externalIds`); const wuwaId = externalIds.wuwa;
+    if (typeof wuwaId !== "string" || !/^\d{1,30}$/.test(wuwaId)) continue;
+    if (index.has(wuwaId)) fail(`${label} duplicates Wuwa id ${wuwaId}`);
+    index.set(wuwaId, entry);
+  }
+  return index;
 }
 
-assertContained(inputPath, "input");
-assertContained(outputPath, "output");
-await rejectSymlink(inputPath, "input");
+assertContained(inputPath, "input"); assertContained(outputPath, "output"); await rejectSymlink(inputPath, "input");
 const inputMetadata = await stat(inputPath);
-if (!inputMetadata.isFile() || inputMetadata.size <= 0 || inputMetadata.size > MAX_SOURCE_BYTES) {
-  fail(`input size ${inputMetadata.size} is outside the allowed range`);
-}
-
+if (!inputMetadata.isFile() || inputMetadata.size <= 0 || inputMetadata.size > MAX_SOURCE_BYTES) fail(`input size ${inputMetadata.size} is outside the allowed range`);
 let database;
-try {
-  database = JSON.parse(await readFile(inputPath, "utf8"));
-} catch (error) {
-  fail(`unable to parse GameDatabase: ${error instanceof Error ? error.message : "unknown error"}`);
-}
+try { database = JSON.parse(await readFile(inputPath, "utf8")); } catch (error) { fail(`unable to parse GameDatabase: ${error instanceof Error ? error.message : "unknown error"}`); }
 const rootRecord = record(database, "database");
-if (!Array.isArray(rootRecord.characters)) fail("database.characters must be an array");
+const charactersByWuwaId = indexByWuwaId(rootRecord.characters, "characters");
+const weaponsByWuwaId = indexByWuwaId(rootRecord.weapons, "weapons");
 
-const byWuwaId = new Map();
-for (const [index, rawCharacter] of rootRecord.characters.entries()) {
-  const character = record(rawCharacter, `characters[${index}]`);
-  const externalIds = record(character.externalIds, `characters[${index}].externalIds`);
-  const wuwaId = externalIds.wuwa;
-  if (typeof wuwaId !== "string" || !/^\d{1,30}$/.test(wuwaId)) continue;
-  if (byWuwaId.has(wuwaId)) fail(`duplicate Wuwa character id ${wuwaId}`);
-  byWuwaId.set(wuwaId, character);
-}
-
-const projection = batch.map(([id, wuwaId, expectedName, expectedElement, expectedWeaponType]) => {
-  if (id === "camellya" || /camell/i.test(expectedName)) fail("Camellya is explicitly excluded from roster promotion");
-  const character = byWuwaId.get(wuwaId);
-  if (!character) fail(`missing GameDatabase character ${wuwaId} (${expectedName})`);
-  if (character.name !== expectedName) fail(`${wuwaId} expected name ${expectedName}, got ${String(character.name)}`);
-  if (character.element !== expectedElement) fail(`${expectedName} expected element ${expectedElement}, got ${String(character.element)}`);
-  if (character.weaponType !== expectedWeaponType) fail(`${expectedName} expected weapon type ${expectedWeaponType}, got ${String(character.weaponType)}`);
-  if (character.rarity !== 5) fail(`${expectedName} expected rarity 5, got ${String(character.rarity)}`);
-  if (!Array.isArray(character.skills)) fail(`${expectedName}.skills must be an array`);
-
+const resonators = [];
+const weapons = [];
+for (const expected of batch) {
+  if (expected.id === "camellya" || /camell/i.test(expected.name)) fail("Camellya is explicitly excluded from roster promotion");
+  const character = charactersByWuwaId.get(expected.wuwaId);
+  if (!character) fail(`missing GameDatabase character ${expected.wuwaId} (${expected.name})`);
+  if (character.name !== expected.name || character.element !== expected.element || character.weaponType !== expected.weaponType || character.rarity !== 5) fail(`${expected.name} identity does not match reviewed 10R1 metadata`);
+  if (!Array.isArray(character.skills)) fail(`${expected.name}.skills must be an array`);
   const skillNames = {};
   for (const [skillIndex, rawSkill] of character.skills.entries()) {
-    const skill = record(rawSkill, `${expectedName}.skills[${skillIndex}]`);
-    const semantic = skillTypeMap.get(sourceParametersType(skill, `${expectedName}.skills[${skillIndex}]`));
+    const skill = record(rawSkill, `${expected.name}.skills[${skillIndex}]`); const semantic = skillTypeMap.get(sourceParametersType(skill, `${expected.name}.skills[${skillIndex}]`));
     if (!semantic) continue;
-    if (Object.prototype.hasOwnProperty.call(skillNames, semantic)) fail(`${expectedName} has multiple ${semantic} skill groups`);
-    skillNames[semantic] = safeText(skill.name, `${expectedName}.skills[${skillIndex}].name`, 200);
+    if (Object.prototype.hasOwnProperty.call(skillNames, semantic)) fail(`${expected.name} has multiple ${semantic} skill groups`);
+    skillNames[semantic] = safeText(skill.name, `${expected.name}.skills[${skillIndex}].name`, 200);
   }
-  for (const semantic of skillTypeMap.values()) {
-    if (!Object.prototype.hasOwnProperty.call(skillNames, semantic)) fail(`${expectedName} is missing unambiguous ${semantic} skill data`);
-  }
-
-  if (!Array.isArray(character.sequences) || character.sequences.length !== 6) fail(`${expectedName} must have exactly six sequences`);
+  for (const semantic of skillTypeMap.values()) if (!Object.prototype.hasOwnProperty.call(skillNames, semantic)) fail(`${expected.name} is missing unambiguous ${semantic} skill data`);
+  if (!Array.isArray(character.sequences) || character.sequences.length !== 6) fail(`${expected.name} must have exactly six sequences`);
   const resonanceChain = character.sequences.map((rawSequence, sequenceIndex) => {
-    const sequence = record(rawSequence, `${expectedName}.sequences[${sequenceIndex}]`);
-    if (!Number.isInteger(sequence.sequence) || sequence.sequence !== sequenceIndex + 1) fail(`${expectedName} sequences must be ordered S1..S6`);
-    return {
-      sequence: sequence.sequence,
-      name: safeText(sequence.name, `${expectedName}.sequences[${sequenceIndex}].name`, 200),
-      description: safeText(sequence.description, `${expectedName}.sequences[${sequenceIndex}].description`),
-    };
+    const sequence = record(rawSequence, `${expected.name}.sequences[${sequenceIndex}]`);
+    if (!Number.isInteger(sequence.sequence) || sequence.sequence !== sequenceIndex + 1) fail(`${expected.name} sequences must be ordered S1..S6`);
+    return { sequence: sequence.sequence, name: safeText(sequence.name, `${expected.name}.sequences[${sequenceIndex}].name`, 200), description: safeText(sequence.description, `${expected.name}.sequences[${sequenceIndex}].description`) };
   });
+  resonators.push({ id: expected.id, sourceItemId: expected.wuwaId, name: expected.name, element: elementMap[expected.element], weaponType: weaponTypeMap[expected.weaponType], rarity: 5, skillNames, resonanceChain });
 
-  return {
-    id,
-    sourceItemId: wuwaId,
-    name: expectedName,
-    element: elementMap[expectedElement],
-    weaponType: weaponTypeMap[expectedWeaponType],
-    rarity: 5,
-    skillNames,
-    resonanceChain,
-  };
-});
+  const weapon = weaponsByWuwaId.get(expected.weapon.wuwaId);
+  if (!weapon) fail(`missing GameDatabase weapon ${expected.weapon.wuwaId} (${expected.weapon.name})`);
+  if (weapon.name !== expected.weapon.name || weapon.type !== expected.weaponType || weapon.rarity !== 5) fail(`${expected.weapon.name} identity does not match reviewed 10R1 metadata`);
+  weapons.push({ id: expected.weapon.id, sourceItemId: expected.weapon.wuwaId, name: expected.weapon.name, type: weaponTypeMap[expected.weaponType], rarity: 5 });
+}
+if (resonators.length !== 10 || new Set(resonators.map((entry) => entry.id)).size !== 10) fail("projection must contain exactly ten unique Resonators");
+if (weapons.length !== 10 || new Set(weapons.map((entry) => entry.id)).size !== 10) fail("projection must contain exactly ten unique signature weapons");
 
-if (projection.length !== 10 || new Set(projection.map((entry) => entry.id)).size !== 10) fail("projection must contain exactly ten unique Resonators");
-
-await mkdir(outputDirectory, { recursive: true });
-await assertRealDirectoryContained(path.dirname(inputPath), "input directory");
-await assertRealDirectoryContained(outputDirectory, "output directory");
-await rejectSymlink(outputPath, "output", true);
-await rejectSymlink(temporaryPath, "temporary output", true);
-
-const serialized = `/* Generated by scripts/generate-character-box-roster-10r1.mjs. Do not edit manually. */\nexport const generatedCharacterBoxRoster10R1 = ${JSON.stringify(projection, null, 2)} as const;\n`;
+await mkdir(outputDirectory, { recursive: true }); await assertRealDirectoryContained(path.dirname(inputPath), "input directory"); await assertRealDirectoryContained(outputDirectory, "output directory"); await rejectSymlink(outputPath, "output", true); await rejectSymlink(temporaryPath, "temporary output", true);
+const serialized = `/* Generated by scripts/generate-character-box-roster-10r1.mjs. Do not edit manually. */\nexport const generatedCharacterBoxRoster10R1 = ${JSON.stringify(resonators, null, 2)} as const;\nexport const generatedCharacterBoxWeapons10R1 = ${JSON.stringify(weapons, null, 2)} as const;\n`;
 const outputBytes = Buffer.byteLength(serialized);
 if (outputBytes <= 0 || outputBytes > MAX_OUTPUT_BYTES) fail(`output size ${outputBytes} is outside the allowed range`);
-try {
-  await writeFile(temporaryPath, serialized, { encoding: "utf8", flag: "wx", mode: 0o644 });
-  await rename(temporaryPath, outputPath);
-} catch (error) {
-  await rm(temporaryPath, { force: true }).catch(() => undefined);
-  throw error;
-}
-
-console.log(`Generated ${path.relative(root, outputPath)} with ${projection.length} reviewed 10R1 Resonators (${outputBytes} bytes).`);
+try { await writeFile(temporaryPath, serialized, { encoding: "utf8", flag: "wx", mode: 0o644 }); await rename(temporaryPath, outputPath); }
+catch (error) { await rm(temporaryPath, { force: true }).catch(() => undefined); throw error; }
+console.log(`Generated ${path.relative(root, outputPath)} with ${resonators.length} reviewed 10R1 Resonators and ${weapons.length} signature weapons (${outputBytes} bytes).`);
