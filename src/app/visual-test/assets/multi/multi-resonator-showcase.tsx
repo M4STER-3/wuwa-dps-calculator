@@ -134,7 +134,7 @@ export function MultiResonatorShowcase() {
         <V4SectionHeader
           eyebrow="Couverture globale"
           title="Deux règles selon le contexte"
-          description="Les cartes gardent le rôle de formation validé, tandis que les grands visuels privilégient un vrai artwork de personnage. Les deux règles sont vérifiées sur toute la projection."
+          description="Les cartes gardent le rôle de formation validé, tandis que les grands visuels privilégient l’artwork propre au personnage. Les deux règles sont vérifiées sur toute la projection."
           action={<V4Badge tone="success">{validation.characters.length} vérifiés</V4Badge>}
         />
         <div className={styles.summaryGrid}>
@@ -186,8 +186,8 @@ export function MultiResonatorShowcase() {
       <V4Panel>
         <V4SectionHeader
           eyebrow="Grand format"
-          title="4 vrais grands visuels avec le même cadrage"
-          description="Ces quatre tests privilégient detail-rolestand, puis detail-roleportrait. Les assets de carte ne servent plus que de fallback si aucun artwork grand format n’existe."
+          title="4 grands visuels propres à leur Resonator"
+          description="Ces quatre tests privilégient detail-roleportrait et utilisent tous le même centrage générique dans leur box. L’asset de formation ne sert que de fallback si l’artwork propre au personnage manque."
           action={<V4Badge tone="accent">Hero assets</V4Badge>}
         />
         <div className={styles.heroGrid}>
@@ -213,7 +213,7 @@ export function MultiResonatorShowcase() {
           })}
         </div>
         <p className={styles.note}>
-          Ce checkpoint est uniquement destiné à valider la robustesse des composants de l’étape 5. La page principale d’assets reste inchangée visuellement.
+          Ce checkpoint est uniquement destiné à valider la robustesse des composants de l’étape 5. La page principale d’assets reste inchangée visuellement en dehors de la sélection correcte du grand artwork.
         </p>
       </V4Panel>
     </div>
