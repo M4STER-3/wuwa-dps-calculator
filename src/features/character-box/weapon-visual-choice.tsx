@@ -7,7 +7,7 @@ import { getWeaponUiIconPath } from "@/game-data/weapon-ui-asset-ids";
 
 import styles from "./weapon-visual-choice.module.css";
 
-type RarityFilter = number | "all";
+type RarityFilter = Weapon["rarity"] | "all";
 
 function WeaponIcon({ weapon, size }: { weapon: Weapon; size: "summary" | "card" }) {
   const iconPath = getWeaponUiIconPath(weapon.id);
