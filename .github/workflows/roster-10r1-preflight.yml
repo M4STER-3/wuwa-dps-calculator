@@ -1,0 +1,59 @@
+name: 10R1 roster preflight
+
+on:
+  pull_request:
+    paths:
+      - "src/data/**"
+      - "src/domain/**"
+      - "src/game-data/**"
+      - "scripts/generate-character-box-roster-10r1.mjs"
+      - "scripts/generate-character-box-roster-baselines-10r1.mjs"
+      - "scripts/generate-character-box-roster-media-10r1.mjs"
+      - "scripts/generate-wuwa-ui-asset-projection-v1.mjs"
+      - "public/data/wuwa/game-database-v1.json"
+      - "public/assets/wuwa/**"
+      - ".github/workflows/roster-10r1-preflight.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: roster-10r1-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  projection:
+    name: Validate dependency-free roster projections
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Validate generator syntax
+        run: |
+          node --check scripts/generate-wuwa-ui-asset-projection-v1.mjs
+          node --check scripts/generate-character-box-roster-10r1.mjs
+          node --check scripts/generate-character-box-roster-baselines-10r1.mjs
+          node --check scripts/generate-character-box-roster-media-10r1.mjs
+
+      - name: Generate secure UI asset projection
+        run: node scripts/generate-wuwa-ui-asset-projection-v1.mjs
+
+      - name: Generate reviewed 10R1 roster projection
+        run: node scripts/generate-character-box-roster-10r1.mjs
+
+      - name: Generate exact 10R1 stat baselines
+        run: node scripts/generate-character-box-roster-baselines-10r1.mjs
+
+      - name: Generate verified 10R1 portrait projection
+        run: node scripts/generate-character-box-roster-media-10r1.mjs
