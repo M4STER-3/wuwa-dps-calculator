@@ -24,6 +24,7 @@ export function WuwaAssetMedia({
   src,
   alt,
   role,
+  sourceRole,
   fallbackLabel = "Image indisponible",
   className,
   sizes,
@@ -31,6 +32,7 @@ export function WuwaAssetMedia({
   src?: string;
   alt: string;
   role: WuwaAssetMediaRole;
+  sourceRole?: string;
   fallbackLabel?: string;
   className?: string;
   sizes?: string;
@@ -38,7 +40,11 @@ export function WuwaAssetMedia({
   const safeSrc = isSafeWuwaAssetPath(src) ? src : undefined;
 
   return (
-    <div className={classes(styles.frame, styles[role], className)} data-asset-role={role}>
+    <div
+      className={classes(styles.frame, styles[role], className)}
+      data-asset-role={role}
+      data-asset-source-role={sourceRole}
+    >
       {safeSrc ? (
         <Image
           src={safeSrc}
