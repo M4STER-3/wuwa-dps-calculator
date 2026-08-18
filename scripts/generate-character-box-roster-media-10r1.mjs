@@ -9,7 +9,7 @@ const temporaryPath = path.join(outputDirectory, `.character-box-roster-media-10
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 64 * 1024;
 const ids = ["1210", "1306", "1206", "1301", "1607", "1107", "1409", "1205", "1508", "1407"];
-const preferredRoles = ["list-roleportrait", "detail-roleportrait"];
+const preferredRoles = ["list-roleheadicon"];
 const localAssetPattern = /^\/assets\/wuwa\/objects\/[a-f0-9]{64}\.(?:png|jpg|webp)$/;
 
 function fail(message) { throw new Error(`Character Box roster media 10R1 projection: ${message}`); }
