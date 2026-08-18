@@ -7,16 +7,16 @@ const database = JSON.parse(
 );
 
 const reviewed = [
-  ["1210", "21020076"],
-  ["1306", "21010026"],
-  ["1206", "21020026"],
-  ["1301", "21010015"],
-  ["1607", "21050056"],
-  ["1107", "21030016"],
-  ["1409", "21020036"],
-  ["1205", "21020016"],
-  ["1508", "21010056"],
-  ["1407", "21030036"],
+  ["1210", "21020076", "Everbright Polestar"],
+  ["1306", "21010026", "Thunderflare Dominion"],
+  ["1206", "21020026", "Unflickering Valor"],
+  ["1301", "21010015", "Lustrous Razor"],
+  ["1607", "21050056", "Whispers of Sirens"],
+  ["1107", "21030016", "The Last Dance"],
+  ["1409", "21020036", "Defier's Thorn"],
+  ["1205", "21020016", "Blazing Brilliance"],
+  ["1508", "21010056", "Kumokiri"],
+  ["1407", "21030036", "Woodland Aria"],
 ];
 
 const characterByWuwaId = new Map(
@@ -26,9 +26,12 @@ const weaponByWuwaId = new Map(
   database.weapons.map((entry) => [entry.externalIds?.wuwa, entry]),
 );
 
-for (const [characterId, weaponId] of reviewed) {
+for (const [characterId, reviewedWeaponId, reviewedWeaponName] of reviewed) {
   const character = characterByWuwaId.get(characterId);
-  const weapon = weaponByWuwaId.get(weaponId);
+  const weaponAtReviewedId = weaponByWuwaId.get(reviewedWeaponId);
+  const nameMatches = database.weapons.filter(
+    (entry) => entry.name === reviewedWeaponName,
+  );
   console.log(
     JSON.stringify({
       character: character
@@ -40,14 +43,23 @@ for (const [characterId, weaponId] of reviewed) {
             rarity: character.rarity,
           }
         : { id: characterId, missing: true },
-      weapon: weapon
-        ? {
-            id: weaponId,
-            name: weapon.name,
-            type: weapon.type,
-            rarity: weapon.rarity,
-          }
-        : { id: weaponId, missing: true },
+      reviewedWeapon: {
+        expectedName: reviewedWeaponName,
+        reviewedId: reviewedWeaponId,
+        observedAtReviewedId: weaponAtReviewedId
+          ? {
+              name: weaponAtReviewedId.name,
+              type: weaponAtReviewedId.type,
+              rarity: weaponAtReviewedId.rarity,
+            }
+          : null,
+        exactNameMatches: nameMatches.map((entry) => ({
+          id: entry.externalIds?.wuwa,
+          name: entry.name,
+          type: entry.type,
+          rarity: entry.rarity,
+        })),
+      },
     }),
   );
 }
