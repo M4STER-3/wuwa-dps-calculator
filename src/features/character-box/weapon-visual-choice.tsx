@@ -30,6 +30,7 @@ export function WeaponVisualChoice({
             type="button"
             role="radio"
             aria-checked={selected}
+            aria-label={`Sélectionner ${weapon.name}`}
             data-selected={selected || undefined}
             className={styles.card}
             onClick={() => onChange(weapon.id)}
