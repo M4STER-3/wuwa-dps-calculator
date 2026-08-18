@@ -10,19 +10,19 @@ const PROMOTED_WEAPON_UI_ASSETS = {
     iconPath:
       "/assets/wuwa/objects/cb5948fae96eca7de41fa1fe1afced2f133024c060b75a47b37c4b055a96fd7c.webp",
   },
-  "thunderflare-dominion": { assetId: "21010026" },
-  "unflickering-valor": { assetId: "21020026" },
+  "thunderflare-dominion": { assetId: "21010046" },
+  "unflickering-valor": { assetId: "21020036" },
   "lustrous-razor": { assetId: "21010015" },
   "whispers-of-sirens": { assetId: "21050056" },
   "the-last-dance": { assetId: "21030016" },
-  "defiers-thorn": { assetId: "21020036" },
+  "defiers-thorn": { assetId: "21020056" },
   "blazing-brilliance": { assetId: "21020016" },
   kumokiri: {
     assetId: "21010056",
     iconPath:
       "/assets/wuwa/objects/b71ad7d5738edb73c2c46e3bed7214bd2608f472f8027d7677244fabcae38ca0.webp",
   },
-  "woodland-aria": { assetId: "21030036" },
+  "woodland-aria": { assetId: "21030026" },
   variation: {
     assetId: "21050024",
     iconPath:
