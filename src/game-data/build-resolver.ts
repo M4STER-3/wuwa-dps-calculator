@@ -1,6 +1,15 @@
+import type { ActiveEffectInstance } from "@/domain/effect-models";
 import type { FinalStats } from "@/domain/models";
 import type { EchoLoadoutV1, ResolvedEchoLoadoutV1 } from "./echo-loadout";
 import { resolveEchoLoadoutV1 } from "./echo-loadout";
+import {
+  applyPermanentBuildEffectsV1,
+  coveredPermanentSourceKeysV1,
+  materializeBuildRuntimeEffectsV1,
+  permanentBuildSourceKeyV1,
+  type BuildEffectSourceV1,
+  type PermanentBuildEffectAuditEntryV1,
+} from "./build-effects";
 import type {
   CharacterCatalogEntry,
   GameDatabaseV1,
@@ -19,6 +28,11 @@ export interface ExactBuildStatInputV1 {
   /** Required only at reviewed ascension-cap levels that have pre/post values. */
   weaponAscended?: boolean;
   echoLoadout: EchoLoadoutV1;
+  /**
+   * Reviewed, structured source semantics. New characters/weapons/sets extend data
+   * through this contract; the resolver never branches on a specific character id.
+   */
+  buildEffects?: readonly BuildEffectSourceV1[];
 }
 
 export type UnresolvedPermanentSourceV1 =
@@ -28,8 +42,9 @@ export type UnresolvedPermanentSourceV1 =
 
 export interface ExactBuildStatResolutionV1 {
   /**
-   * Exact stat sheet for the structured permanent sources covered by V1.
-   * This is NOT automatically written to UserBuild.finalStats while unresolvedPermanentSources is non-empty.
+   * Exact stat sheet for all reviewed permanent sources supplied to the resolver.
+   * Runtime/conditional effects are returned separately and are never folded into
+   * this sheet, preserving UserBuild.finalStats as the single permanent-stat source.
    */
   statSheet: FinalStats;
   complete: boolean;
@@ -41,6 +56,9 @@ export interface ExactBuildStatResolutionV1 {
     "echo-substats",
   ];
   unresolvedPermanentSources: readonly UnresolvedPermanentSourceV1[];
+  coveredPermanentSourceKeys: readonly string[];
+  permanentEffectAudit: readonly PermanentBuildEffectAuditEntryV1[];
+  runtimeEffects: readonly ActiveEffectInstance[];
   echoResolution: ResolvedEchoLoadoutV1;
   exactBase: {
     character: { hp: number; attack: number; defense: number };
@@ -204,6 +222,16 @@ function collectUnresolvedSources(
   return unresolved;
 }
 
+function permanentSourceKey(source: UnresolvedPermanentSourceV1): string {
+  if (source.kind === "character-permanent-nodes") {
+    return permanentBuildSourceKeyV1.characterPermanentNodes(source.characterId);
+  }
+  if (source.kind === "weapon-passive") {
+    return permanentBuildSourceKeyV1.weaponPassive(source.weaponId);
+  }
+  return permanentBuildSourceKeyV1.sonataBonus(source.sonataSetId, source.pieces);
+}
+
 export function resolveExactBuildStatSheetV1(
   database: Pick<GameDatabaseV1, "characters" | "weapons" | "echoes" | "sonataSets">,
   input: ExactBuildStatInputV1,
@@ -276,28 +304,42 @@ export function resolveExactBuildStatSheetV1(
     statSheet.damageTypeBonus[type] += points.damageTypeBonus[type];
   }
 
+  const buildEffects = input.buildEffects ?? [];
+  const permanentEffects = applyPermanentBuildEffectsV1(
+    statSheet,
+    {
+      hp: characterBase.hp,
+      attack: characterBase.attack + weaponAttack,
+      defense: characterBase.defense,
+    },
+    buildEffects,
+  );
+  const resolvedStatSheet = permanentEffects.statSheet;
+
   for (const [key, value] of Object.entries({
-    hp: statSheet.hp,
-    attack: statSheet.attack,
-    defense: statSheet.defense,
-    critRate: statSheet.critRate,
-    critDamage: statSheet.critDamage,
-    energyRegen: statSheet.energyRegen,
-    healingBonus: statSheet.healingBonus,
-    tuneBreakBoost: statSheet.tuneBreakBoost,
+    hp: resolvedStatSheet.hp,
+    attack: resolvedStatSheet.attack,
+    defense: resolvedStatSheet.defense,
+    critRate: resolvedStatSheet.critRate,
+    critDamage: resolvedStatSheet.critDamage,
+    energyRegen: resolvedStatSheet.energyRegen,
+    healingBonus: resolvedStatSheet.healingBonus,
+    tuneBreakBoost: resolvedStatSheet.tuneBreakBoost,
   })) {
     finite(value, `resolved ${key}`);
   }
 
+  const coveredPermanentSourceKeys = coveredPermanentSourceKeysV1(buildEffects);
   const unresolvedPermanentSources = collectUnresolvedSources(
     character,
     weapon,
     database.sonataSets,
     echoResolution.sonataPieceCounts,
-  );
+  ).filter((source) => !coveredPermanentSourceKeys.has(permanentSourceKey(source)));
+  const runtimeEffects = materializeBuildRuntimeEffectsV1(input.characterId, buildEffects);
 
   return {
-    statSheet,
+    statSheet: resolvedStatSheet,
     complete: unresolvedPermanentSources.length === 0,
     coveredPermanentSources: [
       "character-base-stats",
@@ -307,6 +349,9 @@ export function resolveExactBuildStatSheetV1(
       "echo-substats",
     ],
     unresolvedPermanentSources,
+    coveredPermanentSourceKeys: [...coveredPermanentSourceKeys].sort(),
+    permanentEffectAudit: permanentEffects.audit,
+    runtimeEffects,
     echoResolution,
     exactBase: {
       character: characterBase,
