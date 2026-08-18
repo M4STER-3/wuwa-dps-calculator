@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { emptyCharacterBox } from "@/domain/character-box";
 import { calculatePersonalDpsV1 } from "@/domain/personal-dps-engine";
-import type { Element, FinalStats, TalentLevel } from "@/domain/models";
+import type { Element, TalentLevel } from "@/domain/models";
 import { personalDpsPilotProfiles10R1 } from "@/data/personal-dps-pilots-10r1";
 import {
   getBrowserCharacterBoxSnapshot,
@@ -30,10 +30,6 @@ const pilotElements: Readonly<Record<string, Element>> = {
   changli: "fusion",
 };
 
-function cloneStats(stats: FinalStats): FinalStats {
-  return structuredClone(stats);
-}
-
 function toTalentLevel(value: number): TalentLevel {
   if (!Number.isInteger(value) || value < 1 || value > 10) {
     throw new Error(`Invalid saved talent level: ${value}`);
@@ -57,8 +53,6 @@ export function UniversalPersonalDpsLab() {
         (candidate) => candidate.resonatorId === build.resonatorId,
       )
     : undefined;
-  const [sandbox, setSandbox] = useState<FinalStats | null>(null);
-  const stats = sandbox ?? build?.finalStats;
   const [enemyLevel, setEnemyLevel] = useState(90);
   const [enemyResistance, setEnemyResistance] = useState(0.1);
   const [rotationId, setRotationId] = useState("");
@@ -80,11 +74,11 @@ export function UniversalPersonalDpsLab() {
       }
     : undefined;
   const result =
-    build && profile && stats && selectedRotationId && element
+    build && profile && selectedRotationId && element
       ? calculatePersonalDpsV1({
           profile,
           rotationId: selectedRotationId,
-          finalStats: stats,
+          finalStats: build.finalStats,
           attackerLevel: build.characterLevel,
           skillLevels,
           target: {
@@ -95,33 +89,19 @@ export function UniversalPersonalDpsLab() {
         })
       : undefined;
 
-  const editStat = (
-    key: keyof Pick<
-      FinalStats,
-      "attack" | "hp" | "defense" | "critRate" | "critDamage" | "energyRegen"
-    >,
-    value: number,
-  ) => {
-    if (!stats || !Number.isFinite(value)) return;
-    setSandbox({ ...cloneStats(stats), [key]: value });
-  };
-
   if (!pilotBuilds.length) {
     return (
       <main className="lab-shell">
         <header className="lab-header">
           <div>
-            <p className="eyebrow">UNIVERSAL PERSONAL DPS · D2</p>
-            <h1>DPS personnel</h1>
+            <p className="eyebrow">DPS PERSONNEL</p>
+            <h1>Calcul DPS</h1>
           </div>
           <Link className="lab-link" href="/character-box">← Character Box</Link>
         </header>
         <section className="lab-empty">
-          <h2>Ajoute d’abord un des trois pilotes</h2>
-          <p>
-            Cette première validation universelle accepte Aemeath, Calcharo et Changli.
-            Crée ou charge leur build dans Character Box, puis reviens ici.
-          </p>
+          <h2>Ajoute d’abord Aemeath, Calcharo ou Changli</h2>
+          <p>Le calcul utilise directement le build sauvegardé dans Character Box.</p>
         </section>
       </main>
     );
@@ -132,64 +112,93 @@ export function UniversalPersonalDpsLab() {
   );
 
   return (
-    <main className="lab-shell">
+    <main className="lab-shell" style={{ maxWidth: 1050 }}>
       <header className="lab-header">
         <div>
-          <p className="eyebrow">UNIVERSAL PERSONAL DPS · D2 · 3 PILOTES</p>
-          <h1>DPS personnel</h1>
-          <p>
-            Même moteur pour Aemeath, Calcharo et Changli. Les valeurs partent de
-            <code> UserBuild.finalStats</code> et les Motion Values sont des données,
-            jamais des branches spécifiques au personnage.
-          </p>
+          <p className="eyebrow">DPS PERSONNEL · BUILD SAUVEGARDÉ</p>
+          <h1>Calcul DPS</h1>
+          <p>Choisis ton build. Les statistiques viennent automatiquement de Character Box.</p>
         </div>
-        <Link className="lab-link" href="/character-box">← Character Box</Link>
+        <Link className="lab-link" href="/character-box">← Modifier le build</Link>
       </header>
 
-      <div className="lab-grid">
-        <aside className="lab-column">
-          <Panel title="Build">
+      <div className="lab-column">
+        <Panel title="Personnage">
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
             <label>
-              Pilote sauvegardé
+              Build
               <select
                 value={build?.id}
                 onChange={(event) => {
                   setSelectedBuildId(event.target.value);
-                  setSandbox(null);
                   setRotationId("");
                 }}
               >
                 {pilotBuilds.map((candidate) => (
                   <option key={candidate.id} value={candidate.id}>
-                    {pilotName[candidate.resonatorId] ?? candidate.resonatorId} · Lv
-                    {candidate.characterLevel} · S{candidate.sequence}
+                    {pilotName[candidate.resonatorId] ?? candidate.resonatorId} · Lv{candidate.characterLevel} · S{candidate.sequence}
                   </option>
                 ))}
               </select>
             </label>
-            <p className="hint">
-              Source permanente unique : Character Box → <code>finalStats</code>.
-            </p>
-            <div className="stat-grid">
-              {(["attack", "hp", "defense", "critRate", "critDamage", "energyRegen"] as const).map(
-                (key) => (
-                  <label key={key}>
-                    {key}
-                    <input
-                      type="number"
-                      value={stats?.[key] ?? 0}
-                      onChange={(event) => editStat(key, Number(event.target.value))}
-                    />
-                  </label>
-                ),
-              )}
-            </div>
-            <button type="button" onClick={() => setSandbox(null)}>
-              Réinitialiser depuis le build
-            </button>
-          </Panel>
+            <label>
+              Rotation
+              <select
+                value={selectedRotationId}
+                onChange={(event) => setRotationId(event.target.value)}
+              >
+                {profile?.rotations.map((rotation) => (
+                  <option key={rotation.id} value={rotation.id}>
+                    {rotation.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="action-meta">
+            <span>{pilotName[profile?.resonatorId ?? ""] ?? profile?.resonatorId}</span>
+            <span>{profile?.element}</span>
+            <span>Lv{build?.characterLevel} · S{build?.sequence}</span>
+            <span>
+              {selectedRotation?.durationSeconds
+                ? `${selectedRotation.durationSeconds}s`
+                : "durée à valider"}
+            </span>
+          </div>
+        </Panel>
 
-          <Panel title="Cible">
+        <Panel title="Résultat">
+          {!result ? (
+            <div className="unsupported">Calcul indisponible.</div>
+          ) : (
+            <>
+              <div className="damage-cards" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))" }}>
+                <Metric label="Dégâts de rotation" value={result.totals.expected} featured />
+                {result.dps ? (
+                  <Metric label="DPS attendu" value={result.dps.expected} featured />
+                ) : (
+                  <div>
+                    <small>DPS attendu</small>
+                    <strong>—</strong>
+                    <span className="hint">Durée non vérifiée</span>
+                  </div>
+                )}
+              </div>
+              {result.status === "partial" && (
+                <p className="warning">
+                  Certaines étapes ne sont pas encore supportées et ne sont jamais remplacées par zéro.
+                </p>
+              )}
+            </>
+          )}
+        </Panel>
+
+        <details className="lab-panel">
+          <summary style={{ cursor: "pointer", fontWeight: 700 }}>Options détaillées</summary>
+          <div style={{ marginTop: 16 }}>
+            <p className="hint">
+              Ces réglages concernent uniquement la cible. Les stats du personnage restent celles du build sauvegardé.
+            </p>
             <div className="stat-grid">
               <label>
                 Niveau ennemi
@@ -211,129 +220,65 @@ export function UniversalPersonalDpsLab() {
                 />
               </label>
             </div>
-            <p className="hint">
-              Pour reproduire les fixtures WutheringTools : ennemi Lv90 et RES 0,10.
-            </p>
-          </Panel>
-        </aside>
-
-        <section className="lab-column lab-main">
-          <Panel title="Rotation">
-            <label>
-              Rotation vérifiée
-              <select
-                value={selectedRotationId}
-                onChange={(event) => setRotationId(event.target.value)}
-              >
-                {profile?.rotations.map((rotation) => (
-                  <option key={rotation.id} value={rotation.id}>
-                    {rotation.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {selectedRotation?.sourceNote && (
-              <p className="hint">{selectedRotation.sourceNote}</p>
-            )}
+            <h3>Stats utilisées</h3>
             <div className="action-meta">
-              <span>{pilotName[profile?.resonatorId ?? ""] ?? profile?.resonatorId}</span>
-              <span>{profile?.element}</span>
-              <span>{selectedRotation?.steps.length ?? 0} étapes</span>
-              <span>
-                {selectedRotation?.durationSeconds
-                  ? `${selectedRotation.durationSeconds}s vérifiées`
-                  : "durée non vérifiée"}
-              </span>
+              <span>ATK {format(build?.finalStats.attack ?? 0)}</span>
+              <span>HP {format(build?.finalStats.hp ?? 0)}</span>
+              <span>DEF {format(build?.finalStats.defense ?? 0)}</span>
+              <span>CR {format(build?.finalStats.critRate ?? 0)}%</span>
+              <span>CD {format(build?.finalStats.critDamage ?? 0)}%</span>
+              <span>ER {format(build?.finalStats.energyRegen ?? 0)}%</span>
             </div>
-          </Panel>
+            {selectedRotation?.sourceNote && <p className="hint">{selectedRotation.sourceNote}</p>}
+          </div>
+        </details>
 
-          <Panel title="Résultat personnel">
-            {!result ? (
-              <div className="unsupported">Calcul indisponible.</div>
-            ) : (
-              <>
-                <span className={`status ${result.status === "partial" ? "partial" : "complete"}`}>
-                  {result.status === "partial" ? "PARTIAL" : "FORMULES SUPPORTÉES"}
-                </span>
-                <div className="damage-cards">
-                  <Metric label="Total Non Crit" value={result.totals.nonCrit} />
-                  <Metric label="Total Crit" value={result.totals.crit} />
-                  <Metric label="Total attendu" value={result.totals.expected} />
-                  {result.dps ? (
-                    <Metric label="DPS attendu" value={result.dps.expected} />
-                  ) : (
-                    <div>
-                      <small>DPS attendu</small>
-                      <strong>—</strong>
-                    </div>
-                  )}
-                </div>
-                {!result.dps && (
-                  <p className="warning">
-                    Aucun DPS par seconde n’est affiché sans durée de rotation vérifiée.
-                    Le total de dégâts reste calculé. Nous n’inventons pas un timing.
-                  </p>
-                )}
-                {!!result.unsupportedSteps.length && (
-                  <p className="warning">
-                    {result.unsupportedSteps.length} étape(s) non supportée(s) sont exclues,
-                    jamais remplacées par zéro.
-                  </p>
-                )}
-              </>
+        <details className="lab-panel">
+          <summary style={{ cursor: "pointer", fontWeight: 700 }}>Détail des dégâts</summary>
+          <div style={{ marginTop: 16 }}>
+            {result && (
+              <div className="damage-cards">
+                <Metric label="Non Crit" value={result.totals.nonCrit} />
+                <Metric label="Crit" value={result.totals.crit} />
+                <Metric label="Attendu" value={result.totals.expected} />
+              </div>
             )}
-          </Panel>
-
-          <Panel title="Détail action par action">
-            <table>
-              <thead>
-                <tr>
-                  <th>Action</th>
-                  <th>×</th>
-                  <th>Type</th>
-                  <th>MV</th>
-                  <th>Non Crit</th>
-                  <th>Crit</th>
-                  <th>Attendu</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result?.resolvedSteps.map((step) => (
-                  <tr key={`${step.index}-${step.actionId}`}>
-                    <td>{step.actionName}</td>
-                    <td>{step.count}</td>
-                    <td>{step.result.effectiveDamageType}</td>
-                    <td>{format(step.result.totalMotionValue * 100)}%</td>
-                    <td>{format(step.subtotal.nonCrit)}</td>
-                    <td>{format(step.subtotal.crit)}</td>
-                    <td>{format(step.subtotal.expected)}</td>
+            <div style={{ overflowX: "auto" }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Action</th>
+                    <th>×</th>
+                    <th>Type</th>
+                    <th>Attendu</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </Panel>
-        </section>
+                </thead>
+                <tbody>
+                  {result?.resolvedSteps.map((step) => (
+                    <tr key={`${step.index}-${step.actionId}`}>
+                      <td>{step.actionName}</td>
+                      <td>{step.count}</td>
+                      <td>{step.result.effectiveDamageType}</td>
+                      <td>{format(step.subtotal.expected)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
 
-        <aside className="lab-column">
-          <Panel title="Validation WutheringTools">
+        <details className="lab-panel">
+          <summary style={{ cursor: "pointer", fontWeight: 700 }}>Validation et sources</summary>
+          <div style={{ marginTop: 16 }}>
             <p className="hint">
-              Les tests automatiques utilisent les mêmes stats affichées par
-              WutheringTools pour contrôler les dégâts de chaque action.
+              Les dégâts des trois pilotes sont comparés automatiquement à des fixtures WutheringTools avec les mêmes statistiques. Aucun timing non vérifié n’est transformé en DPS/s.
             </p>
-            <ul>
-              <li>Aemeath : benchmark externe déjà versionné.</li>
-              <li>Calcharo : fixture naked Lv90, ATK 437.</li>
-              <li>Changli : fixture naked Lv80, ATK 412.</li>
-            </ul>
-          </Panel>
-          <Panel title="État D2">
-            <p>
-              Les dégâts standards des trois pilotes sont data-driven. Les mécaniques
-              runtime/états/ressources restent soumises au Temporal Engine et seront
-              ajoutées sans logique spécifique par personnage.
+            <p className="hint">
+              Aemeath utilise actuellement une durée totale communautaire calibrée. Les durées individuelles restent estimées par profils temporels jusqu’à disponibilité de mesures d’animation fiables.
             </p>
-          </Panel>
-        </aside>
+          </div>
+        </details>
       </div>
     </main>
   );
@@ -348,11 +293,19 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({
+  label,
+  value,
+  featured = false,
+}: {
+  label: string;
+  value: number;
+  featured?: boolean;
+}) {
   return (
     <div>
       <small>{label}</small>
-      <strong>{format(value)}</strong>
+      <strong style={featured ? { fontSize: "1.65rem" } : undefined}>{format(value)}</strong>
     </div>
   );
 }
