@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+
+import { resonators } from "../data/catalog";
 import {
   promotedResonatorUiAssetIds,
   requireResonatorUiAssetId,
@@ -17,6 +19,14 @@ describe("promoted Resonator UI asset IDs", () => {
     const values = Object.values(promotedResonatorUiAssetIds);
     expect(values.every((value) => /^\d+$/.test(value))).toBe(true);
     expect(new Set(values).size).toBe(values.length);
+  });
+
+  it("covers every real Resonator promoted into the functional catalogue", () => {
+    const promotedIds = resonators
+      .filter((resonator) => resonator.source.kind !== "technical-fixture")
+      .map((resonator) => resonator.id);
+
+    expect(() => promotedIds.forEach(requireResonatorUiAssetId)).not.toThrow();
   });
 
   it("fails closed when a promoted Resonator has no verified asset ID", () => {
