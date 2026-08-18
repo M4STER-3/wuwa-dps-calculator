@@ -22,15 +22,15 @@ type AssetManifest = {
 
 const EXPECTED_IDS = {
   "everbright-polestar": "21020076",
-  "thunderflare-dominion": "21010026",
-  "unflickering-valor": "21020026",
+  "thunderflare-dominion": "21010046",
+  "unflickering-valor": "21020036",
   "lustrous-razor": "21010015",
   "whispers-of-sirens": "21050056",
   "the-last-dance": "21030016",
-  "defiers-thorn": "21020036",
+  "defiers-thorn": "21020056",
   "blazing-brilliance": "21020016",
   kumokiri: "21010056",
-  "woodland-aria": "21030036",
+  "woodland-aria": "21030026",
   variation: "21050024",
 } as const;
 
