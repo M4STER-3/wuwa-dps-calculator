@@ -66,14 +66,33 @@ describe("Echo editor persistence helpers", () => {
     expect(persisted.echoes.map((echo) => echo.echoId)).toEqual(["echo:secondary"]);
   });
 
-  it("rejects incomplete or malformed drafts before storage", () => {
-    const incomplete = draftSlotsFromLoadout(loadout);
-    incomplete[0]!.sonataSetId = "";
-    expect(() => loadoutFromDraftSlots(incomplete)).toThrow(/incomplete/);
+  it("explains exactly what is missing from an incomplete slot", () => {
+    const missingBoth = draftSlotsFromLoadout(loadout);
+    missingBoth[0]!.sonataSetId = "";
+    missingBoth[0]!.primaryMainStatId = "";
+    expect(() => loadoutFromDraftSlots(missingBoth)).toThrow(
+      "Slot 1 incomplet : choisissez un Sonata et une main stat.",
+    );
+
+    const missingMainStat = draftSlotsFromLoadout(loadout);
+    missingMainStat[0]!.primaryMainStatId = "";
+    expect(() => loadoutFromDraftSlots(missingMainStat)).toThrow(
+      "Slot 1 incomplet : choisissez une main stat.",
+    );
+  });
+
+  it("rejects malformed substats before storage with a user-facing message", () => {
+    const incompleteSubstat = draftSlotsFromLoadout(loadout);
+    incompleteSubstat[0]!.substats[0]!.value = "";
+    expect(() => loadoutFromDraftSlots(incompleteSubstat)).toThrow(
+      "Slot 1 · substat 1 incomplète : choisissez la stat et son roll.",
+    );
 
     const badValue = draftSlotsFromLoadout(loadout);
     badValue[0]!.substats[0]!.value = "NaN";
-    expect(() => loadoutFromDraftSlots(badValue)).toThrow(/invalid value/);
+    expect(() => loadoutFromDraftSlots(badValue)).toThrow(
+      "Slot 1 · substat 1 : valeur invalide.",
+    );
   });
 
   it("updates only echoLoadout metadata and preserves finalStats exactly", () => {
