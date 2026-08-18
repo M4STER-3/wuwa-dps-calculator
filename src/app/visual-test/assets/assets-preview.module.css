@@ -64,9 +64,17 @@
   background: transparent;
 }
 
+/*
+ * Size the lead artwork through its layout stage instead of a compositor
+ * transform. The source is already high resolution; avoiding scale/translate
+ * lets the browser rasterize it directly at the final display size.
+ */
+.identityArtwork > span {
+  inset: 0 4% -16% 0;
+}
+
 .identityArtwork img {
-  transform: translate(-5%, 12%) scale(1.22);
-  transform-origin: right bottom;
+  transform: none;
 }
 
 .sectionGrid {
@@ -185,8 +193,8 @@
     min-height: 220px;
   }
 
-  .identityArtwork img {
-    transform: translate(-2%, 7%) scale(1.1);
+  .identityArtwork > span {
+    inset: 0 6% -10% 0;
   }
 
   .sectionGrid,
