@@ -51,23 +51,18 @@
 
 .artwork .image {
   object-fit: contain;
-  object-position: right bottom;
+  object-position: center center;
 }
 
 /*
- * Resonator hero artwork inherits one neutral framing rule everywhere the
- * reusable media component is used. The stage grows symmetrically around the
- * center, avoiding per-character translate/scale fixes and keeping future
- * formation cards and role portraits centered by default.
+ * Hero artwork is always framed inside the actual component bounds. Keeping
+ * the stage at inset: 0 prevents transparent character artwork from being
+ * enlarged beyond the box and clipped near an edge. This is intentionally a
+ * single generic rule for every current and future Resonator hero asset.
  */
-.artwork[data-asset-source-role="detail-formationrolecard"] .imageStage,
-.artwork[data-asset-source-role="detail-roleportrait"] .imageStage {
-  inset: -7% 3%;
-}
-
-.artwork[data-asset-source-role="detail-formationrolecard"] .image,
-.artwork[data-asset-source-role="detail-roleportrait"] .image {
-  object-position: center center;
+.artwork[data-asset-source-role="detail-roleportrait"] .imageStage,
+.artwork[data-asset-source-role="detail-formationrolecard"] .imageStage {
+  inset: 0;
 }
 
 /*
@@ -187,13 +182,6 @@
 
 .chip .fallbackText {
   display: none;
-}
-
-@media (max-width: 980px) {
-  .artwork[data-asset-source-role="detail-formationrolecard"] .imageStage,
-  .artwork[data-asset-source-role="detail-roleportrait"] .imageStage {
-    inset: -4% 5%;
-  }
 }
 
 @media (forced-colors: active) {
