@@ -11,7 +11,7 @@ const MAX_REGISTRY_BYTES = 512 * 1024;
 const MAX_DATABASE_BYTES = 8 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 512 * 1024;
 const SHA_PATTERN = /^[a-f0-9]{40}$/;
-const PROMOTION_STATUSES = new Set(["verified", "blocked-invalid-roll"]);
+const PROMOTION_STATUSES = new Set(["verified", "curated-balanced", "blocked-invalid-roll"]);
 
 const mainStatIds = {
   1: { ATK: "echo-main-1-attack-percent", HP: "echo-main-1-hp-percent", DEF: "echo-main-1-defense-percent" },
@@ -102,7 +102,7 @@ for (const [presetIndex, rawPreset] of registry.presets.entries()) {
   const promotionStatus = safeText(preset.promotionStatus, `${resonatorId}.promotionStatus`, 40);
   if (!PROMOTION_STATUSES.has(promotionStatus)) fail(`${resonatorId}.promotionStatus is unsupported`);
   const promotionNote = preset.promotionNote === undefined ? undefined : safeText(preset.promotionNote, `${resonatorId}.promotionNote`, 1_000);
-  if (promotionStatus !== "verified" && !promotionNote) fail(`${resonatorId} blocked preset must explain why promotion is blocked`);
+  if (promotionStatus !== "verified" && !promotionNote) fail(`${resonatorId} non-verbatim preset must explain its promotion status`);
   if (!Array.isArray(preset.echoes) || preset.echoes.length !== 5) fail(`${resonatorId} must provide exactly five Echoes`);
 
   const equipped = [];
