@@ -33,7 +33,9 @@ describe("promoted Resonator UI portraits", () => {
         src: manifestPath,
         alt: `Portrait de ${resonator.name}`,
       });
-      expect(existsSync(path.join(process.cwd(), manifestPath.slice(1)))).toBe(true);
+      expect(
+        existsSync(path.join(process.cwd(), "public", manifestPath.slice(1))),
+      ).toBe(true);
     }
   });
 
