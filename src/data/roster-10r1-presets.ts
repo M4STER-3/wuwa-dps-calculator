@@ -31,8 +31,9 @@ const allSkillLevels10 = {
 /**
  * Universal fallback baseline for newly promoted Resonators.
  * Adding a reviewed registry entry automatically receives this exact baseline
- * unless that Resonator already owns a richer curated preset. A pinned community
- * Echo loadout is attached only after its promotionStatus becomes "verified".
+ * unless that Resonator already owns a richer curated preset. Echo loadouts can
+ * be verbatim verified community fixtures or explicit WUWA LAB curated-balanced
+ * presets; both must resolve entirely through local GameDatabase ids and roll tables.
  */
 export const roster10R1BaselinePresets: readonly RecommendedBuildPreset[] =
   roster10R1
@@ -46,8 +47,9 @@ export const roster10R1BaselinePresets: readonly RecommendedBuildPreset[] =
       }
 
       const communityPreset = communityPresetsByResonator[registry.id];
-      const verifiedCommunityPreset =
-        communityPreset?.promotionStatus === "verified"
+      const promotedCommunityPreset =
+        communityPreset?.promotionStatus === "verified" ||
+        communityPreset?.promotionStatus === "curated-balanced"
           ? communityPreset
           : undefined;
 
@@ -64,22 +66,24 @@ export const roster10R1BaselinePresets: readonly RecommendedBuildPreset[] =
           rank: 1,
         },
         finalStats,
-        ...(verifiedCommunityPreset
-          ? { echoLoadout: verifiedCommunityPreset.echoLoadout }
+        ...(promotedCommunityPreset
+          ? { echoLoadout: promotedCommunityPreset.echoLoadout }
           : {}),
         notes: [
           "Baseline endgame de départ : personnage Lv90, S0, talents Lv10, arme signature Lv90 R1.",
           "UserBuild.finalStats contient uniquement les sources permanentes actuellement résolues par le pipeline exact ; aucune valeur manquante n’est inventée.",
           "Nodes permanents et passif d’arme restent explicitement non résolus à ce checkpoint.",
-          ...(verifiedCommunityPreset
+          ...(promotedCommunityPreset
             ? [
-                `Echo loadout communautaire vérifié : ${verifiedCommunityPreset.name} (${verifiedCommunityPreset.author}), source pin ${verifiedCommunityPreset.sourceBlobSha}.`,
-                "Les identités Echo/Sonata ont été résolues vers les IDs locaux et les rolls passent le resolver Echo V1.",
+                promotedCommunityPreset.promotionStatus === "verified"
+                  ? `Echo loadout communautaire vérifié : ${promotedCommunityPreset.name} (${promotedCommunityPreset.author}), source pin ${promotedCommunityPreset.sourceBlobSha}.`
+                  : `Echo loadout WUWA LAB curated-balanced : ${promotedCommunityPreset.name}. ${promotedCommunityPreset.promotionNote}`,
+                "Les identités Echo/Sonata ont été résolues vers les IDs locaux et chaque roll passe le resolver Echo V1.",
               ]
             : [
                 communityPreset
-                  ? "Un preset Echo communautaire est archivé mais reste bloqué : au moins une valeur source ne passe pas les tables de rolls vérifiées, donc aucun correctif n’est inventé."
-                  : "Aucun preset Echo communautaire entièrement vérifiable n’est promu à ce checkpoint.",
+                  ? "Un preset Echo reste archivé mais bloqué : il ne passe pas encore les contraintes locales vérifiées."
+                  : "Aucun preset Echo n’est disponible pour ce personnage.",
               ]),
         ],
         source: baselineSource,
