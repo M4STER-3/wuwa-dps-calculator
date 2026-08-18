@@ -308,11 +308,21 @@ function EchoLoadoutWorkspace({ value, onChange }: EchoLoadoutChoiceProps) {
   }
 
   function addSubstat() {
-    if (!activeEcho || activeDraft.substats.length >= 5) return;
-    updateSlot(activeSlot, (slot) => ({
-      ...slot,
-      substats: [...slot.substats, { statId: "", value: "" }],
-    }));
+    const slot = slots[activeSlot];
+    if (!slot?.echoId || slot.substats.length >= 5) return;
+    const nextIndex = slot.substats.length;
+    setSlots((current) =>
+      current.map((candidate, slotIndex) =>
+        slotIndex === activeSlot
+          ? { ...candidate, substats: [...candidate.substats, { statId: "", value: "" }] }
+          : candidate,
+      ),
+    );
+    setStatus(`Substat ${nextIndex + 1} ajoutée · choisissez une stat puis son roll exact.`);
+    setStatusTone("neutral");
+    window.requestAnimationFrame(() => {
+      document.getElementById(`echo-substat-${activeSlot}-${nextIndex}-stat`)?.focus();
+    });
   }
 
   function updateSubstat(index: number, next: DraftSubstat) {
@@ -393,18 +403,25 @@ function EchoLoadoutWorkspace({ value, onChange }: EchoLoadoutChoiceProps) {
               type="button"
               className={styles.slotCard}
               data-active={expanded && activeSlot === index ? "true" : undefined}
+              data-empty={!echo || undefined}
               onClick={() => {
                 setActiveSlot(index);
                 setExpanded(true);
               }}
-              aria-label={`${SLOT_LABELS[index]}${echo ? ` : ${echo.name}` : " : libre"}`}
+              aria-label={echo ? `${SLOT_LABELS[index]} : ${echo.name}` : `Ajouter un Echo au slot ${index + 1}`}
             >
-              <EchoIcon echo={echo} projection={assetProjection} compact />
-              <span className={styles.slotCopy}>
-                <span>{index === 0 ? "MAIN" : `0${index + 1}`}</span>
-                <strong>{echo?.name ?? "Libre"}</strong>
-                <small>{echo ? `C${echo.cost}` : "—"}</small>
-              </span>
+              {echo ? (
+                <>
+                  <EchoIcon echo={echo} projection={assetProjection} compact />
+                  <span className={styles.slotCopy}>
+                    <span>{index === 0 ? "MAIN" : `0${index + 1}`}</span>
+                    <strong>{echo.name}</strong>
+                    <small>C{echo.cost}</small>
+                  </span>
+                </>
+              ) : (
+                <span className={styles.emptySlotPlus} aria-hidden="true">+</span>
+              )}
             </button>
           );
         })}
@@ -606,7 +623,10 @@ function EchoLoadoutWorkspace({ value, onChange }: EchoLoadoutChoiceProps) {
 
                       <div className={styles.substatList}>
                         {activeDraft.substats.length === 0 ? (
-                          <div className={styles.emptySubstats}>Aucune substat renseignée.</div>
+                          <button type="button" className={styles.emptySubstats} onClick={addSubstat}>
+                            <strong>+ Ajouter une substat</strong>
+                            <span>Choisissez ensuite la stat puis un roll exact.</span>
+                          </button>
                         ) : (
                           activeDraft.substats.map((substat, subIndex) => {
                             const definition = reviewedEchoStatTableV1.substatRolls.find(
@@ -620,6 +640,7 @@ function EchoLoadoutWorkspace({ value, onChange }: EchoLoadoutChoiceProps) {
                             return (
                               <div key={subIndex} className={styles.substatRow}>
                                 <select
+                                  id={`echo-substat-${activeSlot}-${subIndex}-stat`}
                                   aria-label={`Substat ${subIndex + 1}`}
                                   value={substat.statId}
                                   onChange={(event) =>
