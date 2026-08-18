@@ -54,13 +54,13 @@
 }
 
 /*
- * Prominent Resonator heroes use a near-square 15:14 frame. Compared with
- * the previous 3:2 hero frame, this gives ~1.4x more height at equal width
- * (and ~2.13x the original 16:7 artwork height) without CSS transforms, so
- * high-resolution portraits fill far more of the card while staying centered.
+ * Prominent Resonator heroes use a tall 3:4 frame. Compared with the previous
+ * 15:14 hero frame, this adds ~43% more height at equal width without CSS
+ * transforms. High-resolution role portraits therefore occupy substantially
+ * more of the card while keeping the same generic center/contain rendering.
  */
 .hero {
-  aspect-ratio: 15 / 14;
+  aspect-ratio: 3 / 4;
 }
 
 .artwork .image,
