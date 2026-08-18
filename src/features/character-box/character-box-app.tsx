@@ -36,6 +36,7 @@ import {
 } from "@/storage/character-box-storage";
 
 import { ResonatorHeroArtwork } from "./resonator-hero-artwork";
+import { WeaponVisualChoice } from "./weapon-visual-choice";
 import styles from "./character-box-v4.module.css";
 
 const elementLabels: Record<Element, string> = {
@@ -597,23 +598,24 @@ function BuildEditor({
               </div>
             </EditorSection>
 
-            <EditorSection title="Arme" hint="Configuration de référence">
-              <div className={styles.controlGrid3}>
+            <EditorSection title="Arme" hint="Équipement du build">
+              <div className={styles.editorField}>
+                <span>Arme compatible</span>
+                <WeaponVisualChoice
+                  compact
+                  value={build.weapon.weaponId}
+                  options={compatibleWeapons}
+                  onChange={(weaponId) =>
+                    onChange({
+                      ...build,
+                      weapon: { ...build.weapon, weaponId },
+                    })
+                  }
+                />
+              </div>
+              <div className={styles.controlGrid2}>
                 {field(
-                  "Arme compatible",
-                  <CatalogChoice
-                    value={build.weapon.weaponId}
-                    options={compatibleWeapons}
-                    onChange={(weaponId) =>
-                      onChange({
-                        ...build,
-                        weapon: { ...build.weapon, weaponId },
-                      })
-                    }
-                  />,
-                )}
-                {field(
-                  "Niveau",
+                  "Niveau de l’arme",
                   numberField(
                     build.weapon.level,
                     (level) => onChange({ ...build, weapon: { ...build.weapon, level } }),
