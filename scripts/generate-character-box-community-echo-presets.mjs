@@ -11,43 +11,27 @@ const MAX_REGISTRY_BYTES = 512 * 1024;
 const MAX_DATABASE_BYTES = 8 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 512 * 1024;
 const SHA_PATTERN = /^[a-f0-9]{40}$/;
+const PROMOTION_STATUSES = new Set(["verified", "blocked-invalid-roll"]);
 
 const mainStatIds = {
-  1: {
-    ATK: "echo-main-1-attack-percent",
-    HP: "echo-main-1-hp-percent",
-    DEF: "echo-main-1-defense-percent",
-  },
+  1: { ATK: "echo-main-1-attack-percent", HP: "echo-main-1-hp-percent", DEF: "echo-main-1-defense-percent" },
   3: {
-    ATK: "echo-main-3-attack-percent",
-    HP: "echo-main-3-hp-percent",
-    DEF: "echo-main-3-defense-percent",
-    Aero: "echo-main-3-aero-damage",
-    Glacio: "echo-main-3-glacio-damage",
-    Electro: "echo-main-3-electro-damage",
-    Fusion: "echo-main-3-fusion-damage",
-    Havoc: "echo-main-3-havoc-damage",
-    Spectro: "echo-main-3-spectro-damage",
+    ATK: "echo-main-3-attack-percent", HP: "echo-main-3-hp-percent", DEF: "echo-main-3-defense-percent",
+    Aero: "echo-main-3-aero-damage", Glacio: "echo-main-3-glacio-damage", Electro: "echo-main-3-electro-damage",
+    Fusion: "echo-main-3-fusion-damage", Havoc: "echo-main-3-havoc-damage", Spectro: "echo-main-3-spectro-damage",
     EnergyRegen: "echo-main-3-energy-regen",
   },
   4: {
-    ATK: "echo-main-4-attack-percent",
-    HP: "echo-main-4-hp-percent",
-    DEF: "echo-main-4-defense-percent",
-    CritRate: "echo-main-4-crit-rate",
-    CritDMG: "echo-main-4-crit-damage",
+    ATK: "echo-main-4-attack-percent", HP: "echo-main-4-hp-percent", DEF: "echo-main-4-defense-percent",
+    CritRate: "echo-main-4-crit-rate", CritDMG: "echo-main-4-crit-damage",
   },
 };
 
 const substatIds = {
-  CritRate: "echo-sub-crit-rate",
-  CritDMG: "echo-sub-crit-damage",
-  ATK: "echo-sub-attack-percent",
-  ATK_FLAT: "echo-sub-attack-flat",
-  HP: "echo-sub-hp-percent",
-  HP_FLAT: "echo-sub-hp-flat",
-  DEF: "echo-sub-defense-percent",
-  DEF_FLAT: "echo-sub-defense-flat",
+  CritRate: "echo-sub-crit-rate", CritDMG: "echo-sub-crit-damage",
+  ATK: "echo-sub-attack-percent", ATK_FLAT: "echo-sub-attack-flat",
+  HP: "echo-sub-hp-percent", HP_FLAT: "echo-sub-hp-flat",
+  DEF: "echo-sub-defense-percent", DEF_FLAT: "echo-sub-defense-flat",
   EnergyRegen: "echo-sub-energy-regen",
   BasicAttackDMGBonus: "echo-sub-basic-attack-damage",
   HeavyAttackDMGBonus: "echo-sub-heavy-attack-damage",
@@ -115,6 +99,10 @@ for (const [presetIndex, rawPreset] of registry.presets.entries()) {
   if (Object.prototype.hasOwnProperty.call(output, resonatorId)) fail(`duplicate preset for ${resonatorId}`);
   const sourceBlobSha = safeText(preset.sourceBlobSha, `${resonatorId}.sourceBlobSha`, 40);
   if (!SHA_PATTERN.test(sourceBlobSha)) fail(`${resonatorId}.sourceBlobSha must be a full Git blob SHA`);
+  const promotionStatus = safeText(preset.promotionStatus, `${resonatorId}.promotionStatus`, 40);
+  if (!PROMOTION_STATUSES.has(promotionStatus)) fail(`${resonatorId}.promotionStatus is unsupported`);
+  const promotionNote = preset.promotionNote === undefined ? undefined : safeText(preset.promotionNote, `${resonatorId}.promotionNote`, 1_000);
+  if (promotionStatus !== "verified" && !promotionNote) fail(`${resonatorId} blocked preset must explain why promotion is blocked`);
   if (!Array.isArray(preset.echoes) || preset.echoes.length !== 5) fail(`${resonatorId} must provide exactly five Echoes`);
 
   const equipped = [];
@@ -151,6 +139,8 @@ for (const [presetIndex, rawPreset] of registry.presets.entries()) {
     name: safeText(preset.name, `${resonatorId}.name`),
     author: safeText(preset.author, `${resonatorId}.author`),
     sourceBlobSha,
+    promotionStatus,
+    ...(promotionNote ? { promotionNote } : {}),
     echoLoadout: { echoes: equipped, ...(mainEchoId ? { mainEchoId } : {}) },
   };
 }
@@ -165,4 +155,4 @@ const bytes = Buffer.byteLength(serialized);
 if (bytes <= 0 || bytes > MAX_OUTPUT_BYTES) fail(`output size ${bytes} is outside the allowed range`);
 try { await writeFile(temporaryPath, serialized, { encoding: "utf8", flag: "wx", mode: 0o644 }); await rename(temporaryPath, outputPath); }
 catch (error) { await rm(temporaryPath, { force: true }).catch(() => undefined); throw error; }
-console.log(`Generated ${path.relative(root, outputPath)} with ${Object.keys(output).length} community Echo presets (${bytes} bytes).`);
+console.log(`Generated ${path.relative(root, outputPath)} with ${Object.keys(output).length} community Echo preset candidates (${bytes} bytes).`);
