@@ -60,10 +60,13 @@ export function WuwaProjectedAssetMedia({
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    setFailed(false);
     if (!assetId) {
+      setProjection(null);
       setFailed(true);
       return;
     }
+
     let cancelled = false;
     void loadProjection()
       .then((value) => {
