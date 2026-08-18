@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "src/data/roster-promotion-registry.json"
+      - "src/data/community-echo-preset-registry.json"
       - "src/data/**"
       - "src/domain/**"
       - "src/game-data/**"
@@ -11,6 +12,7 @@ on:
       - "scripts/generate-character-box-roster-10r1.mjs"
       - "scripts/generate-character-box-roster-baselines-10r1.mjs"
       - "scripts/generate-character-box-roster-media-10r1.mjs"
+      - "scripts/generate-character-box-community-echo-presets.mjs"
       - "scripts/generate-wuwa-ui-asset-projection-v1.mjs"
       - "public/data/wuwa/game-database-v1.json"
       - "public/assets/wuwa/**"
@@ -48,6 +50,7 @@ jobs:
           node --check scripts/generate-character-box-roster-10r1.mjs
           node --check scripts/generate-character-box-roster-baselines-10r1.mjs
           node --check scripts/generate-character-box-roster-media-10r1.mjs
+          node --check scripts/generate-character-box-community-echo-presets.mjs
 
       - name: Generate secure UI asset projection
         run: node scripts/generate-wuwa-ui-asset-projection-v1.mjs
@@ -60,3 +63,6 @@ jobs:
 
       - name: Generate verified 10R1 portrait projection
         run: node scripts/generate-character-box-roster-media-10r1.mjs
+
+      - name: Resolve pinned community Echo presets
+        run: node scripts/generate-character-box-community-echo-presets.mjs
