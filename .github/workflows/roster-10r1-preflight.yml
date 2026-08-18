@@ -6,6 +6,7 @@ on:
       - "src/data/**"
       - "src/domain/**"
       - "src/game-data/**"
+      - "scripts/audit-character-box-roster-10r1-observed.mjs"
       - "scripts/generate-character-box-roster-10r1.mjs"
       - "scripts/generate-character-box-roster-baselines-10r1.mjs"
       - "scripts/generate-character-box-roster-media-10r1.mjs"
@@ -41,10 +42,14 @@ jobs:
 
       - name: Validate generator syntax
         run: |
+          node --check scripts/audit-character-box-roster-10r1-observed.mjs
           node --check scripts/generate-wuwa-ui-asset-projection-v1.mjs
           node --check scripts/generate-character-box-roster-10r1.mjs
           node --check scripts/generate-character-box-roster-baselines-10r1.mjs
           node --check scripts/generate-character-box-roster-media-10r1.mjs
+
+      - name: Audit reviewed character and weapon identities
+        run: node scripts/audit-character-box-roster-10r1-observed.mjs
 
       - name: Generate secure UI asset projection
         run: node scripts/generate-wuwa-ui-asset-projection-v1.mjs
