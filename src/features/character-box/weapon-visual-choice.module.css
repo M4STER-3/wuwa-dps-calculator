@@ -1,0 +1,119 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 26px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--v4-line);
+  border-radius: 13px;
+  background: #fff;
+  padding: 8px;
+  color: var(--v4-text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.card:hover {
+  border-color: var(--v4-line-strong);
+  box-shadow: var(--v4-shadow-xs);
+}
+
+.card[data-selected="true"] {
+  border-color: color-mix(in srgb, var(--v4-accent) 48%, var(--v4-line));
+  background: linear-gradient(135deg, #fff, var(--v4-accent-faint));
+  box-shadow: 0 0 0 2px rgba(53, 102, 232, 0.07);
+}
+
+.card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--v4-focus) 24%, transparent);
+  outline-offset: 2px;
+}
+
+.media {
+  position: relative;
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--v4-line-soft);
+  border-radius: 11px;
+  background: linear-gradient(145deg, #f8faff, #eef3fb);
+}
+
+.image {
+  object-fit: contain;
+  padding: 7px;
+}
+
+.fallback {
+  color: var(--v4-accent);
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.copy strong,
+.copy span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy strong {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.copy span {
+  margin-top: 4px;
+  color: var(--v4-text-muted);
+  font-size: 0.61rem;
+}
+
+.check {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--v4-accent-soft);
+  color: var(--v4-accent-active);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.empty {
+  display: block;
+  border: 1px dashed var(--v4-line);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--v4-text-muted);
+  font-size: 0.7rem;
+}
+
+@media (max-width: 620px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    grid-template-columns: 62px minmax(0, 1fr) 24px;
+  }
+
+  .media {
+    width: 62px;
+    height: 62px;
+  }
+}
