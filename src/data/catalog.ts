@@ -13,6 +13,7 @@ import type {
   Weapon,
 } from "@/domain/models";
 import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa";
+import { roster10R1BaselinePresets } from "./roster-10r1-presets";
 import {
   roster10R1PromotedResonators,
   roster10R1PromotedWeapons,
@@ -165,6 +166,7 @@ const fixturePreset: RecommendedBuildPreset = {
 
 export const presets: readonly RecommendedBuildPreset[] = [
   aemeathPreset,
+  ...roster10R1BaselinePresets,
   chisaPreset,
   verinaPreset,
   fixturePreset,
