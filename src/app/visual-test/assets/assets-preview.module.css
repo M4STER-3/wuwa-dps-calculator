@@ -64,6 +64,11 @@
   background: transparent;
 }
 
+.identityArtwork img {
+  transform: scale(1.32);
+  transform-origin: right bottom;
+}
+
 .sectionGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -178,6 +183,10 @@
 
   .identityMedia {
     min-height: 220px;
+  }
+
+  .identityArtwork img {
+    transform: scale(1.18);
   }
 
   .sectionGrid,
