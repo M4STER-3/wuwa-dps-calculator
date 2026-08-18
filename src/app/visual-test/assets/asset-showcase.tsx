@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { V4Badge, V4Panel, V4SectionHeader, V4Skeleton } from "@/components/ui/v4-ui";
 import {
-  WUWA_RESONATOR_DISPLAY_ROLES,
+  WUWA_RESONATOR_CARD_ROLES,
+  WUWA_RESONATOR_HERO_ROLES,
   WuwaAssetMedia,
 } from "@/components/ui/wuwa-asset-media";
 import {
@@ -144,10 +145,10 @@ export function AssetShowcase() {
   const leadCharacter = samples.characters[0];
   const leadChipRoles = ["list-roleheadicon", "detail-roleheadiconlarge", "detail-roleportrait"] as const;
   const leadArtworkPath = leadCharacter
-    ? pathFor(projection, leadCharacter, WUWA_RESONATOR_DISPLAY_ROLES)
+    ? pathFor(projection, leadCharacter, WUWA_RESONATOR_HERO_ROLES)
     : undefined;
   const leadArtworkRole = leadCharacter
-    ? selectedRole(leadCharacter, WUWA_RESONATOR_DISPLAY_ROLES)
+    ? selectedRole(leadCharacter, WUWA_RESONATOR_HERO_ROLES)
     : undefined;
   const leadChipPath = leadCharacter
     ? pathFor(projection, leadCharacter, leadChipRoles)
@@ -217,7 +218,7 @@ export function AssetShowcase() {
               projection={projection}
               entry={entry}
               mediaRole="portrait"
-              preferredRoles={WUWA_RESONATOR_DISPLAY_ROLES}
+              preferredRoles={WUWA_RESONATOR_CARD_ROLES}
             />
           ))}
         </div>
