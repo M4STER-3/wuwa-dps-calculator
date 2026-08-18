@@ -4,11 +4,31 @@ import styles from "./wuwa-asset-media.module.css";
 
 const localAssetPattern = /^\/assets\/wuwa\/objects\/[a-f0-9]{64}\.(?:png|jpg|webp)$/;
 
-export const WUWA_RESONATOR_DISPLAY_ROLES = [
+/**
+ * Compact/card contexts intentionally prefer the validated formation card.
+ * This keeps portrait selectors sharp and consistent across Resonators.
+ */
+export const WUWA_RESONATOR_CARD_ROLES = [
   "detail-formationrolecard",
   "detail-roleportrait",
   "detail-roleheadiconlarge",
 ] as const;
+
+/**
+ * Hero/large-artwork contexts must prefer actual large character artwork.
+ * `detail-rolestand` is the first choice when promoted for that Resonator,
+ * then the high-resolution role portrait, with card/head assets only as
+ * graceful fallbacks.
+ */
+export const WUWA_RESONATOR_HERO_ROLES = [
+  "detail-rolestand",
+  "detail-roleportrait",
+  "detail-formationrolecard",
+  "detail-roleheadiconlarge",
+] as const;
+
+// Backward-compatible name for existing card/portrait call sites.
+export const WUWA_RESONATOR_DISPLAY_ROLES = WUWA_RESONATOR_CARD_ROLES;
 
 export type WuwaAssetMediaRole =
   | "portrait"
