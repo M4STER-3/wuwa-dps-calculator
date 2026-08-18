@@ -43,8 +43,11 @@ export function createBuildFromPreset(
       elementalDamageBonus: { ...preset.finalStats.elementalDamageBonus },
       damageTypeBonus: { ...preset.finalStats.damageTypeBonus },
     },
-    sonataId: preset.sonataId,
-    mainEchoId: preset.mainEchoId,
+    ...(preset.echoLoadout !== undefined
+      ? { echoLoadout: sanitizeUserEchoLoadoutV1(preset.echoLoadout) }
+      : {}),
+    ...(preset.sonataId !== undefined ? { sonataId: preset.sonataId } : {}),
+    ...(preset.mainEchoId !== undefined ? { mainEchoId: preset.mainEchoId } : {}),
     createdAt: options.now,
     updatedAt: options.now,
   };
