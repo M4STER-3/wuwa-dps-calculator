@@ -29,10 +29,11 @@ describe("10R1 pinned community Echo presets", () => {
     }
   });
 
-  it("resolves every generated loadout through the authoritative Echo resolver", () => {
+  it("resolves every verified loadout through the authoritative Echo resolver", () => {
     for (const [resonatorId, preset] of Object.entries(
       generatedCommunityEchoPresets10R1,
     )) {
+      if (preset.promotionStatus !== "verified") continue;
       expect(preset.echoLoadout.echoes).toHaveLength(5);
       const resolved = resolveEchoLoadoutV1(echoCatalog, preset.echoLoadout);
       expect(resolved.totalCost, resonatorId).toBeLessThanOrEqual(12);
@@ -46,6 +47,23 @@ describe("10R1 pinned community Echo presets", () => {
         ).toBe(true);
       }
     }
+  });
+
+  it("keeps blocked source candidates explicit and unpromoted", () => {
+    for (const preset of Object.values(generatedCommunityEchoPresets10R1)) {
+      if (preset.promotionStatus === "verified") continue;
+      expect(preset.promotionStatus).toBe("blocked-invalid-roll");
+      expect("promotionNote" in preset && preset.promotionNote.length > 0).toBe(true);
+    }
+    expect(generatedCommunityEchoPresets10R1.augusta.promotionStatus).toBe(
+      "blocked-invalid-roll",
+    );
+    expect(generatedCommunityEchoPresets10R1.cantarella.promotionStatus).toBe(
+      "blocked-invalid-roll",
+    );
+    expect(generatedCommunityEchoPresets10R1.ciaccona.promotionStatus).toBe(
+      "blocked-invalid-roll",
+    );
   });
 
   it("keeps unresolved source gaps out instead of guessing", () => {
