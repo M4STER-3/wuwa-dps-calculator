@@ -1,0 +1,82 @@
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.destinationGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.destination {
+  min-width: 0;
+  min-height: 156px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--v4-line);
+  border-radius: var(--v4-radius-md);
+  background: var(--v4-surface);
+  padding: 16px;
+  color: var(--v4-text);
+  text-decoration: none;
+  box-shadow: var(--v4-shadow-xs);
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.destination:hover {
+  border-color: #c5d2ef;
+  background: var(--v4-accent-faint);
+  box-shadow: var(--v4-shadow-sm);
+  transform: translateY(-1px);
+}
+
+.destinationTitle {
+  font-size: 0.82rem;
+  font-weight: 760;
+}
+
+.destinationCopy {
+  margin-top: 8px;
+  color: var(--v4-text-muted);
+  font-size: 0.69rem;
+  line-height: 1.55;
+}
+
+.destinationAction {
+  margin-top: auto;
+  padding-top: 18px;
+  color: var(--v4-accent-active);
+  font-size: 0.69rem;
+  font-weight: 720;
+}
+
+@media (max-width: 1260px) {
+  .destinationGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .destinationGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .destination {
+    min-height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .destination {
+    transition: none;
+  }
+}
