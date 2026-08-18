@@ -1,0 +1,103 @@
+/* Step 8D — Character Box progression presentation.
+ * Permanent combat stats are intentionally NOT exposed as manual controls.
+ * UserBuild.finalStats remains the only permanent-stat source consumed by the
+ * engines, but the long-term UI source is the upstream Build Resolver
+ * (character + weapon + Echoes + Sonata), not freeform manual entry.
+ */
+
+/* Progression becomes the first strong configuration block rather than a flat
+ * pair of generic form inputs. */
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(1) {
+  border-color: #d6e1f3 !important;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(53, 102, 232, 0.075), transparent 14rem),
+    linear-gradient(135deg, #ffffff 0%, #f6f9ff 100%) !important;
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(1)
+  > div:last-child {
+  gap: 9px !important;
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(1)
+  > div:last-child
+  > label {
+  border: 1px solid var(--v4-line-soft);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 10px;
+}
+
+/* Manual permanent-stat sections are legacy scaffolding. Hide them from the
+ * V4 editor now; they will be replaced by a read-only resolved stat snapshot
+ * once weapon/Echo/Sonata composition is wired upstream through Build Resolver.
+ */
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5),
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(6),
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(7) {
+  display: none !important;
+}
+
+/* The old notice states that permanent stats are manually entered. Hide it in
+ * V4 because that is no longer the intended UX contract. */
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside
+  > div:last-child {
+  display: none !important;
+}
+
+/* Keep the remaining configuration modules compact and visually tiered. */
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(2),
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(3),
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(4) {
+  border-color: #dfe6f0 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+}
+
+@media (max-width: 620px) {
+  [role="dialog"][aria-modal="true"]
+    > div:has(> div > aside)
+    aside + div
+    > div
+    > section:nth-of-type(1)
+    > div:last-child {
+    grid-template-columns: 1fr !important;
+  }
+}
