@@ -173,6 +173,12 @@ function actionAtTalentLevel(
   return { ...action, level, multipliers };
 }
 
+function isUnsupportedProjection(
+  value: CombatAction | UnsupportedDamageResult,
+): value is UnsupportedDamageResult {
+  return "status" in value && value.status === "unsupported";
+}
+
 function validateProfile(profile: PersonalDpsProfileV1): void {
   if (!profile.resonatorId) {
     throw new PersonalDpsCalculationError("resonatorId must be non-empty.");
@@ -246,7 +252,7 @@ export function calculatePersonalDpsV1(
     const talentLevel = resolvedTalentLevel(action, step, request.skillLevels);
     const projected = actionAtTalentLevel(action, talentLevel);
 
-    if ("status" in projected && projected.status === "unsupported") {
+    if (isUnsupportedProjection(projected)) {
       unsupportedSteps.push({
         index,
         actionId: action.id,
@@ -258,6 +264,7 @@ export function calculatePersonalDpsV1(
       continue;
     }
 
+    const modifiers = mergeModifiers(request.globalModifiers, step.modifiers);
     const result = calculateActionDamage({
       action: projected,
       finalStats: request.finalStats,
@@ -269,9 +276,7 @@ export function calculatePersonalDpsV1(
       ...(step.effectiveDamageType !== undefined
         ? { effectiveDamageType: step.effectiveDamageType }
         : {}),
-      ...(mergeModifiers(request.globalModifiers, step.modifiers) !== undefined
-        ? { modifiers: mergeModifiers(request.globalModifiers, step.modifiers) }
-        : {}),
+      ...(modifiers !== undefined ? { modifiers } : {}),
     });
 
     if (result.status === "unsupported") {
