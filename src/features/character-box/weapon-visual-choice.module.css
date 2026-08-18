@@ -90,80 +90,80 @@
 
 .cataloguePanel {
   display: grid;
-  gap: 8px;
+  gap: 9px;
+  border: 1px solid var(--v4-line-soft);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--v4-surface-muted, #f8faff) 82%, #fff);
+  padding: 10px;
 }
 
 .selector[data-compact="true"] .cataloguePanel {
-  border: 1px solid var(--v4-line-soft);
-  border-radius: 12px;
-  background: color-mix(in srgb, #fff 80%, var(--v4-accent-faint));
-  padding: 9px;
+  gap: 7px;
+  border-radius: 11px;
+  padding: 8px;
 }
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(180px, 1fr) auto;
   align-items: center;
   gap: 8px;
 }
 
 .searchField {
   position: relative;
-  display: flex;
   min-width: 0;
-  align-items: center;
 }
 
 .searchField input {
   width: 100%;
-  min-height: 40px;
+  min-height: 38px;
   border: 1px solid var(--v4-line);
-  border-radius: 11px;
-  background: var(--v4-surface-muted, #f8faff);
+  border-radius: 10px;
+  background: #fff;
   padding: 0 38px 0 34px;
   color: var(--v4-text);
   font: inherit;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   outline: none;
-  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
 }
 
 .selector[data-compact="true"] .searchField input {
-  min-height: 36px;
+  min-height: 34px;
+  font-size: 0.64rem;
 }
 
 .searchField input:focus {
-  border-color: color-mix(in srgb, var(--v4-accent) 45%, var(--v4-line));
-  background: #fff;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--v4-focus) 12%, transparent);
-}
-
-.searchField input::placeholder {
-  color: var(--v4-text-soft, #8a95a7);
+  border-color: color-mix(in srgb, var(--v4-accent) 55%, var(--v4-line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--v4-focus) 14%, transparent);
 }
 
 .searchIcon {
   position: absolute;
-  left: 11px;
   z-index: 1;
+  top: 50%;
+  left: 12px;
   color: var(--v4-text-muted);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
+  transform: translateY(-50%);
   pointer-events: none;
 }
 
 .clearSearch {
   position: absolute;
+  top: 50%;
   right: 6px;
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   place-items: center;
   border: 0;
   border-radius: 8px;
   background: transparent;
   color: var(--v4-text-muted);
+  font: inherit;
   cursor: pointer;
-  font-size: 0.9rem;
+  transform: translateY(-50%);
 }
 
 .clearSearch:hover {
@@ -316,15 +316,12 @@
   height: 54px;
 }
 
-.image {
-  object-fit: contain;
-  padding: 6px;
-}
-
-.fallback {
-  color: var(--v4-accent);
-  font-size: 0.7rem;
-  font-weight: 850;
+.projectedMedia {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .copy {
@@ -388,11 +385,12 @@
 }
 
 .noResults button {
+  min-height: 32px;
   margin-top: 3px;
   border: 1px solid var(--v4-line);
   border-radius: 9px;
   background: #fff;
-  padding: 7px 10px;
+  padding: 0 10px;
   color: var(--v4-accent-active);
   font: inherit;
   font-size: 0.62rem;
@@ -425,49 +423,21 @@
     gap: 3px;
   }
 
-  .selectedSummary {
-    grid-template-columns: 76px minmax(0, 1fr) auto;
-  }
-
-  .media[data-size="summary"] {
-    width: 76px;
-    height: 76px;
-  }
-
-  .selector[data-compact="true"] .selectedSummary {
-    grid-template-columns: 58px minmax(0, 1fr) auto;
-  }
-
-  .selector[data-compact="true"] .media[data-size="summary"] {
-    width: 58px;
-    height: 58px;
-  }
-}
-
-@media (max-width: 620px) {
   .grid,
   .selector[data-compact="true"] .grid {
     grid-template-columns: 1fr;
   }
+}
 
-  .scrollArea,
-  .selector[data-compact="true"] .scrollArea {
-    max-height: 42dvh;
-  }
-
+@media (max-width: 520px) {
   .selectedSummary,
   .selector[data-compact="true"] .selectedSummary {
-    grid-template-columns: 56px minmax(0, 1fr) auto;
+    grid-template-columns: 54px minmax(0, 1fr) auto;
   }
 
   .media[data-size="summary"],
   .selector[data-compact="true"] .media[data-size="summary"] {
-    width: 56px;
-    height: 56px;
-  }
-
-  .toggleButton {
-    min-height: 32px;
-    padding: 5px 8px;
+    width: 54px;
+    height: 54px;
   }
 }
