@@ -16,6 +16,7 @@ import styles from "./wuwa-resonator-selector.module.css";
 
 export type ResonatorSelectorEntry = {
   id: string;
+  assetId: string;
   name: string;
   element: string;
   weaponType: string;
@@ -33,10 +34,11 @@ const elementLabels: Record<string, string> = {
 
 function sourceRoleFor(
   projection: WuwaUiAssetProjectionV1,
-  id: string,
+  assetId: string,
 ) {
   const entry = projection.entries.find(
-    (candidate) => candidate.category === "characters" && candidate.id === id,
+    (candidate) =>
+      candidate.category === "characters" && candidate.id === assetId,
   );
   return WUWA_RESONATOR_CARD_ROLES.find((role) =>
     entry?.assets.some((asset) => asset.role === role),
@@ -45,12 +47,12 @@ function sourceRoleFor(
 
 function portraitPathFor(
   projection: WuwaUiAssetProjectionV1,
-  id: string,
+  assetId: string,
 ) {
   return findWuwaUiAssetPathV1(
     projection,
     "characters",
-    id,
+    assetId,
     WUWA_RESONATOR_CARD_ROLES,
   );
 }
@@ -107,9 +109,12 @@ export function WuwaResonatorSelector({
       const matchesQuery =
         normalizedQuery.length === 0 ||
         entry.name.toLocaleLowerCase("fr").includes(normalizedQuery) ||
-        entry.id.toLocaleLowerCase("fr").includes(normalizedQuery);
-      const matchesElement = elementFilter === "all" || entry.element === elementFilter;
-      const matchesRarity = rarityFilter === "all" || entry.rarity === Number(rarityFilter);
+        entry.id.toLocaleLowerCase("fr").includes(normalizedQuery) ||
+        entry.assetId.includes(normalizedQuery);
+      const matchesElement =
+        elementFilter === "all" || entry.element === elementFilter;
+      const matchesRarity =
+        rarityFilter === "all" || entry.rarity === Number(rarityFilter);
       return matchesQuery && matchesElement && matchesRarity;
     });
   }, [entries, elementFilter, query, rarityFilter]);
@@ -117,9 +122,13 @@ export function WuwaResonatorSelector({
   const selected =
     entries.find((entry) => entry.id === selectedId) ?? entries[0];
   const selectedSourceRole =
-    projection && selected ? sourceRoleFor(projection, selected.id) : undefined;
+    projection && selected
+      ? sourceRoleFor(projection, selected.assetId)
+      : undefined;
   const selectedPortrait =
-    projection && selected ? portraitPathFor(projection, selected.id) : undefined;
+    projection && selected
+      ? portraitPathFor(projection, selected.assetId)
+      : undefined;
 
   return (
     <section className={styles.selector} aria-label="Sélecteur visuel de Resonator">
@@ -212,7 +221,9 @@ export function WuwaResonatorSelector({
       </div>
 
       <div className={styles.resultsBar}>
-        <span><strong>{visibleEntries.length}</strong> Resonator{visibleEntries.length > 1 ? "s" : ""}</span>
+        <span aria-live="polite" aria-atomic="true">
+          <strong>{visibleEntries.length}</strong> Resonator{visibleEntries.length > 1 ? "s" : ""}
+        </span>
         <span>Appuie sur un portrait pour le sélectionner</span>
       </div>
 
@@ -226,8 +237,12 @@ export function WuwaResonatorSelector({
         <div className={styles.grid}>
           {visibleEntries.map((entry) => {
             const isSelected = entry.id === selected?.id;
-            const sourceRole = projection ? sourceRoleFor(projection, entry.id) : undefined;
-            const portraitPath = projection ? portraitPathFor(projection, entry.id) : undefined;
+            const sourceRole = projection
+              ? sourceRoleFor(projection, entry.assetId)
+              : undefined;
+            const portraitPath = projection
+              ? portraitPathFor(projection, entry.assetId)
+              : undefined;
 
             return (
               <button
@@ -262,7 +277,7 @@ export function WuwaResonatorSelector({
                     <span aria-hidden="true">·</span>
                     {entry.weaponType}
                   </span>
-                  <span className={styles.cardId}>ID {entry.id}</span>
+                  <span className={styles.cardId}>ID Wuwa {entry.assetId}</span>
                 </span>
               </button>
             );
