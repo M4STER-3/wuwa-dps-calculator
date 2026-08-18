@@ -25,12 +25,13 @@ const batch = [
 
 const elementMap = { Aero: "aero", Glacio: "glacio", Electro: "electro", Fusion: "fusion", Havoc: "havoc", Spectro: "spectro" };
 const weaponTypeMap = { Broadblade: "broadblade", Gauntlets: "gauntlets", Pistols: "pistols", Rectifier: "rectifier", Sword: "sword" };
+const normalizeSemanticLabel = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
 const skillTypeMap = new Map([
-  ["Basic Attack", "basicAttack"],
-  ["Resonance Skill", "resonanceSkill"],
-  ["Forte Circuit", "forteCircuit"],
-  ["Resonance Liberation", "resonanceLiberation"],
-  ["Intro Skill", "introSkill"],
+  [normalizeSemanticLabel("Basic Attack"), "basicAttack"],
+  [normalizeSemanticLabel("Resonance Skill"), "resonanceSkill"],
+  [normalizeSemanticLabel("Forte Circuit"), "forteCircuit"],
+  [normalizeSemanticLabel("Resonance Liberation"), "resonanceLiberation"],
+  [normalizeSemanticLabel("Intro Skill"), "introSkill"],
 ]);
 
 function fail(message) { throw new Error(`Character Box roster 10R1 projection: ${message}`); }
@@ -90,7 +91,8 @@ for (const expected of batch) {
   if (!Array.isArray(character.skills)) fail(`${expected.name}.skills must be an array`);
   const skillNames = {};
   for (const [skillIndex, rawSkill] of character.skills.entries()) {
-    const skill = record(rawSkill, `${expected.name}.skills[${skillIndex}]`); const semantic = skillTypeMap.get(sourceParametersType(skill, `${expected.name}.skills[${skillIndex}]`));
+    const skill = record(rawSkill, `${expected.name}.skills[${skillIndex}]`);
+    const semantic = skillTypeMap.get(normalizeSemanticLabel(sourceParametersType(skill, `${expected.name}.skills[${skillIndex}]`)));
     if (!semantic) continue;
     if (Object.prototype.hasOwnProperty.call(skillNames, semantic)) fail(`${expected.name} has multiple ${semantic} skill groups`);
     skillNames[semantic] = safeText(skill.name, `${expected.name}.skills[${skillIndex}].name`, 200);
