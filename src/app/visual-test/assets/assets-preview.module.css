@@ -65,7 +65,7 @@
 }
 
 .identityArtwork img {
-  transform: translate(-4%, 6%) scale(1.27);
+  transform: translate(-5%, 12%) scale(1.22);
   transform-origin: right bottom;
 }
 
@@ -186,7 +186,7 @@
   }
 
   .identityArtwork img {
-    transform: translate(-2%, 3%) scale(1.14);
+    transform: translate(-2%, 7%) scale(1.1);
   }
 
   .sectionGrid,
