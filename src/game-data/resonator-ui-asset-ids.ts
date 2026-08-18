@@ -1,26 +1,37 @@
+type ResonatorUiAsset = {
+  readonly assetId: string;
+  /** Legacy direct path kept only for already-reviewed promoted portraits. */
+  readonly portraitPath?: `/assets/wuwa/objects/${string}`;
+};
+
 const PROMOTED_RESONATOR_UI_ASSETS = {
   aemeath: {
     assetId: "1210",
     portraitPath:
       "/assets/wuwa/objects/e3daf909b043ab2f6ffa706967a910f50133900dd00dddd94faac9d51a1b55eb.webp",
   },
+  augusta: { assetId: "1306" },
+  brant: { assetId: "1206" },
+  calcharo: { assetId: "1301" },
+  cantarella: { assetId: "1607" },
+  carlotta: { assetId: "1107" },
+  cartethyia: { assetId: "1409" },
+  changli: { assetId: "1205" },
   chisa: {
     assetId: "1508",
     portraitPath:
       "/assets/wuwa/objects/032c01884fc173aa401462b0a45e341bb441609c8fc497ddcd34117460b2185d.webp",
   },
+  ciaccona: { assetId: "1407" },
   verina: {
     assetId: "1503",
     portraitPath:
       "/assets/wuwa/objects/b05014748673f03cf6627f79456e67204fae5dd745ec7f47da75b7cd2451d7e3.webp",
   },
-} as const satisfies Record<
-  string,
-  { readonly assetId: string; readonly portraitPath: `/assets/wuwa/objects/${string}` }
->;
+} as const satisfies Record<string, ResonatorUiAsset>;
 
 export function getResonatorUiAssetId(resonatorId: string): string | undefined {
-  return (PROMOTED_RESONATOR_UI_ASSETS as Record<string, { assetId: string }>)[
+  return (PROMOTED_RESONATOR_UI_ASSETS as Record<string, ResonatorUiAsset>)[
     resonatorId
   ]?.assetId;
 }
@@ -38,12 +49,9 @@ export function requireResonatorUiAssetId(resonatorId: string): string {
 export function getResonatorUiPortraitPath(
   resonatorId: string,
 ): `/assets/wuwa/objects/${string}` | undefined {
-  return (
-    PROMOTED_RESONATOR_UI_ASSETS as Record<
-      string,
-      { portraitPath: `/assets/wuwa/objects/${string}` }
-    >
-  )[resonatorId]?.portraitPath;
+  return (PROMOTED_RESONATOR_UI_ASSETS as Record<string, ResonatorUiAsset>)[
+    resonatorId
+  ]?.portraitPath;
 }
 
 export function requireResonatorUiPortraitPath(

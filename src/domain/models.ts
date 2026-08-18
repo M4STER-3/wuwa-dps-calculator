@@ -273,6 +273,8 @@ export interface RecommendedBuildPreset {
       elementalDamageBonus?: Partial<Record<Element, { minimum: number; maximum?: number }>>;
     }
   >;
+  /** Exact five-Echo recommendation input. It is upstream build data, never a second runtime stat source. */
+  echoLoadout?: import("./user-echo-loadout").UserEchoLoadoutV1;
   sonataId?: string;
   mainEchoId?: string;
   notes: readonly string[];

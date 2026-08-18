@@ -19,8 +19,12 @@ describe("cohérence du catalogue", () => {
       const weapon = weapons.find((entry) => entry.id === preset.weapon.weaponId);
       expect(resonator).toBeDefined();
       expect(weapon?.type).toBe(resonator?.weaponType);
-      expect(sonatas.some((entry) => entry.id === preset.sonataId)).toBe(true);
-      expect(mainEchoes.some((entry) => entry.id === preset.mainEchoId)).toBe(true);
+      if (preset.sonataId) {
+        expect(sonatas.some((entry) => entry.id === preset.sonataId)).toBe(true);
+      }
+      if (preset.mainEchoId) {
+        expect(mainEchoes.some((entry) => entry.id === preset.mainEchoId)).toBe(true);
+      }
     }
   });
 
@@ -60,16 +64,12 @@ describe("cohérence du catalogue", () => {
     expect(aemeathPreset.finalStats.attack).toBe(2000);
   });
 
-  it("n'expose qu'un équipement réel vérifié pour Aemeath", () => {
-    expect(
-      weapons
-        .filter(
-          (entry) =>
-            entry.type === aemeath.weaponType &&
-            entry.source.kind !== "technical-fixture",
-        )
-        .map((entry) => entry.name),
-    ).toEqual(["Everbright Polestar"]);
+  it("conserve l'équipement vérifié d'Aemeath dans le catalogue étendu", () => {
+    expect(weapons.find((entry) => entry.id === "everbright-polestar")).toMatchObject({
+      name: "Everbright Polestar",
+      type: "sword",
+      rarity: 5,
+    });
     expect(
       sonatas
         .filter((entry) => entry.source.kind !== "technical-fixture")

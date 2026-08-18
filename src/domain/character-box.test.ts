@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { presets } from "@/data/catalog";
+import { generatedCommunityEchoPresets10R1 } from "@/generated/community-echo-presets-10r1";
 import {
   MAX_CHARACTER_BOX_SERIALIZED_LENGTH,
   addBuild,
@@ -36,6 +37,23 @@ describe("Character Box", () => {
     expect(preset.weapon.level).toBe(90);
     expect(preset.finalStats.attack).toBe(2000);
     expect(preset.finalStats.elementalDamageBonus.fusion).toBe(40);
+  });
+
+  it("copie et sanitise génériquement un Echo loadout de preset", () => {
+    const echoLoadout = generatedCommunityEchoPresets10R1.augusta.echoLoadout;
+    const preset = { ...fixturePreset, echoLoadout };
+    const build = createBuildFromPreset(preset, {
+      id: "build-with-echoes",
+      now: "2026-08-15T00:00:00.000Z",
+    });
+
+    expect(build.echoLoadout).toEqual(echoLoadout);
+    expect(build.echoLoadout).not.toBe(echoLoadout);
+    expect(build.echoLoadout?.echoes).not.toBe(echoLoadout.echoes);
+    expect(
+      parseCharacterBox(JSON.stringify({ schemaVersion: 1, builds: [build] }))
+        .builds[0]?.echoLoadout,
+    ).toEqual(echoLoadout);
   });
 
   it("empêche deux builds du même Resonator", () => {
