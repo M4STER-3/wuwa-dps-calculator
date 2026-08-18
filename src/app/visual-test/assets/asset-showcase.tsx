@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { V4Badge, V4Panel, V4SectionHeader, V4Skeleton } from "@/components/ui/v4-ui";
-import { WuwaAssetMedia } from "@/components/ui/wuwa-asset-media";
+import {
+  WUWA_RESONATOR_DISPLAY_ROLES,
+  WuwaAssetMedia,
+} from "@/components/ui/wuwa-asset-media";
 import {
   findWuwaUiAssetPathV1,
   isWuwaUiAssetProjectionV1,
@@ -139,13 +142,12 @@ export function AssetShowcase() {
   if (!projection || !samples) return <LoadingState />;
 
   const leadCharacter = samples.characters[0];
-  const leadArtworkRoles = ["detail-roleportrait"] as const;
   const leadChipRoles = ["list-roleheadicon", "detail-roleheadiconlarge", "detail-roleportrait"] as const;
   const leadArtworkPath = leadCharacter
-    ? pathFor(projection, leadCharacter, leadArtworkRoles)
+    ? pathFor(projection, leadCharacter, WUWA_RESONATOR_DISPLAY_ROLES)
     : undefined;
   const leadArtworkRole = leadCharacter
-    ? selectedRole(leadCharacter, leadArtworkRoles)
+    ? selectedRole(leadCharacter, WUWA_RESONATOR_DISPLAY_ROLES)
     : undefined;
   const leadChipPath = leadCharacter
     ? pathFor(projection, leadCharacter, leadChipRoles)
@@ -215,7 +217,7 @@ export function AssetShowcase() {
               projection={projection}
               entry={entry}
               mediaRole="portrait"
-              preferredRoles={["detail-formationrolecard", "detail-roleportrait", "detail-roleheadiconlarge"]}
+              preferredRoles={WUWA_RESONATOR_DISPLAY_ROLES}
             />
           ))}
         </div>
