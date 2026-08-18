@@ -33,7 +33,7 @@
       "resonatorId": "cantarella",
       "name": "Standard CR Build",
       "author": "thundertooth",
-      "sourceBlobSha": "7e7913a46d79d82e03826f0c0454ff160a1bf567",
+      "sourceBlobSha": "be1b610b7774d6b2611ee242b51c8840c8439a08",
       "echoes": [
         {"cost":4,"echo":"Lorelei","sonata":"MidnightVeil","mainStat":"CritRate","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["BasicAttackDMGBonus",8.6]]},
         {"cost":3,"echo":"AbyssalGladius","sonata":"MidnightVeil","mainStat":"Havoc","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["BasicAttackDMGBonus",8.6]]},
