@@ -46,8 +46,9 @@ function requiredWeaponType(value: string): WeaponType {
 
 /**
  * Typed Character Box view of the universal promotion registry.
- * Future roster batches should add reviewed data to roster-promotion-registry.json
- * instead of duplicating IDs across UI, baseline and media generators.
+ * This view intentionally contains no per-character promotion rules: future roster
+ * batches should add reviewed data to roster-promotion-registry.json instead of
+ * duplicating IDs across UI, baseline and media generators.
  */
 export const roster10R1: readonly RosterPromotionEntry[] = registry.batches["10R1"].map(
   (entry): RosterPromotionEntry => {
