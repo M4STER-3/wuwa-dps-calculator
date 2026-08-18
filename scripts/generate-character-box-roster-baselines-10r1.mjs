@@ -1,5 +1,6 @@
 import { lstat, mkdir, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { loadRosterPromotionBatch } from "./lib/roster-promotion-registry.mjs";
 
 const root = path.resolve(process.cwd());
 const inputPath = path.resolve(root, "public/data/wuwa/game-database-v1.json");
@@ -8,18 +9,7 @@ const outputDirectory = path.dirname(outputPath);
 const temporaryPath = path.join(outputDirectory, `.character-box-roster-baselines-10r1.${process.pid}.tmp`);
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 128 * 1024;
-const batch = [
-  ["aemeath", "1210", "21020076"],
-  ["augusta", "1306", "21010026"],
-  ["brant", "1206", "21020026"],
-  ["calcharo", "1301", "21010015"],
-  ["cantarella", "1607", "21050056"],
-  ["carlotta", "1107", "21030016"],
-  ["cartethyia", "1409", "21020036"],
-  ["changli", "1205", "21020016"],
-  ["chisa", "1508", "21010056"],
-  ["ciaccona", "1407", "21030036"],
-];
+const { entries: batch } = await loadRosterPromotionBatch(root, "10R1");
 
 function fail(message) { throw new Error(`Character Box 10R1 baseline projection: ${message}`); }
 function assertContained(candidate, label) {
@@ -73,23 +63,23 @@ const characters = indexByWuwaId(rootRecord.characters, "characters");
 const weapons = indexByWuwaId(rootRecord.weapons, "weapons");
 const baselines = {};
 
-for (const [resonatorId, characterWuwaId, weaponWuwaId] of batch) {
-  if (resonatorId === "camellya") fail("Camellya is explicitly excluded");
-  const character = characters.get(characterWuwaId); const weapon = weapons.get(weaponWuwaId);
-  if (!character || !weapon) fail(`missing character/weapon pair for ${resonatorId}`);
-  if (character.weaponType !== weapon.type) fail(`weapon type mismatch for ${resonatorId}`);
+for (const entry of batch) {
+  const character = characters.get(entry.wuwaId); const weapon = weapons.get(entry.weapon.wuwaId);
+  if (!character || !weapon) fail(`missing character/weapon pair for ${entry.id}`);
+  if (character.name !== entry.name || weapon.name !== entry.weapon.name) fail(`identity mismatch for ${entry.id}`);
+  if (character.weaponType !== weapon.type || character.weaponType !== entry.weaponType) fail(`weapon type mismatch for ${entry.id}`);
   const stats = blankStats();
-  const characterStats = record(character.stats, `${resonatorId}.character.stats`);
-  const hp = exactLevel90(characterStats.hp, `${resonatorId}.hp`);
-  const characterAttack = exactLevel90(characterStats.attack, `${resonatorId}.attack`);
-  const defense = exactLevel90(characterStats.defense, `${resonatorId}.defense`);
-  const baseStats = record(weapon.baseStats, `${resonatorId}.weapon.baseStats`);
-  const weaponAttack = exactLevel90(baseStats.attack, `${resonatorId}.weapon.attack`);
+  const characterStats = record(character.stats, `${entry.id}.character.stats`);
+  const hp = exactLevel90(characterStats.hp, `${entry.id}.hp`);
+  const characterAttack = exactLevel90(characterStats.attack, `${entry.id}.attack`);
+  const defense = exactLevel90(characterStats.defense, `${entry.id}.defense`);
+  const baseStats = record(weapon.baseStats, `${entry.id}.weapon.baseStats`);
+  const weaponAttack = exactLevel90(baseStats.attack, `${entry.id}.weapon.attack`);
   let hpPercent = 0; let attackPercent = 0; let defensePercent = 0;
   if (baseStats.secondaryStat !== undefined) {
-    const secondary = record(baseStats.secondaryStat, `${resonatorId}.weapon.secondaryStat`);
-    if (secondary.unit !== "percentage-points") fail(`${resonatorId} weapon secondary unit is unsupported`);
-    const amount = exactLevel90(secondary.progression, `${resonatorId}.weapon.secondaryStat.progression`);
+    const secondary = record(baseStats.secondaryStat, `${entry.id}.weapon.secondaryStat`);
+    if (secondary.unit !== "percentage-points") fail(`${entry.id} weapon secondary unit is unsupported`);
+    const amount = exactLevel90(secondary.progression, `${entry.id}.weapon.secondaryStat.progression`);
     switch (secondary.stat) {
       case "ATK": attackPercent += amount; break;
       case "HP": hpPercent += amount; break;
@@ -97,18 +87,18 @@ for (const [resonatorId, characterWuwaId, weaponWuwaId] of batch) {
       case "Crit. Rate": stats.critRate += amount; break;
       case "Crit. DMG": stats.critDamage += amount; break;
       case "Energy Regen": stats.energyRegen += amount; break;
-      default: fail(`${resonatorId} weapon secondary stat ${JSON.stringify(secondary.stat)} has no reviewed mapping`);
+      default: fail(`${entry.id} weapon secondary stat ${JSON.stringify(secondary.stat)} has no reviewed mapping`);
     }
   }
   stats.hp = hp * (1 + hpPercent / 100);
   stats.attack = (characterAttack + weaponAttack) * (1 + attackPercent / 100);
   stats.defense = defense * (1 + defensePercent / 100);
-  baselines[resonatorId] = stats;
+  baselines[entry.id] = stats;
 }
-if (Object.keys(baselines).length !== 10) fail("projection must contain exactly ten baselines");
+if (Object.keys(baselines).length !== batch.length) fail("projection size mismatch");
 
 await mkdir(outputDirectory, { recursive: true }); await assertRealDirectoryContained(path.dirname(inputPath), "input directory"); await assertRealDirectoryContained(outputDirectory, "output directory"); await rejectSymlink(outputPath, "output", true); await rejectSymlink(temporaryPath, "temporary output", true);
-const serialized = `/* Generated by scripts/generate-character-box-roster-baselines-10r1.mjs. Do not edit manually. */\nexport const generatedCharacterBoxRosterBaselines10R1 = ${JSON.stringify(baselines, null, 2)} as const;\n`;
+const serialized = `/* Generated from roster-promotion-registry.json. Do not edit manually. */\nexport const generatedCharacterBoxRosterBaselines10R1 = ${JSON.stringify(baselines, null, 2)} as const;\n`;
 const outputBytes = Buffer.byteLength(serialized);
 if (outputBytes <= 0 || outputBytes > MAX_OUTPUT_BYTES) fail(`output size ${outputBytes} is outside the allowed range`);
 try { await writeFile(temporaryPath, serialized, { encoding: "utf8", flag: "wx", mode: 0o644 }); await rename(temporaryPath, outputPath); }
