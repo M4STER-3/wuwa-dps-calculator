@@ -34,6 +34,11 @@ import styles from "./echo-loadout-choice.module.css";
 type LoadState = "loading" | "ready" | "error";
 type CostFilter = "all" | 1 | 3 | 4;
 
+type EchoLoadoutChoiceProps = {
+  value?: UserEchoLoadoutV1;
+  onChange: (loadout: UserEchoLoadoutV1 | undefined) => void;
+};
+
 const SLOT_LABELS = ["Main Echo", "Echo 2", "Echo 3", "Echo 4", "Echo 5"] as const;
 const COSTS = [4, 3, 1] as const;
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/;
@@ -171,13 +176,12 @@ function EchoIcon({
   );
 }
 
-export function EchoLoadoutChoice({
-  value,
-  onChange,
-}: {
-  value?: UserEchoLoadoutV1;
-  onChange: (loadout: UserEchoLoadoutV1 | undefined) => void;
-}) {
+export function EchoLoadoutChoice(props: EchoLoadoutChoiceProps) {
+  const persistedKey = JSON.stringify(props.value ?? null);
+  return <EchoLoadoutWorkspace key={persistedKey} {...props} />;
+}
+
+function EchoLoadoutWorkspace({ value, onChange }: EchoLoadoutChoiceProps) {
   const [catalog, setCatalog] = useState<EchoCatalogProjectionV1 | null>(null);
   const [assetProjection, setAssetProjection] = useState<WuwaUiAssetProjectionV1 | null>(null);
   const [loadState, setLoadState] = useState<LoadState>("loading");
@@ -234,13 +238,6 @@ export function EchoLoadoutChoice({
     void load();
     return () => controller.abort();
   }, []);
-
-  useEffect(() => {
-    setSlots(draftSlotsFromLoadout(value));
-    setActiveSlot(0);
-    setStatus("");
-    setStatusTone("neutral");
-  }, [value]);
 
   const echoById = useMemo(
     () => new Map(catalog?.echoes.map((echo) => [echo.id, echo]) ?? []),
@@ -352,8 +349,7 @@ export function EchoLoadoutChoice({
   function clearLoadout() {
     if (!value && selectedCount === 0) return;
     if (!window.confirm("Effacer le loadout Echo détaillé de ce personnage ?")) return;
-    const empty = draftSlotsFromLoadout(undefined);
-    setSlots(empty);
+    setSlots(draftSlotsFromLoadout(undefined));
     setActiveSlot(0);
     onChange(undefined);
     setStatus("Loadout Echo effacé");
