@@ -38,11 +38,13 @@ describe("10R1 pinned community Echo presets", () => {
       const resolved = resolveEchoLoadoutV1(echoCatalog, preset.echoLoadout);
       expect(resolved.totalCost, resonatorId).toBeLessThanOrEqual(12);
       expect(resolved.echoes, resonatorId).toHaveLength(5);
-      if (preset.echoLoadout.mainEchoId) {
+      if (
+        "mainEchoId" in preset.echoLoadout &&
+        preset.echoLoadout.mainEchoId !== undefined
+      ) {
+        const mainEchoId = preset.echoLoadout.mainEchoId;
         expect(
-          resolved.echoes.some(
-            (echo) => echo.echoId === preset.echoLoadout.mainEchoId,
-          ),
+          resolved.echoes.some((echo) => echo.echoId === mainEchoId),
           resonatorId,
         ).toBe(true);
       }
