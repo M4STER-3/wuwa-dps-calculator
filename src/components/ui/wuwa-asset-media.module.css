@@ -20,8 +20,14 @@
   pointer-events: none;
 }
 
-.image {
+.imageStage {
+  position: absolute;
+  inset: 0;
   z-index: 1;
+  display: block;
+}
+
+.image {
   image-rendering: auto;
 }
 
@@ -55,22 +61,28 @@
   border-radius: var(--v4-radius-md);
 }
 
+.weapon .imageStage,
+.echo .imageStage,
+.catalogue .imageStage {
+  inset: 9%;
+}
+
 .weapon .image,
 .echo .image,
 .catalogue .image {
   object-fit: contain;
-  padding: 9%;
 }
 
 /*
- * list-icon is the universal catalogue fallback and can be much smaller than
- * a detail artwork. Keep the light card unchanged, but avoid magnifying that
- * fallback as aggressively on high-density screens.
+ * Encore guarantees list-icon for weapons and Echoes, but representative
+ * promoted list icons are 256×256. Keep the surrounding light card unchanged
+ * while capping the raster's CSS footprint so a large checkpoint card does not
+ * magnify the source far beyond its native dimensions.
  */
-.weapon[data-asset-source-role="list-icon"] .image,
-.echo[data-asset-source-role="list-icon"] .image,
-.catalogue[data-asset-source-role="list-icon"] .image {
-  padding: 15%;
+.weapon[data-asset-source-role="list-icon"] .imageStage,
+.echo[data-asset-source-role="list-icon"] .imageStage,
+.catalogue[data-asset-source-role="list-icon"] .imageStage {
+  inset: max(12%, calc((100% - 256px) / 2));
 }
 
 .chip {
