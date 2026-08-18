@@ -11,6 +11,8 @@ const realResonators = resonators.filter(
 const contentAddressedAsset =
   /^\/assets\/wuwa\/objects\/[a-f0-9]{64}\.(?:png|jpg|webp)$/;
 
+const promotedEchoStatuses = new Set(["verified", "curated-balanced"]);
+
 describe("10R1 functional Character Box promotion", () => {
   it("promotes every reviewed 10R1 Resonator exactly once", () => {
     for (const reviewed of roster10R1) {
@@ -102,13 +104,13 @@ describe("10R1 functional Character Box promotion", () => {
     }
   });
 
-  it("attaches Echo loadouts only to community candidates promoted as verified", () => {
+  it("attaches Echo loadouts to every explicitly promoted community or curated candidate", () => {
     for (const [resonatorId, community] of Object.entries(
       generatedCommunityEchoPresets10R1,
     )) {
       const preset = presets.find((entry) => entry.resonatorId === resonatorId);
       expect(preset, resonatorId).toBeDefined();
-      if (community.promotionStatus === "verified") {
+      if (promotedEchoStatuses.has(community.promotionStatus)) {
         expect(preset?.echoLoadout, resonatorId).toEqual(community.echoLoadout);
       } else {
         expect(preset?.echoLoadout, resonatorId).toBeUndefined();
