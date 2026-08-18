@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { emptyCharacterBox } from "@/domain/character-box";
 import { calculatePersonalDpsV1 } from "@/domain/personal-dps-engine";
-import type { Element, FinalStats } from "@/domain/models";
+import type { Element, FinalStats, TalentLevel } from "@/domain/models";
 import { personalDpsPilotProfiles10R1 } from "@/data/personal-dps-pilots-10r1";
 import {
   getBrowserCharacterBoxSnapshot,
@@ -32,6 +32,13 @@ const pilotElements: Readonly<Record<string, Element>> = {
 
 function cloneStats(stats: FinalStats): FinalStats {
   return structuredClone(stats);
+}
+
+function toTalentLevel(value: number): TalentLevel {
+  if (!Number.isInteger(value) || value < 1 || value > 10) {
+    throw new Error(`Invalid saved talent level: ${value}`);
+  }
+  return value as TalentLevel;
 }
 
 export function UniversalPersonalDpsLab() {
@@ -63,6 +70,15 @@ export function UniversalPersonalDpsLab() {
   const element = profile
     ? pilotElements[profile.resonatorId] ?? profile.element
     : undefined;
+  const skillLevels = build
+    ? {
+        basicAttack: toTalentLevel(build.skillLevels.basicAttack),
+        resonanceSkill: toTalentLevel(build.skillLevels.resonanceSkill),
+        forteCircuit: toTalentLevel(build.skillLevels.forteCircuit),
+        resonanceLiberation: toTalentLevel(build.skillLevels.resonanceLiberation),
+        introSkill: toTalentLevel(build.skillLevels.introSkill),
+      }
+    : undefined;
   const result =
     build && profile && stats && selectedRotationId && element
       ? calculatePersonalDpsV1({
@@ -70,7 +86,7 @@ export function UniversalPersonalDpsLab() {
           rotationId: selectedRotationId,
           finalStats: stats,
           attackerLevel: build.characterLevel,
-          skillLevels: build.skillLevels,
+          skillLevels,
           target: {
             level: enemyLevel,
             elementalResistance: { [element]: enemyResistance },
