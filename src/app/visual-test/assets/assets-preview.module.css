@@ -65,15 +65,16 @@
 }
 
 /*
- * Size the lead artwork through its layout stage instead of a compositor
- * transform. The source is already high resolution; avoiding scale/translate
- * lets the browser rasterize it directly at the final display size.
+ * Keep lead Resonator artwork sizing and centering generic. The stage grows
+ * symmetrically around the card center instead of being pushed toward one
+ * edge, so future character assets inherit the same neutral framing rule.
  */
 .identityArtwork > span {
-  inset: 0 4% -16% 0;
+  inset: -7% 3%;
 }
 
 .identityArtwork img {
+  object-position: center center;
   transform: none;
 }
 
@@ -194,7 +195,7 @@
   }
 
   .identityArtwork > span {
-    inset: 0 6% -10% 0;
+    inset: -4% 5%;
   }
 
   .sectionGrid,
