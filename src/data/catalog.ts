@@ -13,8 +13,12 @@ import type {
   Weapon,
 } from "@/domain/models";
 import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa";
+import {
+  roster10R1PromotedResonators,
+  roster10R1PromotedWeapons,
+} from "./roster-10r1-promoted";
 import { fallacyOfNoReturn, rejuvenatingGlow, variation, verina, verinaPreset } from "./verina";
-import { requireResonatorUiPortraitPath } from "@/game-data/resonator-ui-asset-ids";
+import { getResonatorUiPortraitPath } from "@/game-data/resonator-ui-asset-ids";
 
 const fixtureSource = {
   kind: "technical-fixture" as const,
@@ -31,15 +35,28 @@ const skillNames = {
   introSkill: "Intro Skill",
 } as const;
 
-const withLocalUiPortrait = (resonator: Resonator): Resonator => ({
-  ...resonator,
-  portrait: {
-    src: requireResonatorUiPortraitPath(resonator.id),
-    alt: `Portrait de ${resonator.name}`,
-  },
-});
+const withOptionalLocalUiPortrait = (resonator: Resonator): Resonator => {
+  const portraitPath = getResonatorUiPortraitPath(resonator.id);
+  return portraitPath
+    ? {
+        ...resonator,
+        portrait: {
+          src: portraitPath,
+          alt: `Portrait de ${resonator.name}`,
+        },
+      }
+    : resonator;
+};
 
-const promotedResonators = [aemeath, chisa, verina].map(withLocalUiPortrait);
+const generated10R1Resonators = roster10R1PromotedResonators.filter(
+  (resonator) => resonator.id !== "aemeath" && resonator.id !== "chisa",
+);
+const promotedResonators = [
+  aemeath,
+  ...generated10R1Resonators,
+  chisa,
+  verina,
+].map(withOptionalLocalUiPortrait);
 
 export const resonators: readonly Resonator[] = [
   ...promotedResonators,
@@ -55,8 +72,13 @@ export const resonators: readonly Resonator[] = [
   },
 ];
 
+const generated10R1Weapons = roster10R1PromotedWeapons.filter(
+  (weapon) => weapon.id !== "everbright-polestar" && weapon.id !== "kumokiri",
+);
+
 export const weapons: readonly Weapon[] = [
   everbrightPolestar,
+  ...generated10R1Weapons,
   kumokiri,
   variation,
   {
