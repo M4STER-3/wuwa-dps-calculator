@@ -7,6 +7,7 @@ import "./illustrated-card.css";
 import "./site-shell-focus.css";
 import "./v4-design-system.css";
 import "./v4-design-system-fixes.css";
+import "./v4-site-shell.css";
 
 export const metadata: Metadata = {
   title: "WUWA LAB — Wuthering Waves DPS Calculator",
