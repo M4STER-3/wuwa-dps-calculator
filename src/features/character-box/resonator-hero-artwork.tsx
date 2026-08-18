@@ -2,7 +2,11 @@
 
 import { WuwaProjectedAssetMedia } from "@/components/ui/wuwa-projected-asset-media";
 
-const HERO_ROLES = ["detail-roleportrait"] as const;
+const HERO_ROLES = [
+  "detail-roleportrait",
+  "list-roleportrait",
+  "list-roleheadicon",
+] as const;
 
 export function ResonatorHeroArtwork({
   assetId,
