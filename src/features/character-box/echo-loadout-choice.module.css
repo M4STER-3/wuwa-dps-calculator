@@ -98,11 +98,39 @@
   transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
+.slotCard[data-empty="true"] {
+  grid-template-columns: 1fr;
+  place-items: center;
+  padding: 7px;
+}
+
+.emptySlotPlus {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 1px dashed color-mix(in srgb, var(--v4-accent) 34%, var(--v4-line));
+  border-radius: 10px;
+  background: linear-gradient(145deg, #fbfcff, var(--v4-accent-faint));
+  color: var(--v4-accent-active);
+  font-size: 1.65rem;
+  font-weight: 500;
+  line-height: 1;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
 .slotCard:hover {
   border-color: var(--v4-line-strong);
   background: #fff;
   box-shadow: var(--v4-shadow-xs);
   transform: translateY(-1px);
+}
+
+.slotCard[data-empty="true"]:hover .emptySlotPlus,
+.slotCard[data-active="true"] .emptySlotPlus {
+  border-color: color-mix(in srgb, var(--v4-accent) 56%, var(--v4-line));
+  background: var(--v4-accent-soft);
+  transform: scale(1.03);
 }
 
 .slotCard[data-active="true"] {
@@ -523,8 +551,32 @@
 }
 
 .emptySubstats {
-  padding: 14px;
+  display: grid;
+  width: 100%;
+  gap: 3px;
+  border-color: color-mix(in srgb, var(--v4-accent) 26%, var(--v4-line));
+  background: #fff;
+  padding: 13px 14px;
+  color: var(--v4-text-muted);
+  font: inherit;
   text-align: center;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.emptySubstats:hover {
+  border-color: color-mix(in srgb, var(--v4-accent) 46%, var(--v4-line));
+  background: var(--v4-accent-faint);
+}
+
+.emptySubstats strong {
+  color: var(--v4-accent-active);
+  font-size: 0.62rem;
+  font-weight: 820;
+}
+
+.emptySubstats span {
+  font-size: 0.54rem;
 }
 
 .emptyConfig {
@@ -617,6 +669,7 @@
 .echoCard:focus-visible,
 .activeIdentity button:focus-visible,
 .substatHeader button:focus-visible,
+.emptySubstats:focus-visible,
 .substatRow button:focus-visible,
 .clearButton:focus-visible,
 .saveButton:focus-visible {
