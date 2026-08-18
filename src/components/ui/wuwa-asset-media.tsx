@@ -46,14 +46,16 @@ export function WuwaAssetMedia({
       data-asset-source-role={sourceRole}
     >
       {safeSrc ? (
-        <Image
-          src={safeSrc}
-          alt={alt}
-          fill
-          sizes={sizes ?? (role === "chip" ? "44px" : "(max-width: 720px) 45vw, 280px")}
-          className={styles.image}
-          unoptimized
-        />
+        <span className={styles.imageStage} aria-hidden="true">
+          <Image
+            src={safeSrc}
+            alt={alt}
+            fill
+            sizes={sizes ?? (role === "chip" ? "44px" : "(max-width: 720px) 45vw, 280px")}
+            className={styles.image}
+            unoptimized
+          />
+        </span>
       ) : (
         <div className={styles.fallback} role="img" aria-label={fallbackLabel}>
           <span className={styles.fallbackMark} aria-hidden="true">
