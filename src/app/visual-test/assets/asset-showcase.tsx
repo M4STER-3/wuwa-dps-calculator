@@ -139,8 +139,8 @@ export function AssetShowcase() {
   if (!projection || !samples) return <LoadingState />;
 
   const leadCharacter = samples.characters[0];
-  const leadArtworkRoles = ["detail-roleportrait", "list-roleheadicon"] as const;
-  const leadChipRoles = ["list-roleheadicon", "detail-roleportrait"] as const;
+  const leadArtworkRoles = ["detail-roleportrait"] as const;
+  const leadChipRoles = ["list-roleheadicon", "detail-roleheadiconlarge", "detail-roleportrait"] as const;
   const leadArtworkPath = leadCharacter
     ? pathFor(projection, leadCharacter, leadArtworkRoles)
     : undefined;
@@ -215,7 +215,7 @@ export function AssetShowcase() {
               projection={projection}
               entry={entry}
               mediaRole="portrait"
-              preferredRoles={["detail-roleportrait", "detail-roleheadiconlarge", "list-roleheadicon"]}
+              preferredRoles={["detail-roleportrait", "detail-roleheadiconlarge"]}
             />
           ))}
         </div>
