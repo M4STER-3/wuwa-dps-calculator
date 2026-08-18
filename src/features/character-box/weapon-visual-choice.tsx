@@ -41,6 +41,8 @@ export function WeaponVisualChoice({
   const [query, setQuery] = useState("");
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
 
+  // Character Box already limits `options` to the Resonator's compatible weapon type.
+  // Search + rarity filters keep that reduced catalogue fast even when it grows to dozens of entries.
   const rarities = useMemo(
     () => [...new Set(options.map((weapon) => weapon.rarity))].sort((a, b) => b - a),
     [options],
