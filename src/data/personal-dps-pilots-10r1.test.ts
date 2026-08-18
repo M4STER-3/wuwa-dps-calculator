@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { calculateActionDamage } from "@/domain/damage-engine";
 import { compareExternalDisplay } from "@/domain/external-benchmark";
 import type { FinalStats } from "@/domain/models";
+import { calculateUncategorizedDamageV1 } from "@/domain/uncategorized-damage";
 import { aemeathNakedStandardBenchmarks } from "./aemeath-external-benchmarks";
 import {
   aemeathPersonalDpsProfile10R1,
@@ -58,6 +59,7 @@ const calcharoWutheringTools = {
   "calcharo-hounds-roar-3": [324, 332, 485],
   "calcharo-extermination-order-1": [339, 348, 509],
   "calcharo-extermination-order-2": [509, 522, 763],
+  "calcharo-shadowy-raid": [1160, 1189, 1739],
 } as const;
 
 const changliWutheringTools = {
@@ -133,7 +135,7 @@ describe("10R1 universal personal-DPS pilot profiles", () => {
     }
   });
 
-  it("matches WutheringTools Calcharo Lv90 naked fixture with identical displayed stats", () => {
+  it("matches WutheringTools Calcharo Lv90 naked fixture including uncategorized Outro", () => {
     const stats = nakedStats({ hp: 10500, attack: 437, defense: 1185 });
     for (const action of calcharoPersonalDpsProfile10R1.actions) {
       const expected = calcharoWutheringTools[
@@ -141,18 +143,57 @@ describe("10R1 universal personal-DPS pilot profiles", () => {
       ];
       expect(expected, action.id).toBeDefined();
       if (!expected) continue;
-      const result = calculateActionDamage({
+      const request = {
         action,
         finalStats: stats,
         attackerLevel: 90,
-        scalingAttribute: "attack",
-        element: "electro",
+        scalingAttribute: "attack" as const,
+        element: "electro" as const,
         target: target("electro"),
-      });
+      };
+      const result =
+        action.id === "calcharo-shadowy-raid"
+          ? calculateUncategorizedDamageV1(request)
+          : calculateActionDamage(request);
       expect(result.status, action.id).toBe("supported");
       if (result.status !== "supported") continue;
       expectDisplayedMatch(result.total, expected);
     }
+  });
+
+  it("does not leak an arbitrary panel damage-type bonus into uncategorized damage", () => {
+    const action = calcharoPersonalDpsProfile10R1.actions.find(
+      (candidate) => candidate.id === "calcharo-shadowy-raid",
+    );
+    expect(action).toBeDefined();
+    if (!action) return;
+    const base = nakedStats({ hp: 10500, attack: 437, defense: 1185 });
+    const withIntroBonus: FinalStats = {
+      ...base,
+      damageTypeBonus: { ...base.damageTypeBonus, introSkill: 75 },
+    };
+    const plain = calculateUncategorizedDamageV1({
+      action,
+      finalStats: base,
+      attackerLevel: 90,
+      scalingAttribute: "attack",
+      element: "electro",
+      target: target("electro"),
+    });
+    const boosted = calculateUncategorizedDamageV1({
+      action,
+      finalStats: withIntroBonus,
+      attackerLevel: 90,
+      scalingAttribute: "attack",
+      element: "electro",
+      target: target("electro"),
+    });
+    expect(plain.status).toBe("supported");
+    expect(boosted.status).toBe("supported");
+    if (plain.status !== "supported" || boosted.status !== "supported") return;
+    expect(boosted.total.expected).toBeCloseTo(plain.total.expected, 12);
+    expect(boosted.effectiveDamageType).toBe("uncategorized");
+    expect(boosted.damageTypeBonusPercent).toBe(0);
   });
 
   it("matches WutheringTools Changli Lv80 naked fixture with identical displayed stats", () => {
