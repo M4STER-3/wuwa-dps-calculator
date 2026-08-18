@@ -22,11 +22,11 @@ const echoCatalog = JSON.parse(
 
 const promotedStatuses = new Set(["verified", "curated-balanced"]);
 
-describe("10R1 pinned community Echo presets", () => {
-  it("only targets promoted non-excluded Resonators", () => {
-    const promoted = new Set(roster10R1Ids);
+describe("pinned community Echo presets", () => {
+  it("only targets supported non-excluded Resonators", () => {
+    const supported = new Set([...roster10R1Ids, "verina"]);
     for (const resonatorId of Object.keys(generatedCommunityEchoPresets10R1)) {
-      expect(promoted.has(resonatorId)).toBe(true);
+      expect(supported.has(resonatorId), resonatorId).toBe(true);
       expect(resonatorId).not.toBe("camellya");
     }
   });
@@ -59,7 +59,9 @@ describe("10R1 pinned community Echo presets", () => {
       "calcharo",
       "cantarella",
       "cartethyia",
+      "chisa",
       "ciaccona",
+      "verina",
     ] as const;
     for (const resonatorId of curatedIds) {
       const preset = generatedCommunityEchoPresets10R1[resonatorId];
@@ -69,7 +71,7 @@ describe("10R1 pinned community Echo presets", () => {
   });
 
   it("preserves verbatim verified fixtures separately from curated presets", () => {
-    for (const resonatorId of ["brant", "carlotta", "changli"] as const) {
+    for (const resonatorId of ["aemeath", "brant", "carlotta", "changli"] as const) {
       expect(generatedCommunityEchoPresets10R1[resonatorId].promotionStatus).toBe(
         "verified",
       );
