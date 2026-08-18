@@ -3,6 +3,7 @@ import {
   generatedCharacterBoxRoster10R1,
   generatedCharacterBoxWeapons10R1,
 } from "@/generated/character-box-roster-10r1";
+import { generatedCharacterBoxRosterMedia10R1 } from "@/generated/character-box-roster-media-10r1";
 
 const projectedSource = {
   kind: "verified-game-data" as const,
@@ -18,6 +19,10 @@ export const roster10R1PromotedResonators: readonly Resonator[] =
     element: entry.element,
     weaponType: entry.weaponType,
     rarity: entry.rarity,
+    portrait: {
+      src: generatedCharacterBoxRosterMedia10R1[entry.sourceItemId],
+      alt: `Portrait de ${entry.name}`,
+    },
     skillNames: entry.skillNames,
     resonanceChain: entry.resonanceChain,
     source: {
