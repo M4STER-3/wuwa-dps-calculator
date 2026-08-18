@@ -1,3 +1,5 @@
-import { PersonalDpsLab } from "@/features/personal-dps/personal-dps-lab";
+import { UniversalPersonalDpsLab } from "@/features/personal-dps/universal-personal-dps-lab";
 
-export default function PersonalDpsPage() { return <PersonalDpsLab />; }
+export default function PersonalDpsPage() {
+  return <UniversalPersonalDpsLab />;
+}
