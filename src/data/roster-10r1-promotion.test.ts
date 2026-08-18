@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { generatedCommunityEchoPresets10R1 } from "@/generated/community-echo-presets-10r1";
 import { presets, resonators, weapons } from "./catalog";
 import { excludedRosterResonatorIds, roster10R1 } from "./roster-10r1";
 
@@ -98,6 +99,20 @@ describe("10R1 functional Character Box promotion", () => {
       expect(preset?.mainEchoId).toBeUndefined();
       expect(preset?.notes.join(" ")).toMatch(/non résolu/i);
       expect(preset?.source.kind).toBe("verified-game-data");
+    }
+  });
+
+  it("attaches Echo loadouts only to community candidates promoted as verified", () => {
+    for (const [resonatorId, community] of Object.entries(
+      generatedCommunityEchoPresets10R1,
+    )) {
+      const preset = presets.find((entry) => entry.resonatorId === resonatorId);
+      expect(preset, resonatorId).toBeDefined();
+      if (community.promotionStatus === "verified") {
+        expect(preset?.echoLoadout, resonatorId).toEqual(community.echoLoadout);
+      } else {
+        expect(preset?.echoLoadout, resonatorId).toBeUndefined();
+      }
     }
   });
 });
