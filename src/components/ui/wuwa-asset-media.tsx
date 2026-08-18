@@ -4,6 +4,12 @@ import styles from "./wuwa-asset-media.module.css";
 
 const localAssetPattern = /^\/assets\/wuwa\/objects\/[a-f0-9]{64}\.(?:png|jpg|webp)$/;
 
+export const WUWA_RESONATOR_DISPLAY_ROLES = [
+  "detail-formationrolecard",
+  "detail-roleportrait",
+  "detail-roleheadiconlarge",
+] as const;
+
 export type WuwaAssetMediaRole =
   | "portrait"
   | "artwork"
