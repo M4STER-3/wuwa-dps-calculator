@@ -14,4 +14,10 @@ describe("promoted Resonator UI portraits", () => {
       });
     }
   });
+
+  it("never assigns promoted portrait routes to technical fixtures", () => {
+    for (const resonator of resonators.filter((entry) => !isPromoted(entry))) {
+      expect(resonator.portrait).toBeUndefined();
+    }
+  });
 });
