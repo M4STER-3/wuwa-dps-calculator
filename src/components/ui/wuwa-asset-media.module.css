@@ -41,27 +41,43 @@
   object-position: center 12%;
 }
 
-.artwork {
-  aspect-ratio: 16 / 7;
+.artwork,
+.hero {
   border-radius: var(--v4-radius-lg);
   background:
     radial-gradient(circle at 74% 45%, rgba(53, 102, 232, 0.1), transparent 34%),
     linear-gradient(115deg, #ffffff 0%, #f7f9fe 52%, #eef4ff 100%);
 }
 
-.artwork .image {
+.artwork {
+  aspect-ratio: 16 / 7;
+}
+
+/*
+ * Prominent Resonator heroes use a taller 3:2 frame instead of scaling the
+ * bitmap with CSS transforms. At equal width this is ~1.52x the height of the
+ * 16:7 artwork frame, so character-specific high-resolution portraits render
+ * substantially larger while preserving normal browser rasterization.
+ */
+.hero {
+  aspect-ratio: 3 / 2;
+}
+
+.artwork .image,
+.hero .image {
   object-fit: contain;
   object-position: center center;
 }
 
 /*
- * Hero artwork is always framed inside the actual component bounds. Keeping
- * the stage at inset: 0 prevents transparent character artwork from being
- * enlarged beyond the box and clipped near an edge. This is intentionally a
- * single generic rule for every current and future Resonator hero asset.
+ * Character artwork stays inside the real component bounds. The image itself
+ * is centered by object-position; no per-character translate/scale patch is
+ * needed for current or future Resonators.
  */
 .artwork[data-asset-source-role="detail-roleportrait"] .imageStage,
-.artwork[data-asset-source-role="detail-formationrolecard"] .imageStage {
+.artwork[data-asset-source-role="detail-formationrolecard"] .imageStage,
+.hero[data-asset-source-role="detail-roleportrait"] .imageStage,
+.hero[data-asset-source-role="detail-formationrolecard"] .imageStage {
   inset: 0;
 }
 
@@ -69,11 +85,13 @@
  * The 256×256 head icon is a last-resort Resonator fallback. Do not magnify it
  * to hero size; keep it centered at approximately 2× raster density instead.
  */
-.artwork[data-asset-source-role="detail-roleheadiconlarge"] .imageStage {
+.artwork[data-asset-source-role="detail-roleheadiconlarge"] .imageStage,
+.hero[data-asset-source-role="detail-roleheadiconlarge"] .imageStage {
   inset: max(12%, calc((100% - 128px) / 2));
 }
 
-.artwork[data-asset-source-role="detail-roleheadiconlarge"] .image {
+.artwork[data-asset-source-role="detail-roleheadiconlarge"] .image,
+.hero[data-asset-source-role="detail-roleheadiconlarge"] .image {
   object-position: center;
 }
 
