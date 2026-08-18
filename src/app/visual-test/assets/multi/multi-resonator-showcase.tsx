@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { V4Badge, V4Panel, V4SectionHeader, V4Skeleton } from "@/components/ui/v4-ui";
 import {
-  WUWA_RESONATOR_DISPLAY_ROLES,
+  WUWA_RESONATOR_CARD_ROLES,
+  WUWA_RESONATOR_HERO_ROLES,
   WuwaAssetMedia,
 } from "@/components/ui/wuwa-asset-media";
 import {
@@ -38,18 +39,20 @@ function evenlySample(entries: readonly WuwaUiAssetEntryV1[], count: number) {
   return selected;
 }
 
-function selectedRole(entry: WuwaUiAssetEntryV1) {
-  return WUWA_RESONATOR_DISPLAY_ROLES.find((role) =>
-    entry.assets.some((asset) => asset.role === role),
-  );
+function selectedRole(entry: WuwaUiAssetEntryV1, preferredRoles: readonly string[]) {
+  return preferredRoles.find((role) => entry.assets.some((asset) => asset.role === role));
 }
 
-function assetPath(projection: WuwaUiAssetProjectionV1, entry: WuwaUiAssetEntryV1) {
+function assetPath(
+  projection: WuwaUiAssetProjectionV1,
+  entry: WuwaUiAssetEntryV1,
+  preferredRoles: readonly string[],
+) {
   return findWuwaUiAssetPathV1(
     projection,
     entry.category,
     entry.id,
-    WUWA_RESONATOR_DISPLAY_ROLES,
+    preferredRoles,
   );
 }
 
@@ -102,14 +105,17 @@ export function MultiResonatorShowcase() {
     const characters = characterEntries(projection);
     const portraits = evenlySample(characters, 12);
     const heroes = evenlySample(characters, 4);
-    const counts = new Map<string, number>();
+    const cardCounts = new Map<string, number>();
+    const heroCounts = new Map<string, number>();
 
     for (const entry of characters) {
-      const role = selectedRole(entry) ?? "fallback absent";
-      counts.set(role, (counts.get(role) ?? 0) + 1);
+      const cardRole = selectedRole(entry, WUWA_RESONATOR_CARD_ROLES) ?? "fallback absent";
+      const heroRole = selectedRole(entry, WUWA_RESONATOR_HERO_ROLES) ?? "fallback absent";
+      cardCounts.set(cardRole, (cardCounts.get(cardRole) ?? 0) + 1);
+      heroCounts.set(heroRole, (heroCounts.get(heroRole) ?? 0) + 1);
     }
 
-    return { characters, portraits, heroes, counts };
+    return { characters, portraits, heroes, cardCounts, heroCounts };
   }, [projection]);
 
   if (error) {
@@ -127,21 +133,23 @@ export function MultiResonatorShowcase() {
       <V4Panel>
         <V4SectionHeader
           eyebrow="Couverture globale"
-          title="Une seule règle pour toute la liste"
-          description="Les compteurs ci-dessous vérifient le rôle visuel retenu pour chaque Resonator mappé, pas seulement pour les exemples affichés."
+          title="Deux règles selon le contexte"
+          description="Les cartes gardent le rôle de formation validé, tandis que les grands visuels privilégient un vrai artwork de personnage. Les deux règles sont vérifiées sur toute la projection."
           action={<V4Badge tone="success">{validation.characters.length} vérifiés</V4Badge>}
         />
         <div className={styles.summaryGrid}>
-          {WUWA_RESONATOR_DISPLAY_ROLES.map((role) => (
-            <div key={role} className={styles.summaryCard}>
-              <span className={styles.summaryValue}>{validation.counts.get(role) ?? 0}</span>
-              <span className={styles.summaryLabel}>{role}</span>
+          {WUWA_RESONATOR_CARD_ROLES.map((role) => (
+            <div key={`card-${role}`} className={styles.summaryCard}>
+              <span className={styles.summaryValue}>{validation.cardCounts.get(role) ?? 0}</span>
+              <span className={styles.summaryLabel}>carte · {role}</span>
             </div>
           ))}
-          <div className={styles.summaryCard}>
-            <span className={styles.summaryValue}>{validation.counts.get("fallback absent") ?? 0}</span>
-            <span className={styles.summaryLabel}>sans rôle compatible</span>
-          </div>
+          {WUWA_RESONATOR_HERO_ROLES.slice(0, 2).map((role) => (
+            <div key={`hero-${role}`} className={styles.summaryCard}>
+              <span className={styles.summaryValue}>{validation.heroCounts.get(role) ?? 0}</span>
+              <span className={styles.summaryLabel}>hero · {role}</span>
+            </div>
+          ))}
         </div>
       </V4Panel>
 
@@ -149,16 +157,16 @@ export function MultiResonatorShowcase() {
         <V4SectionHeader
           eyebrow="Échantillon réparti"
           title="12 portraits dans toute la liste"
-          description="L’échantillon est pris à intervalles réguliers dans les IDs mappés afin de vérifier la même priorité d’assets sur des personnages éloignés dans la projection."
+          description="Les portraits conservent exactement la règle déjà validée : formation card en priorité, puis fallbacks sûrs."
           action={<V4Badge tone="accent">Portraits</V4Badge>}
         />
         <div className={styles.portraitGrid}>
           {validation.portraits.map((entry) => {
-            const role = selectedRole(entry);
+            const role = selectedRole(entry, WUWA_RESONATOR_CARD_ROLES);
             return (
               <article key={`portrait-${entry.id}`} className={styles.portraitCard}>
                 <WuwaAssetMedia
-                  src={assetPath(projection, entry)}
+                  src={assetPath(projection, entry, WUWA_RESONATOR_CARD_ROLES)}
                   alt={`Portrait du Resonator ${entry.id}`}
                   role="portrait"
                   sourceRole={role}
@@ -178,17 +186,17 @@ export function MultiResonatorShowcase() {
       <V4Panel>
         <V4SectionHeader
           eyebrow="Grand format"
-          title="4 grands visuels avec le même cadrage"
-          description="Aucun réglage par personnage : ces quatre visuels utilisent le même composant, la même priorité de source et le même centrage générique."
+          title="4 vrais grands visuels avec le même cadrage"
+          description="Ces quatre tests privilégient detail-rolestand, puis detail-roleportrait. Les assets de carte ne servent plus que de fallback si aucun artwork grand format n’existe."
           action={<V4Badge tone="accent">Hero assets</V4Badge>}
         />
         <div className={styles.heroGrid}>
           {validation.heroes.map((entry) => {
-            const role = selectedRole(entry);
+            const role = selectedRole(entry, WUWA_RESONATOR_HERO_ROLES);
             return (
               <article key={`hero-${entry.id}`} className={styles.heroCard}>
                 <WuwaAssetMedia
-                  src={assetPath(projection, entry)}
+                  src={assetPath(projection, entry, WUWA_RESONATOR_HERO_ROLES)}
                   alt={`Grand visuel du Resonator ${entry.id}`}
                   role="artwork"
                   sourceRole={role}
