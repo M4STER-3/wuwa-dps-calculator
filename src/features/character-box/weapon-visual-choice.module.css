@@ -3,6 +3,11 @@
   gap: 10px;
 }
 
+.selector[data-compact="true"] {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
 .selectedSummary {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr) auto;
@@ -14,6 +19,14 @@
   background: linear-gradient(135deg, #fff 0%, var(--v4-accent-faint) 100%);
   padding: 9px 12px 9px 9px;
   box-shadow: var(--v4-shadow-xs);
+}
+
+.selector[data-compact="true"] .selectedSummary {
+  grid-template-columns: 62px minmax(0, 1fr) auto;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 7px 9px 7px 7px;
+  box-shadow: none;
 }
 
 .selectedCopy {
@@ -35,6 +48,10 @@
   white-space: nowrap;
 }
 
+.selector[data-compact="true"] .selectedCopy strong {
+  font-size: 0.8rem;
+}
+
 .selectedCopy > span:last-child {
   margin-top: 4px;
   color: var(--v4-text-muted);
@@ -49,7 +66,8 @@
   text-transform: uppercase;
 }
 
-.equippedBadge {
+.equippedBadge,
+.toggleButton {
   border: 1px solid color-mix(in srgb, var(--v4-accent) 25%, var(--v4-line));
   border-radius: 999px;
   background: #fff;
@@ -57,6 +75,29 @@
   color: var(--v4-accent-active);
   font-size: 0.61rem;
   font-weight: 850;
+}
+
+.toggleButton {
+  min-height: 34px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.toggleButton:hover {
+  border-color: color-mix(in srgb, var(--v4-accent) 46%, var(--v4-line));
+  background: var(--v4-accent-soft);
+}
+
+.cataloguePanel {
+  display: grid;
+  gap: 8px;
+}
+
+.selector[data-compact="true"] .cataloguePanel {
+  border: 1px solid var(--v4-line-soft);
+  border-radius: 12px;
+  background: color-mix(in srgb, #fff 80%, var(--v4-accent-faint));
+  padding: 9px;
 }
 
 .toolbar {
@@ -85,6 +126,10 @@
   font-size: 0.7rem;
   outline: none;
   transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.selector[data-compact="true"] .searchField input {
+  min-height: 36px;
 }
 
 .searchField input:focus {
@@ -146,6 +191,12 @@
   cursor: pointer;
 }
 
+.selector[data-compact="true"] .rarityFilters button {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 0.6rem;
+}
+
 .rarityFilters button[data-active="true"] {
   border-color: color-mix(in srgb, var(--v4-accent) 40%, var(--v4-line));
   background: var(--v4-accent-soft);
@@ -155,7 +206,8 @@
 .rarityFilters button:focus-visible,
 .clearSearch:focus-visible,
 .card:focus-visible,
-.noResults button:focus-visible {
+.noResults button:focus-visible,
+.toggleButton:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--v4-focus) 24%, transparent);
   outline-offset: 2px;
 }
@@ -182,10 +234,19 @@
   scrollbar-gutter: stable;
 }
 
+.selector[data-compact="true"] .scrollArea {
+  max-height: 238px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
   gap: 7px;
+}
+
+.selector[data-compact="true"] .grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px;
 }
 
 .card {
@@ -203,6 +264,14 @@
   text-align: left;
   cursor: pointer;
   transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.selector[data-compact="true"] .card {
+  grid-template-columns: 54px minmax(0, 1fr) 22px;
+  min-height: 64px;
+  gap: 7px;
+  border-radius: 10px;
+  padding: 5px;
 }
 
 .card:hover {
@@ -232,9 +301,19 @@
   height: 88px;
 }
 
+.selector[data-compact="true"] .media[data-size="summary"] {
+  width: 62px;
+  height: 62px;
+}
+
 .media[data-size="card"] {
   width: 68px;
   height: 68px;
+}
+
+.selector[data-compact="true"] .media[data-size="card"] {
+  width: 54px;
+  height: 54px;
 }
 
 .image {
@@ -354,28 +433,41 @@
     width: 76px;
     height: 76px;
   }
+
+  .selector[data-compact="true"] .selectedSummary {
+    grid-template-columns: 58px minmax(0, 1fr) auto;
+  }
+
+  .selector[data-compact="true"] .media[data-size="summary"] {
+    width: 58px;
+    height: 58px;
+  }
 }
 
 @media (max-width: 620px) {
-  .grid {
+  .grid,
+  .selector[data-compact="true"] .grid {
     grid-template-columns: 1fr;
   }
 
-  .scrollArea {
-    max-height: 46dvh;
+  .scrollArea,
+  .selector[data-compact="true"] .scrollArea {
+    max-height: 42dvh;
   }
 
-  .selectedSummary {
-    grid-template-columns: 70px minmax(0, 1fr);
+  .selectedSummary,
+  .selector[data-compact="true"] .selectedSummary {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
   }
 
-  .equippedBadge {
-    grid-column: 1 / -1;
-    justify-self: start;
+  .media[data-size="summary"],
+  .selector[data-compact="true"] .media[data-size="summary"] {
+    width: 56px;
+    height: 56px;
   }
 
-  .media[data-size="summary"] {
-    width: 70px;
-    height: 70px;
+  .toggleButton {
+    min-height: 32px;
+    padding: 5px 8px;
   }
 }
