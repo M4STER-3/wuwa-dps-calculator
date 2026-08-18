@@ -23,6 +23,12 @@ main [role="dialog"][aria-modal="true"] > div > header {
   z-index: 20;
 }
 
+@media (min-width: 1040px) {
+  main [role="dialog"][aria-modal="true"] {
+    inset: -58px 0 0 -216px !important;
+  }
+}
+
 @media (max-width: 520px) {
   main [role="dialog"][aria-modal="true"] {
     place-items: stretch !important;
