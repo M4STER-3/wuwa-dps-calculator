@@ -10,13 +10,13 @@ const PROMOTED_WEAPON_UI_ASSETS = {
     iconPath:
       "/assets/wuwa/objects/cb5948fae96eca7de41fa1fe1afced2f133024c060b75a47b37c4b055a96fd7c.webp",
   },
-  "thunderflare-dominion": { assetId: "21020046" },
-  "unflickering-valor": { assetId: "21010156" },
-  "lustrous-razor": { assetId: "21020016" },
-  "whispers-of-sirens": { assetId: "21050046" },
-  "the-last-dance": { assetId: "21030026" },
-  "defiers-thorn": { assetId: "21010206" },
-  "blazing-brilliance": { assetId: "21010036" },
+  "thunderflare-dominion": { assetId: "21010026" },
+  "unflickering-valor": { assetId: "21020026" },
+  "lustrous-razor": { assetId: "21010015" },
+  "whispers-of-sirens": { assetId: "21050056" },
+  "the-last-dance": { assetId: "21030016" },
+  "defiers-thorn": { assetId: "21020036" },
+  "blazing-brilliance": { assetId: "21020016" },
   kumokiri: {
     assetId: "21010056",
     iconPath:
