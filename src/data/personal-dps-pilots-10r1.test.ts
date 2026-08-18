@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { calculateActionDamage } from "@/domain/damage-engine";
 import { compareExternalDisplay } from "@/domain/external-benchmark";
 import type { FinalStats } from "@/domain/models";
+import { calculatePersonalDpsV1 } from "@/domain/personal-dps-engine";
 import { calculateUncategorizedDamageV1 } from "@/domain/uncategorized-damage";
 import { aemeathNakedStandardBenchmarks } from "./aemeath-external-benchmarks";
 import {
@@ -159,6 +160,25 @@ describe("10R1 universal personal-DPS pilot profiles", () => {
       if (result.status !== "supported") continue;
       expectDisplayedMatch(result.total, expected);
     }
+  });
+
+  it("aggregates the complete Calcharo DMx3 rotation including Shadowy Raid", () => {
+    const result = calculatePersonalDpsV1({
+      profile: calcharoPersonalDpsProfile10R1,
+      rotationId: "calcharo-prydwen-dmx3-v1",
+      finalStats: nakedStats({ hp: 10500, attack: 437, defense: 1185 }),
+      attackerLevel: 90,
+      target: target("electro"),
+    });
+    expect(result.status).toBe("supported");
+    expect(result.unsupportedSteps).toHaveLength(0);
+    expect(result.resolvedSteps.at(-1)?.actionId).toBe("calcharo-shadowy-raid");
+    expect(result.resolvedSteps.at(-1)?.result.effectiveDamageType).toBe(
+      "uncategorized",
+    );
+    expect(result.breakdown.byDamageType.uncategorized?.expected).toBeGreaterThan(0);
+    expect(result.durationSeconds).toBeNull();
+    expect(result.dps).toBeNull();
   });
 
   it("does not leak an arbitrary panel damage-type bonus into uncategorized damage", () => {
