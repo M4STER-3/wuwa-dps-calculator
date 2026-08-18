@@ -3,6 +3,21 @@
   "source": "ryanbenson/wuthering-waves-optimizer",
   "presets": [
     {
+      "resonatorId": "aemeath",
+      "name": "Standard CD Build",
+      "author": "lavasnake",
+      "sourceBlobSha": "bee680c2300dbddaccf93191206710fb05f1489d",
+      "promotionStatus": "verified",
+      "echoes": [
+        {"cost":4,"echo":"Sigillum","sonata":"TrailblazingStar","mainStat":"CritDMG","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["ResonanceLiberationDMGBonus",8.6]]},
+        {"cost":3,"echo":"Glommoth","sonata":"TrailblazingStar","mainStat":"Fusion","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["ResonanceLiberationDMGBonus",8.6]]},
+        {"cost":3,"echo":"Kronablight","sonata":"TrailblazingStar","mainStat":"Fusion","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["DEF",10.9],["HP",8.6]]},
+        {"cost":1,"echo":"GeospiderS4","sonata":"TrailblazingStar","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["DEF",10.9],["HP",8.6]]},
+        {"cost":1,"echo":"IceglintDancer","sonata":"TrailblazingStar","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["HP",8.6],["HP_FLAT",430],["DEF",10.9]]}
+      ],
+      "mainEcho": "Sigillum"
+    },
+    {
       "resonatorId": "augusta",
       "name": "WUWA LAB Balanced · Crown of Valor",
       "author": "WUWA LAB · community-guided",
@@ -109,6 +124,22 @@
       ]
     },
     {
+      "resonatorId": "chisa",
+      "name": "WUWA LAB Balanced · Rejuvenating Glow",
+      "author": "WUWA LAB · WutheringTools/Prydwen-guided",
+      "sourceBlobSha": "eec636f68ab1d0af52a7635a18f3ba633aed0654",
+      "promotionStatus": "curated-balanced",
+      "promotionNote": "WutheringTools' CR Rejuvenating Glow preset is retained and its impossible HP_FLAT=50 rolls are replaced by the legal reviewed HP_FLAT=320 roll. Prydwen currently recommends Rejuvenating Glow + Fallacy of No Return as Chisa's best overall support set.",
+      "echoes": [
+        {"cost":4,"echo":"FallacyOfNoReturn","sonata":"RejuvenatingGlow","mainStat":"CritRate","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["ResonanceLiberationDMGBonus",8.6]]},
+        {"cost":3,"echo":"StonewallBracer","sonata":"RejuvenatingGlow","mainStat":"Havoc","substats":[["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50],["ResonanceLiberationDMGBonus",8.6]]},
+        {"cost":3,"echo":"RocksteadyGuardian","sonata":"RejuvenatingGlow","mainStat":"Havoc","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["HP_FLAT",320],["DEF",10.9]]},
+        {"cost":1,"echo":"TickTack","sonata":"RejuvenatingGlow","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["DEF_FLAT",50],["HP_FLAT",320]]},
+        {"cost":1,"echo":"VanguardJunrock","sonata":"RejuvenatingGlow","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["EnergyRegen",9.2],["HP_FLAT",320],["DEF",10.9]]}
+      ],
+      "mainEcho": "FallacyOfNoReturn"
+    },
+    {
       "resonatorId": "ciaccona",
       "name": "WUWA LAB Balanced · Gusts of Welkin",
       "author": "WUWA LAB · community-guided",
@@ -123,6 +154,22 @@
         {"cost":1,"echo":"DevoteesFlesh","sonata":"GustsofWelkin","mainStat":"ATK","substats":[["CritRate",8.1],["CritDMG",16.2],["DEF_FLAT",50],["HP",8.6],["HP_FLAT",320]]}
       ],
       "mainEcho": "NightmareKelpie"
+    },
+    {
+      "resonatorId": "verina",
+      "name": "WUWA LAB Balanced · Rejuvenating Glow",
+      "author": "WUWA LAB · Prydwen-guided",
+      "sourceBlobSha": "3c822881679e4e16a21c1778ad2718b63419a980",
+      "promotionStatus": "curated-balanced",
+      "promotionNote": "WutheringTools has no Echo preset for Verina at the pinned revision. This curated 43311 preset follows Prydwen's current Rejuvenating Glow + Fallacy of No Return recommendation and prioritizes Energy Regen, Crit and ATK with legal reviewed rolls only.",
+      "echoes": [
+        {"cost":4,"echo":"FallacyOfNoReturn","sonata":"RejuvenatingGlow","mainStat":"CritRate","substats":[["EnergyRegen",9.2],["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50]]},
+        {"cost":3,"echo":"StonewallBracer","sonata":"RejuvenatingGlow","mainStat":"EnergyRegen","substats":[["EnergyRegen",9.2],["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["ATK_FLAT",50]]},
+        {"cost":3,"echo":"RocksteadyGuardian","sonata":"RejuvenatingGlow","mainStat":"EnergyRegen","substats":[["EnergyRegen",9.2],["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["HP_FLAT",320]]},
+        {"cost":1,"echo":"TickTack","sonata":"RejuvenatingGlow","mainStat":"ATK","substats":[["EnergyRegen",9.2],["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["DEF_FLAT",50]]},
+        {"cost":1,"echo":"VanguardJunrock","sonata":"RejuvenatingGlow","mainStat":"ATK","substats":[["EnergyRegen",9.2],["CritRate",8.1],["CritDMG",16.2],["ATK",8.6],["DEF",10.9]]}
+      ],
+      "mainEcho": "FallacyOfNoReturn"
     }
   ]
 }
