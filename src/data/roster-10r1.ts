@@ -1,4 +1,5 @@
 import type { Element, WeaponType } from "@/domain/models";
+import registry from "./roster-promotion-registry.json";
 
 export interface RosterPromotionEntry {
   readonly id: string;
@@ -14,148 +15,67 @@ export interface RosterPromotionEntry {
   };
 }
 
+const elementMap: Readonly<Record<string, Element>> = {
+  Aero: "aero",
+  Glacio: "glacio",
+  Electro: "electro",
+  Fusion: "fusion",
+  Havoc: "havoc",
+  Spectro: "spectro",
+};
+
+const weaponTypeMap: Readonly<Record<string, WeaponType>> = {
+  Broadblade: "broadblade",
+  Gauntlets: "gauntlets",
+  Pistols: "pistols",
+  Rectifier: "rectifier",
+  Sword: "sword",
+};
+
+function requiredElement(value: string): Element {
+  const mapped = elementMap[value];
+  if (!mapped) throw new Error(`Unsupported roster registry element: ${value}`);
+  return mapped;
+}
+
+function requiredWeaponType(value: string): WeaponType {
+  const mapped = weaponTypeMap[value];
+  if (!mapped) throw new Error(`Unsupported roster registry weapon type: ${value}`);
+  return mapped;
+}
+
 /**
- * First verified roster-expansion batch.
- *
- * Identity, weapon type and signature-weapon IDs are cross-checked against the
- * promoted WUWA GameDatabase and the current WutheringTools character metadata.
- * Heavy combat data is deliberately not duplicated here: GameDatabase remains
- * the authoritative source for level curves, skills and sequence descriptions.
+ * Typed Character Box view of the universal promotion registry.
+ * Future roster batches should add reviewed data to roster-promotion-registry.json
+ * instead of duplicating IDs across UI, baseline and media generators.
  */
-export const roster10R1 = [
-  {
-    id: "aemeath",
-    name: "Aemeath",
-    sourceItemId: "1210",
-    rarity: 5,
-    element: "fusion",
-    weaponType: "sword",
-    signatureWeapon: {
-      id: "everbright-polestar",
-      name: "Everbright Polestar",
-      sourceItemId: "21020076",
-    },
+export const roster10R1: readonly RosterPromotionEntry[] = registry.batches["10R1"].map(
+  (entry): RosterPromotionEntry => {
+    if (entry.rarity !== 5) {
+      throw new Error(`Unsupported promoted rarity for ${entry.id}: ${entry.rarity}`);
+    }
+    return {
+      id: entry.id,
+      name: entry.name,
+      sourceItemId: entry.wuwaId,
+      rarity: 5,
+      element: requiredElement(entry.element),
+      weaponType: requiredWeaponType(entry.weaponType),
+      signatureWeapon: {
+        id: entry.signatureWeapon.id,
+        name: entry.signatureWeapon.name,
+        sourceItemId: entry.signatureWeapon.wuwaId,
+      },
+    };
   },
-  {
-    id: "augusta",
-    name: "Augusta",
-    sourceItemId: "1306",
-    rarity: 5,
-    element: "electro",
-    weaponType: "broadblade",
-    signatureWeapon: {
-      id: "thunderflare-dominion",
-      name: "Thunderflare Dominion",
-      sourceItemId: "21010046",
-    },
-  },
-  {
-    id: "brant",
-    name: "Brant",
-    sourceItemId: "1206",
-    rarity: 5,
-    element: "fusion",
-    weaponType: "sword",
-    signatureWeapon: {
-      id: "unflickering-valor",
-      name: "Unflickering Valor",
-      sourceItemId: "21020036",
-    },
-  },
-  {
-    id: "calcharo",
-    name: "Calcharo",
-    sourceItemId: "1301",
-    rarity: 5,
-    element: "electro",
-    weaponType: "broadblade",
-    signatureWeapon: {
-      id: "lustrous-razor",
-      name: "Lustrous Razor",
-      sourceItemId: "21010015",
-    },
-  },
-  {
-    id: "cantarella",
-    name: "Cantarella",
-    sourceItemId: "1607",
-    rarity: 5,
-    element: "havoc",
-    weaponType: "rectifier",
-    signatureWeapon: {
-      id: "whispers-of-sirens",
-      name: "Whispers of Sirens",
-      sourceItemId: "21050056",
-    },
-  },
-  {
-    id: "carlotta",
-    name: "Carlotta",
-    sourceItemId: "1107",
-    rarity: 5,
-    element: "glacio",
-    weaponType: "pistols",
-    signatureWeapon: {
-      id: "the-last-dance",
-      name: "The Last Dance",
-      sourceItemId: "21030016",
-    },
-  },
-  {
-    id: "cartethyia",
-    name: "Cartethyia",
-    sourceItemId: "1409",
-    rarity: 5,
-    element: "aero",
-    weaponType: "sword",
-    signatureWeapon: {
-      id: "defiers-thorn",
-      name: "Defier's Thorn",
-      sourceItemId: "21020056",
-    },
-  },
-  {
-    id: "changli",
-    name: "Changli",
-    sourceItemId: "1205",
-    rarity: 5,
-    element: "fusion",
-    weaponType: "sword",
-    signatureWeapon: {
-      id: "blazing-brilliance",
-      name: "Blazing Brilliance",
-      sourceItemId: "21020016",
-    },
-  },
-  {
-    id: "chisa",
-    name: "Chisa",
-    sourceItemId: "1508",
-    rarity: 5,
-    element: "havoc",
-    weaponType: "broadblade",
-    signatureWeapon: {
-      id: "kumokiri",
-      name: "Kumokiri",
-      sourceItemId: "21010056",
-    },
-  },
-  {
-    id: "ciaccona",
-    name: "Ciaccona",
-    sourceItemId: "1407",
-    rarity: 5,
-    element: "aero",
-    weaponType: "pistols",
-    signatureWeapon: {
-      id: "woodland-aria",
-      name: "Woodland Aria",
-      sourceItemId: "21030026",
-    },
-  },
-] as const satisfies readonly RosterPromotionEntry[];
+);
 
 /** Camellya is intentionally excluded from every roster-promotion batch. */
-export const excludedRosterResonatorIds = ["camellya"] as const;
+export const excludedRosterResonatorIds: readonly string[] =
+  registry.excludedResonatorIds;
+
+if (!excludedRosterResonatorIds.includes("camellya")) {
+  throw new Error("Camellya must remain explicitly excluded from roster promotion");
+}
 
 export const roster10R1Ids = roster10R1.map((entry) => entry.id);
