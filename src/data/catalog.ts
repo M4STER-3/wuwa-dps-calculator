@@ -14,6 +14,7 @@ import type {
 } from "@/domain/models";
 import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa";
 import { fallacyOfNoReturn, rejuvenatingGlow, variation, verina, verinaPreset } from "./verina";
+import { requireResonatorUiPortraitPath } from "@/game-data/resonator-ui-asset-ids";
 
 const fixtureSource = {
   kind: "technical-fixture" as const,
@@ -30,10 +31,18 @@ const skillNames = {
   introSkill: "Intro Skill",
 } as const;
 
+const withLocalUiPortrait = (resonator: Resonator): Resonator => ({
+  ...resonator,
+  portrait: {
+    src: requireResonatorUiPortraitPath(resonator.id),
+    alt: `Portrait de ${resonator.name}`,
+  },
+});
+
+const promotedResonators = [aemeath, chisa, verina].map(withLocalUiPortrait);
+
 export const resonators: readonly Resonator[] = [
-  aemeath,
-  chisa,
-  verina,
+  ...promotedResonators,
   {
     id: "fixture-fusion-pistols",
     name: "Resonator démo · Fusion",

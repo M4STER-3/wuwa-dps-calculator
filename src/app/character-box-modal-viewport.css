@@ -1,0 +1,38 @@
+/* Character Box modal viewport guard.
+ * Keeps the dialog independent from the persistent V4 shell on tablet/mobile.
+ */
+main [role="dialog"][aria-modal="true"] {
+  z-index: 1000 !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+  padding: clamp(12px, 2vw, 24px) !important;
+}
+
+main [role="dialog"][aria-modal="true"] > div {
+  width: min(100%, 1160px);
+  max-height: calc(100dvh - 32px);
+  margin: 0 !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+}
+
+main [role="dialog"][aria-modal="true"] > div > header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+@media (max-width: 520px) {
+  main [role="dialog"][aria-modal="true"] {
+    place-items: stretch !important;
+    padding: 0 !important;
+  }
+
+  main [role="dialog"][aria-modal="true"] > div {
+    width: 100%;
+    max-height: 100dvh;
+    min-height: 100dvh;
+    border-radius: 0 !important;
+  }
+}

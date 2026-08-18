@@ -71,6 +71,12 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: {
+    // WUWA LAB serves verified same-origin content-addressed assets directly.
+    // Avoid the Next image optimizer layer so Cloudflare previews use the exact
+    // local bytes already validated by the asset pipeline.
+    unoptimized: true,
+  },
   async headers() {
     return [
       {
