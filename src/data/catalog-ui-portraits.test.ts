@@ -39,6 +39,21 @@ describe("promoted Resonator UI portraits", () => {
     }
   });
 
+  it("requires a verified local role portrait for every promoted Character Box hero", () => {
+    for (const resonator of resonators.filter(isPromoted)) {
+      const assetId = requireResonatorUiAssetId(resonator.id);
+      const heroPath =
+        manifest.entities.characters[assetId]?.assets["detail-roleportrait"]?.path;
+
+      expect(heroPath).toMatch(
+        /^\/assets\/wuwa\/objects\/[a-f0-9]{64}\.(?:png|jpg|webp)$/,
+      );
+      expect(
+        existsSync(path.join(process.cwd(), "public", heroPath.slice(1))),
+      ).toBe(true);
+    }
+  });
+
   it("never assigns promoted portraits to technical fixtures", () => {
     for (const resonator of resonators.filter((entry) => !isPromoted(entry))) {
       expect(resonator.portrait).toBeUndefined();

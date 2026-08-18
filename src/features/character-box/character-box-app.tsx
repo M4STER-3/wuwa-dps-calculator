@@ -28,12 +28,14 @@ import {
   type Sequence,
   type UserBuild,
 } from "@/domain/models";
+import { getResonatorUiAssetId } from "@/game-data/resonator-ui-asset-ids";
 import {
   createBrowserCharacterBoxStorage,
   getBrowserCharacterBoxSnapshot,
   subscribeToBrowserCharacterBox,
 } from "@/storage/character-box-storage";
 
+import { ResonatorHeroArtwork } from "./resonator-hero-artwork";
 import styles from "./character-box-v4.module.css";
 
 const elementLabels: Record<Element, string> = {
@@ -464,6 +466,7 @@ function BuildEditor({
   onReset: () => void;
 }) {
   const resonator = resonators.find((item) => item.id === build.resonatorId)!;
+  const uiAssetId = getResonatorUiAssetId(resonator.id);
   const preset = presets.find((item) => item.id === build.sourcePresetId);
   const compatibleWeapons = weapons.filter(
     (weapon) => weapon.type === resonator.weaponType && isRealData(weapon),
@@ -518,6 +521,9 @@ function BuildEditor({
     >
       <div className={styles.editorLayout}>
         <aside className={styles.editorRail} data-element={resonator.element}>
+          {uiAssetId ? (
+            <ResonatorHeroArtwork assetId={uiAssetId} name={resonator.name} />
+          ) : null}
           <div className={styles.editorIdentity}>
             <ResonatorPortrait resonator={resonator} size="card" />
             <div>
