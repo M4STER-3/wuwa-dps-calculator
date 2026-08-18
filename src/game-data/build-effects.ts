@@ -6,6 +6,14 @@ import type {
 } from "@/domain/effect-models";
 import type { Element, FinalStats } from "@/domain/models";
 
+export const permanentBuildSourceKeyV1 = {
+  characterPermanentNodes: (characterId: string) =>
+    `character-permanent-nodes:${characterId}`,
+  weaponPassive: (weaponId: string) => `weapon-passive:${weaponId}`,
+  sonataBonus: (sonataSetId: string, pieces: number) =>
+    `sonata-bonus:${sonataSetId}:${pieces}`,
+} as const;
+
 export type PermanentBuildStatTargetV1 =
   | "hp"
   | "attack"
