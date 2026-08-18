@@ -215,7 +215,7 @@ export function AssetShowcase() {
               projection={projection}
               entry={entry}
               mediaRole="portrait"
-              preferredRoles={["detail-roleportrait", "detail-roleheadiconlarge"]}
+              preferredRoles={["detail-formationrolecard", "detail-roleportrait", "detail-roleheadiconlarge"]}
             />
           ))}
         </div>
