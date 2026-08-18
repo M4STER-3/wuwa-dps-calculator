@@ -4,13 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import {
-  mainEchoes,
-  presets,
-  resonators,
-  sonatas,
-  weapons,
-} from "@/data/catalog";
+import { presets, resonators, weapons } from "@/data/catalog";
 import {
   addBuild,
   createBuildFromPreset,
@@ -24,7 +18,6 @@ import {
   skillTypes,
   type CharacterBox,
   type Element,
-  type FinalStats,
   type Sequence,
   type UserBuild,
 } from "@/domain/models";
@@ -35,6 +28,7 @@ import {
   subscribeToBrowserCharacterBox,
 } from "@/storage/character-box-storage";
 
+import { EchoLoadoutChoice } from "./echo-loadout-choice";
 import { ResonatorHeroArtwork } from "./resonator-hero-artwork";
 import { WeaponVisualChoice } from "./weapon-visual-choice";
 import styles from "./character-box-v4.module.css";
@@ -47,6 +41,7 @@ const elementLabels: Record<Element, string> = {
   havoc: "Havoc",
   spectro: "Spectro",
 };
+
 const skillLabels = {
   basicAttack: "Basic Attack",
   resonanceSkill: "Resonance Skill",
@@ -54,14 +49,7 @@ const skillLabels = {
   resonanceLiberation: "Resonance Liberation",
   introSkill: "Intro Skill",
 };
-const damageLabels: Record<keyof FinalStats["damageTypeBonus"], string> = {
-  basicAttack: "Basic Attack DMG",
-  heavyAttack: "Heavy Attack DMG",
-  resonanceSkill: "Resonance Skill DMG",
-  resonanceLiberation: "Resonance Liberation DMG",
-  introSkill: "Intro Skill DMG",
-  echoSkill: "Echo Skill DMG",
-};
+
 const serverBox = emptyCharacterBox();
 const isRealData = (entry: { source: { kind: string } }) =>
   entry.source.kind !== "technical-fixture";
@@ -271,8 +259,8 @@ export function CharacterBoxApp() {
                         <strong className={styles.cardStatValue}>{build.finalStats.critRate}%</strong>
                       </span>
                       <span className={styles.cardStat}>
-                        <span className={styles.cardStatLabel}>Crit DMG</span>
-                        <strong className={styles.cardStatValue}>{build.finalStats.critDamage}%</strong>
+                        <span className={styles.cardStatLabel}>Echoes</span>
+                        <strong className={styles.cardStatValue}>{build.echoLoadout?.echoes.length ?? 0}/5</strong>
                       </span>
                     </div>
                     <div className={styles.cardFooter}>
@@ -468,12 +456,9 @@ function BuildEditor({
 }) {
   const resonator = resonators.find((item) => item.id === build.resonatorId)!;
   const uiAssetId = getResonatorUiAssetId(resonator.id);
-  const preset = presets.find((item) => item.id === build.sourcePresetId);
   const compatibleWeapons = weapons.filter(
     (weapon) => weapon.type === resonator.weaponType && isRealData(weapon),
   );
-  const availableSonatas = sonatas.filter(isRealData);
-  const availableMainEchoes = mainEchoes.filter(isRealData);
   const numberField = (
     value: number,
     setValue: (value: number) => void,
@@ -507,11 +492,8 @@ function BuildEditor({
       {control}
     </label>
   );
-  const patchStats = (patch: Partial<FinalStats>) =>
-    onChange({ ...build, finalStats: { ...build.finalStats, ...patch } });
   const equippedWeapon = weapons.find((item) => item.id === build.weapon.weaponId);
-  const selectedSonata = sonatas.find((item) => item.id === build.sonataId);
-  const selectedEcho = mainEchoes.find((item) => item.id === build.mainEchoId);
+  const echoCount = build.echoLoadout?.echoes.length ?? 0;
 
   return (
     <ModalShell
@@ -538,12 +520,15 @@ function BuildEditor({
             <div className={styles.editorFact}><span>Niveau</span><strong>{build.characterLevel}</strong></div>
             <div className={styles.editorFact}><span>Chaîne</span><strong>S{build.sequence}</strong></div>
             <div className={styles.editorFact}><span>Arme</span><strong>{equippedWeapon?.name ?? "—"}</strong></div>
-            <div className={styles.editorFact}><span>Sonata</span><strong>{selectedSonata?.name ?? "—"}</strong></div>
-            <div className={styles.editorFact}><span>Main Echo</span><strong>{selectedEcho?.name ?? "—"}</strong></div>
+            <div className={styles.editorFact}><span>Echoes</span><strong>{echoCount}/5</strong></div>
+            <div className={styles.editorFact}>
+              <span>Main Echo</span>
+              <strong>{build.echoLoadout?.mainEchoId ? "Configuré" : "—"}</strong>
+            </div>
           </div>
           <div className={styles.ruleNotice}>
             <strong>Règle anti-double comptage.</strong><br />
-            Les statistiques permanentes restent saisies dans <code>UserBuild.finalStats</code> et ne sont jamais reconstruites ici depuis l’arme, le Sonata ou le Main Echo.
+            L’arme et le loadout Echo sont des entrées structurées du Build Resolver. Les moteurs de combat continuent à consommer uniquement <code>UserBuild.finalStats</code>. Les stats finales seront écrites automatiquement lorsque toutes les sources permanentes seront résolues.
           </div>
         </aside>
 
@@ -633,95 +618,12 @@ function BuildEditor({
               </div>
             </EditorSection>
 
-            <EditorSection title="Sonata & Main Echo" hint="Références du build">
-              <div className={styles.controlGrid2}>
-                {field(
-                  "Sonata",
-                  <CatalogChoice
-                    value={build.sonataId}
-                    options={availableSonatas}
-                    onChange={(sonataId) => onChange({ ...build, sonataId })}
-                  />,
-                )}
-                {field(
-                  "Main Echo",
-                  <CatalogChoice
-                    value={build.mainEchoId}
-                    options={availableMainEchoes}
-                    onChange={(mainEchoId) => onChange({ ...build, mainEchoId })}
-                  />,
-                )}
-              </div>
-              {preset && (
-                <p className={styles.presetCopy}>
-                  Preset de départ : {sonatas.find((item) => item.id === preset.sonataId)?.name ?? "—"} · {mainEchoes.find((item) => item.id === preset.mainEchoId)?.name ?? "—"}
-                </p>
-              )}
-            </EditorSection>
-
-            <EditorSection title="Statistiques finales" hint="Source permanente des moteurs">
-              <p className={styles.sectionCopy}>
-                Valeurs permanentes affichées sur le panneau du personnage. Les pourcentages sont saisis en points (ex. 65 pour 65 %).
-              </p>
-              <div className={styles.controlGrid4}>
-                {(
-                  [
-                    ["HP", "hp"],
-                    ["ATK", "attack"],
-                    ["DEF", "defense"],
-                    ["Crit Rate (%)", "critRate"],
-                    ["Crit DMG (%)", "critDamage"],
-                    ["Energy Regen (%)", "energyRegen"],
-                    ["Healing Bonus (%)", "healingBonus"],
-                    ["Tune Break Boost (%)", "tuneBreakBoost"],
-                  ] as const
-                ).map(([label, key]) =>
-                  field(
-                    label,
-                    numberField(build.finalStats[key], (value) => patchStats({ [key]: value })),
-                  ),
-                )}
-              </div>
-            </EditorSection>
-
-            <EditorSection title="Bonus élémentaires" hint="Points de pourcentage">
-              <div className={styles.controlGrid6}>
-                {elements.map((element) =>
-                  field(
-                    `${elementLabels[element]} DMG (%)`,
-                    numberField(
-                      build.finalStats.elementalDamageBonus[element],
-                      (value) =>
-                        patchStats({
-                          elementalDamageBonus: {
-                            ...build.finalStats.elementalDamageBonus,
-                            [element]: value,
-                          },
-                        }),
-                    ),
-                  ),
-                )}
-              </div>
-            </EditorSection>
-
-            <EditorSection title="Bonus par catégorie" hint="Points de pourcentage">
-              <div className={styles.controlGrid3}>
-                {(
-                  Object.keys(damageLabels) as Array<keyof FinalStats["damageTypeBonus"]>
-                ).map((key) =>
-                  field(
-                    `${damageLabels[key]} (%)`,
-                    numberField(build.finalStats.damageTypeBonus[key], (value) =>
-                      patchStats({
-                        damageTypeBonus: {
-                          ...build.finalStats.damageTypeBonus,
-                          [key]: value,
-                        },
-                      }),
-                    ),
-                  ),
-                )}
-              </div>
+            <EditorSection title="Echoes" hint="5 slots · coût 12 · resolver exact">
+              <EchoLoadoutChoice
+                key={build.id}
+                value={build.echoLoadout}
+                onChange={(echoLoadout) => onChange({ ...build, echoLoadout })}
+              />
             </EditorSection>
 
             <div className={styles.editorActions}>
@@ -741,38 +643,6 @@ function BuildEditor({
         </div>
       </div>
     </ModalShell>
-  );
-}
-
-function CatalogChoice({
-  value,
-  options,
-  onChange,
-}: {
-  value?: string;
-  options: readonly { id: string; name: string }[];
-  onChange: (id: string) => void;
-}) {
-  if (options.length === 0) {
-    return (
-      <span className={styles.staticControl} data-empty="true">
-        Aucune option configurée
-      </span>
-    );
-  }
-  if (options.length === 1) {
-    return <span className={styles.staticControl}>{options[0].name}</span>;
-  }
-  return (
-    <select
-      value={value ?? ""}
-      onChange={(event) => onChange(event.target.value)}
-      className={styles.selectControl}
-    >
-      {options.map((option) => (
-        <option key={option.id} value={option.id}>{option.name}</option>
-      ))}
-    </select>
   );
 }
 
