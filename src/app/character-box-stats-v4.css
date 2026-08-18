@@ -1,0 +1,235 @@
+/* Step 8D — Character Box progression + permanent-stat presentation.
+ * This file changes presentation only. It does not derive, rebuild or mutate
+ * permanent stats: the controls still edit UserBuild.finalStats directly.
+ */
+
+/* Progression becomes the first strong configuration block rather than a flat
+ * pair of generic form inputs. */
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(1) {
+  border-color: #d6e1f3 !important;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(53, 102, 232, 0.075), transparent 14rem),
+    linear-gradient(135deg, #ffffff 0%, #f6f9ff 100%) !important;
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(1)
+  > div:last-child {
+  gap: 9px !important;
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(1)
+  > div:last-child
+  > label {
+  border: 1px solid var(--v4-line-soft);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 10px;
+}
+
+/* Permanent stats are the main theorycraft snapshot. Keep the editable inputs,
+ * but present each one as a compact stat tile so users can scan the build at a
+ * glance before editing it. */
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5) {
+  border-color: #cfdcf1 !important;
+  background:
+    radial-gradient(circle at 84% 0%, rgba(118, 88, 214, 0.07), transparent 16rem),
+    radial-gradient(circle at 8% 100%, rgba(53, 102, 232, 0.06), transparent 17rem),
+    #ffffff !important;
+  box-shadow: 0 9px 24px rgba(24, 45, 77, 0.065) !important;
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:first-child {
+  margin-bottom: 8px !important;
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > p {
+  max-width: 72ch;
+  margin: 0 0 12px !important;
+  color: var(--v4-text-muted) !important;
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:last-child {
+  gap: 8px !important;
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:last-child
+  > label {
+  position: relative;
+  gap: 4px !important;
+  min-height: 74px;
+  border: 1px solid #dde5ef;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff, #fafcff);
+  padding: 9px 10px 8px;
+  color: var(--v4-text-faint) !important;
+  font-size: 0.52rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:last-child
+  > label
+  > input {
+  min-height: 34px !important;
+  border: 0 !important;
+  border-radius: 7px !important;
+  background: transparent !important;
+  padding: 0 !important;
+  color: var(--v4-text) !important;
+  font-size: 0.9rem !important;
+  font-weight: 820 !important;
+  letter-spacing: -0.025em;
+  box-shadow: none !important;
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:last-child
+  > label:focus-within {
+  border-color: color-mix(in srgb, var(--v4-accent) 44%, var(--v4-line));
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(53, 102, 232, 0.07);
+}
+
+/* ATK, Crit Rate and Crit DMG are the values most frequently scanned during
+ * DPS theorycraft, so they receive restrained emphasis without changing data. */
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:last-child
+  > label:nth-child(2),
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:last-child
+  > label:nth-child(4),
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:last-child
+  > label:nth-child(5) {
+  border-color: #d4def2;
+  background: linear-gradient(180deg, #f7f9ff, #ffffff);
+}
+
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:last-child
+  > label:nth-child(2)
+  > input,
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:last-child
+  > label:nth-child(4)
+  > input,
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(5)
+  > div:last-child
+  > label:nth-child(5)
+  > input {
+  color: var(--v4-accent-active) !important;
+}
+
+/* Secondary bonus sections remain dense and visually quieter than the main
+ * permanent-stat panel. */
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(6),
+[role="dialog"][aria-modal="true"]
+  > div:has(> div > aside)
+  aside + div
+  > div
+  > section:nth-of-type(7) {
+  background: #fbfcfe !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 1080px) {
+  [role="dialog"][aria-modal="true"]
+    > div:has(> div > aside)
+    aside + div
+    > div
+    > section:nth-of-type(5)
+    > div:last-child {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  [role="dialog"][aria-modal="true"]
+    > div:has(> div > aside)
+    aside + div
+    > div
+    > section:nth-of-type(1)
+    > div:last-child,
+  [role="dialog"][aria-modal="true"]
+    > div:has(> div > aside)
+    aside + div
+    > div
+    > section:nth-of-type(5)
+    > div:last-child {
+    grid-template-columns: 1fr !important;
+  }
+}
