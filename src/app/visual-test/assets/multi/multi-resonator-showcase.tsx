@@ -21,6 +21,10 @@ function characterEntries(projection: WuwaUiAssetProjectionV1) {
   return projection.entries.filter((entry) => entry.category === "characters");
 }
 
+function hasRole(entry: WuwaUiAssetEntryV1, role: string) {
+  return entry.assets.some((asset) => asset.role === role);
+}
+
 function evenlySample(entries: readonly WuwaUiAssetEntryV1[], count: number) {
   if (entries.length <= count) return [...entries];
   if (count <= 1) return entries.slice(0, 1);
@@ -40,7 +44,7 @@ function evenlySample(entries: readonly WuwaUiAssetEntryV1[], count: number) {
 }
 
 function selectedRole(entry: WuwaUiAssetEntryV1, preferredRoles: readonly string[]) {
-  return preferredRoles.find((role) => entry.assets.some((asset) => asset.role === role));
+  return preferredRoles.find((role) => hasRole(entry, role));
 }
 
 function assetPath(
@@ -104,7 +108,8 @@ export function MultiResonatorShowcase() {
 
     const characters = characterEntries(projection);
     const portraits = evenlySample(characters, 12);
-    const heroes = evenlySample(characters, 4);
+    const heroCandidates = characters.filter((entry) => hasRole(entry, "detail-roleportrait"));
+    const heroes = evenlySample(heroCandidates, 4);
     const cardCounts = new Map<string, number>();
     const heroCounts = new Map<string, number>();
 
@@ -115,7 +120,7 @@ export function MultiResonatorShowcase() {
       heroCounts.set(heroRole, (heroCounts.get(heroRole) ?? 0) + 1);
     }
 
-    return { characters, portraits, heroes, cardCounts, heroCounts };
+    return { characters, portraits, heroCandidates, heroes, cardCounts, heroCounts };
   }, [projection]);
 
   if (error) {
@@ -186,9 +191,9 @@ export function MultiResonatorShowcase() {
       <V4Panel>
         <V4SectionHeader
           eyebrow="Grand format"
-          title="4 grands visuels propres à leur Resonator"
-          description="Ces quatre tests privilégient detail-roleportrait et utilisent tous le même centrage générique dans leur box. L’asset de formation ne sert que de fallback si l’artwork propre au personnage manque."
-          action={<V4Badge tone="accent">Hero assets</V4Badge>}
+          title="4 vrais heroes agrandis et recentrés"
+          description="Les quatre exemples sont sélectionnés uniquement parmi les Resonators possédant detail-roleportrait. Le mode hero réutilisable les affiche environ 1,52× plus grands que l’ancien cadre 16:7, sans transform CSS et avec un centrage commun."
+          action={<V4Badge tone="accent">{validation.heroCandidates.length} vrais heroes</V4Badge>}
         />
         <div className={styles.heroGrid}>
           {validation.heroes.map((entry) => {
@@ -198,7 +203,7 @@ export function MultiResonatorShowcase() {
                 <WuwaAssetMedia
                   src={assetPath(projection, entry, WUWA_RESONATOR_HERO_ROLES)}
                   alt={`Grand visuel du Resonator ${entry.id}`}
-                  role="artwork"
+                  role="hero"
                   sourceRole={role}
                   className={styles.heroMedia}
                   fallbackLabel={`Artwork ${entry.id} indisponible`}
@@ -213,7 +218,7 @@ export function MultiResonatorShowcase() {
           })}
         </div>
         <p className={styles.note}>
-          Ce checkpoint est uniquement destiné à valider la robustesse des composants de l’étape 5. La page principale d’assets reste inchangée visuellement en dehors de la sélection correcte du grand artwork.
+          Ce checkpoint valide le mode hero qui sera réutilisé pour les futurs grands visuels Resonator. Les portraits/cartes déjà validés restent inchangés.
         </p>
       </V4Panel>
     </div>
