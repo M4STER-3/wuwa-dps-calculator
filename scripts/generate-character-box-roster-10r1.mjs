@@ -1,5 +1,6 @@
 import { lstat, mkdir, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { loadRosterPromotionBatch } from "./lib/roster-promotion-registry.mjs";
 
 const root = path.resolve(process.cwd());
 const inputPath = path.resolve(root, "public/data/wuwa/game-database-v1.json");
@@ -9,19 +10,7 @@ const temporaryPath = path.join(outputDirectory, `.character-box-roster-10r1.${p
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 768 * 1024;
 const DANGEROUS_KEYS = new Set(["__proto__", "prototype", "constructor"]);
-
-const batch = [
-  { id: "aemeath", wuwaId: "1210", name: "Aemeath", element: "Fusion", weaponType: "Sword", weapon: { id: "everbright-polestar", wuwaId: "21020076", name: "Everbright Polestar" } },
-  { id: "augusta", wuwaId: "1306", name: "Augusta", element: "Electro", weaponType: "Broadblade", weapon: { id: "thunderflare-dominion", wuwaId: "21010026", name: "Thunderflare Dominion" } },
-  { id: "brant", wuwaId: "1206", name: "Brant", element: "Fusion", weaponType: "Sword", weapon: { id: "unflickering-valor", wuwaId: "21020026", name: "Unflickering Valor" } },
-  { id: "calcharo", wuwaId: "1301", name: "Calcharo", element: "Electro", weaponType: "Broadblade", weapon: { id: "lustrous-razor", wuwaId: "21010015", name: "Lustrous Razor" } },
-  { id: "cantarella", wuwaId: "1607", name: "Cantarella", element: "Havoc", weaponType: "Rectifier", weapon: { id: "whispers-of-sirens", wuwaId: "21050056", name: "Whispers of Sirens" } },
-  { id: "carlotta", wuwaId: "1107", name: "Carlotta", element: "Glacio", weaponType: "Pistols", weapon: { id: "the-last-dance", wuwaId: "21030016", name: "The Last Dance" } },
-  { id: "cartethyia", wuwaId: "1409", name: "Cartethyia", element: "Aero", weaponType: "Sword", weapon: { id: "defiers-thorn", wuwaId: "21020036", name: "Defier's Thorn" } },
-  { id: "changli", wuwaId: "1205", name: "Changli", element: "Fusion", weaponType: "Sword", weapon: { id: "blazing-brilliance", wuwaId: "21020016", name: "Blazing Brilliance" } },
-  { id: "chisa", wuwaId: "1508", name: "Chisa", element: "Havoc", weaponType: "Broadblade", weapon: { id: "kumokiri", wuwaId: "21010056", name: "Kumokiri" } },
-  { id: "ciaccona", wuwaId: "1407", name: "Ciaccona", element: "Aero", weaponType: "Pistols", weapon: { id: "woodland-aria", wuwaId: "21030036", name: "Woodland Aria" } },
-];
+const { entries: batch } = await loadRosterPromotionBatch(root, "10R1");
 
 const elementMap = { Aero: "aero", Glacio: "glacio", Electro: "electro", Fusion: "fusion", Havoc: "havoc", Spectro: "spectro" };
 const weaponTypeMap = { Broadblade: "broadblade", Gauntlets: "gauntlets", Pistols: "pistols", Rectifier: "rectifier", Sword: "sword" };
@@ -84,47 +73,39 @@ const weaponsByWuwaId = indexByWuwaId(rootRecord.weapons, "weapons");
 const resonators = [];
 const weapons = [];
 for (const expected of batch) {
-  if (expected.id === "camellya" || /camell/i.test(expected.name)) fail("Camellya is explicitly excluded from roster promotion");
   const character = charactersByWuwaId.get(expected.wuwaId);
   if (!character) fail(`missing GameDatabase character ${expected.wuwaId} (${expected.name})`);
-  if (character.name !== expected.name || character.element !== expected.element || character.weaponType !== expected.weaponType || character.rarity !== 5) fail(`${expected.name} identity does not match reviewed 10R1 metadata`);
+  if (character.name !== expected.name || character.element !== expected.element || character.weaponType !== expected.weaponType || character.rarity !== expected.rarity) fail(`${expected.name} identity does not match reviewed metadata`);
   if (!Array.isArray(character.skills)) fail(`${expected.name}.skills must be an array`);
   const skillNames = {};
-  const observedSkillTypes = new Set();
   for (const [skillIndex, rawSkill] of character.skills.entries()) {
     const skill = record(rawSkill, `${expected.name}.skills[${skillIndex}]`);
-    const sourceType = sourceParametersType(skill, `${expected.name}.skills[${skillIndex}]`);
-    observedSkillTypes.add(sourceType);
-    const semantic = skillTypeMap.get(normalizeSemanticLabel(sourceType));
+    const semantic = skillTypeMap.get(normalizeSemanticLabel(sourceParametersType(skill, `${expected.name}.skills[${skillIndex}]`)));
     if (!semantic) continue;
     if (Object.prototype.hasOwnProperty.call(skillNames, semantic)) fail(`${expected.name} has multiple ${semantic} skill groups`);
     skillNames[semantic] = safeText(skill.name, `${expected.name}.skills[${skillIndex}].name`, 200);
   }
-  for (const semantic of skillTypeMap.values()) {
-    if (!Object.prototype.hasOwnProperty.call(skillNames, semantic)) {
-      fail(`${expected.name} is missing unambiguous ${semantic} skill data; observed types: ${JSON.stringify([...observedSkillTypes].sort())}`);
-    }
-  }
+  for (const semantic of skillTypeMap.values()) if (!Object.prototype.hasOwnProperty.call(skillNames, semantic)) fail(`${expected.name} is missing unambiguous ${semantic} skill data`);
   if (!Array.isArray(character.sequences) || character.sequences.length !== 6) fail(`${expected.name} must have exactly six sequences`);
   const resonanceChain = character.sequences.map((rawSequence, sequenceIndex) => {
     const sequence = record(rawSequence, `${expected.name}.sequences[${sequenceIndex}]`);
     if (!Number.isInteger(sequence.sequence) || sequence.sequence !== sequenceIndex + 1) fail(`${expected.name} sequences must be ordered S1..S6`);
     return { sequence: sequence.sequence, name: safeText(sequence.name, `${expected.name}.sequences[${sequenceIndex}].name`, 200), description: safeText(sequence.description, `${expected.name}.sequences[${sequenceIndex}].description`) };
   });
-  resonators.push({ id: expected.id, sourceItemId: expected.wuwaId, name: expected.name, element: elementMap[expected.element], weaponType: weaponTypeMap[expected.weaponType], rarity: 5, skillNames, resonanceChain });
+  resonators.push({ id: expected.id, sourceItemId: expected.wuwaId, name: expected.name, element: elementMap[expected.element], weaponType: weaponTypeMap[expected.weaponType], rarity: expected.rarity, skillNames, resonanceChain });
 
   const weapon = weaponsByWuwaId.get(expected.weapon.wuwaId);
   if (!weapon) fail(`missing GameDatabase weapon ${expected.weapon.wuwaId} (${expected.weapon.name})`);
-  if (weapon.name !== expected.weapon.name || weapon.type !== expected.weaponType || weapon.rarity !== 5) fail(`${expected.weapon.name} identity does not match reviewed 10R1 metadata`);
+  if (weapon.name !== expected.weapon.name || weapon.type !== expected.weaponType || weapon.rarity !== 5) fail(`${expected.weapon.name} identity does not match reviewed metadata`);
   weapons.push({ id: expected.weapon.id, sourceItemId: expected.weapon.wuwaId, name: expected.weapon.name, type: weaponTypeMap[expected.weaponType], rarity: 5 });
 }
-if (resonators.length !== 10 || new Set(resonators.map((entry) => entry.id)).size !== 10) fail("projection must contain exactly ten unique Resonators");
-if (weapons.length !== 10 || new Set(weapons.map((entry) => entry.id)).size !== 10) fail("projection must contain exactly ten unique signature weapons");
+if (resonators.length !== batch.length || new Set(resonators.map((entry) => entry.id)).size !== batch.length) fail("projection size/uniqueness mismatch");
+if (weapons.length !== batch.length || new Set(weapons.map((entry) => entry.id)).size !== batch.length) fail("weapon projection size/uniqueness mismatch");
 
 await mkdir(outputDirectory, { recursive: true }); await assertRealDirectoryContained(path.dirname(inputPath), "input directory"); await assertRealDirectoryContained(outputDirectory, "output directory"); await rejectSymlink(outputPath, "output", true); await rejectSymlink(temporaryPath, "temporary output", true);
-const serialized = `/* Generated by scripts/generate-character-box-roster-10r1.mjs. Do not edit manually. */\nexport const generatedCharacterBoxRoster10R1 = ${JSON.stringify(resonators, null, 2)} as const;\nexport const generatedCharacterBoxWeapons10R1 = ${JSON.stringify(weapons, null, 2)} as const;\n`;
+const serialized = `/* Generated from roster-promotion-registry.json. Do not edit manually. */\nexport const generatedCharacterBoxRoster10R1 = ${JSON.stringify(resonators, null, 2)} as const;\nexport const generatedCharacterBoxWeapons10R1 = ${JSON.stringify(weapons, null, 2)} as const;\n`;
 const outputBytes = Buffer.byteLength(serialized);
 if (outputBytes <= 0 || outputBytes > MAX_OUTPUT_BYTES) fail(`output size ${outputBytes} is outside the allowed range`);
 try { await writeFile(temporaryPath, serialized, { encoding: "utf8", flag: "wx", mode: 0o644 }); await rename(temporaryPath, outputPath); }
 catch (error) { await rm(temporaryPath, { force: true }).catch(() => undefined); throw error; }
-console.log(`Generated ${path.relative(root, outputPath)} with ${resonators.length} reviewed 10R1 Resonators and ${weapons.length} signature weapons (${outputBytes} bytes).`);
+console.log(`Generated ${path.relative(root, outputPath)} with ${resonators.length} reviewed Resonators and ${weapons.length} signature weapons (${outputBytes} bytes).`);
