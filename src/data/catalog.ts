@@ -30,10 +30,18 @@ const skillNames = {
   introSkill: "Intro Skill",
 } as const;
 
+const withLocalUiPortrait = (resonator: Resonator): Resonator => ({
+  ...resonator,
+  portrait: {
+    src: `/api/wuwa/character-portrait/${encodeURIComponent(resonator.id)}` as `/${string}`,
+    alt: `Portrait de ${resonator.name}`,
+  },
+});
+
+const promotedResonators = [aemeath, chisa, verina].map(withLocalUiPortrait);
+
 export const resonators: readonly Resonator[] = [
-  aemeath,
-  chisa,
-  verina,
+  ...promotedResonators,
   {
     id: "fixture-fusion-pistols",
     name: "Resonator démo · Fusion",
