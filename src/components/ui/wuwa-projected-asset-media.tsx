@@ -57,15 +57,10 @@ export function WuwaProjectedAssetMedia({
   sizes?: string;
 }) {
   const [projection, setProjection] = useState<WuwaUiAssetProjectionV1 | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failedAssetId, setFailedAssetId] = useState<string | null>(null);
 
   useEffect(() => {
-    setFailed(false);
-    if (!assetId) {
-      setProjection(null);
-      setFailed(true);
-      return;
-    }
+    if (!assetId) return;
 
     let cancelled = false;
     void loadProjection()
@@ -73,13 +68,14 @@ export function WuwaProjectedAssetMedia({
         if (!cancelled) setProjection(value);
       })
       .catch(() => {
-        if (!cancelled) setFailed(true);
+        if (!cancelled) setFailedAssetId(assetId);
       });
     return () => {
       cancelled = true;
     };
   }, [assetId]);
 
+  const failed = !assetId || failedAssetId === assetId;
   const src = useMemo(
     () =>
       !failed && projection && assetId
