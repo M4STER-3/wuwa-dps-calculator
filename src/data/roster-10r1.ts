@@ -46,7 +46,7 @@ export const roster10R1 = [
     signatureWeapon: {
       id: "thunderflare-dominion",
       name: "Thunderflare Dominion",
-      sourceItemId: "21010026",
+      sourceItemId: "21010046",
     },
   },
   {
@@ -59,7 +59,7 @@ export const roster10R1 = [
     signatureWeapon: {
       id: "unflickering-valor",
       name: "Unflickering Valor",
-      sourceItemId: "21020026",
+      sourceItemId: "21020036",
     },
   },
   {
@@ -111,7 +111,7 @@ export const roster10R1 = [
     signatureWeapon: {
       id: "defiers-thorn",
       name: "Defier's Thorn",
-      sourceItemId: "21020036",
+      sourceItemId: "21020056",
     },
   },
   {
@@ -150,7 +150,7 @@ export const roster10R1 = [
     signatureWeapon: {
       id: "woodland-aria",
       name: "Woodland Aria",
-      sourceItemId: "21030036",
+      sourceItemId: "21030026",
     },
   },
 ] as const satisfies readonly RosterPromotionEntry[];
