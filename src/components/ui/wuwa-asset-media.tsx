@@ -46,7 +46,7 @@ export function WuwaAssetMedia({
       data-asset-source-role={sourceRole}
     >
       {safeSrc ? (
-        <span className={styles.imageStage} aria-hidden="true">
+        <span className={styles.imageStage}>
           <Image
             src={safeSrc}
             alt={alt}
