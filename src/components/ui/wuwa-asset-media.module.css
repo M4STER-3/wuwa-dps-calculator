@@ -74,15 +74,30 @@
 }
 
 /*
- * Encore guarantees list-icon for weapons and Echoes, but representative
- * promoted list icons are 256×256. Keep the surrounding light card unchanged
- * while capping the raster's CSS footprint so a large checkpoint card does not
- * magnify the source far beyond its native dimensions.
+ * Promoted weapon list icons and Echo detail/list icons are 256×256 in the
+ * current manifest. Cap them to 128 CSS px in large cards so a 2× display can
+ * render them at native raster density instead of magnifying their edges.
+ * The surrounding validated V4 card geometry stays unchanged.
  */
 .weapon[data-asset-source-role="list-icon"] .imageStage,
+.echo[data-asset-source-role="detail-icon"] .imageStage,
 .echo[data-asset-source-role="list-icon"] .imageStage,
+.catalogue[data-asset-source-role="detail-icon"] .imageStage,
 .catalogue[data-asset-source-role="list-icon"] .imageStage {
-  inset: max(12%, calc((100% - 256px) / 2));
+  inset: max(12%, calc((100% - 128px) / 2));
+}
+
+/*
+ * A 256×256 Resonator head icon is only a fallback for a medium portrait.
+ * Keep it at 2× raster density rather than stretching it to fill the card.
+ */
+.portrait[data-asset-source-role="detail-roleheadiconlarge"] .imageStage {
+  inset: max(12%, calc((100% - 128px) / 2));
+}
+
+.portrait[data-asset-source-role="detail-roleheadiconlarge"] .image {
+  object-fit: contain;
+  object-position: center;
 }
 
 .chip {
