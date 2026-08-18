@@ -22,6 +22,7 @@
 
 .image {
   z-index: 1;
+  image-rendering: auto;
 }
 
 .portrait {
@@ -59,6 +60,17 @@
 .catalogue .image {
   object-fit: contain;
   padding: 9%;
+}
+
+/*
+ * list-icon is the universal catalogue fallback and can be much smaller than
+ * a detail artwork. Keep the light card unchanged, but avoid magnifying that
+ * fallback as aggressively on high-density screens.
+ */
+.weapon[data-asset-source-role="list-icon"] .image,
+.echo[data-asset-source-role="list-icon"] .image,
+.catalogue[data-asset-source-role="list-icon"] .image {
+  padding: 15%;
 }
 
 .chip {
