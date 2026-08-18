@@ -73,6 +73,7 @@ function AssetCard({
         src={path}
         alt={`${entry.category} ${entry.id}`}
         role={mediaRole}
+        sourceRole={role}
         fallbackLabel={`Asset ${entry.id} indisponible`}
       />
       <div className={styles.assetCardCopy}>
@@ -138,11 +139,19 @@ export function AssetShowcase() {
   if (!projection || !samples) return <LoadingState />;
 
   const leadCharacter = samples.characters[0];
+  const leadArtworkRoles = ["detail-roleportrait", "list-roleheadicon"] as const;
+  const leadChipRoles = ["list-roleheadicon", "detail-roleportrait"] as const;
   const leadArtworkPath = leadCharacter
-    ? pathFor(projection, leadCharacter, ["detail-roleportrait", "list-roleheadicon"])
+    ? pathFor(projection, leadCharacter, leadArtworkRoles)
+    : undefined;
+  const leadArtworkRole = leadCharacter
+    ? selectedRole(leadCharacter, leadArtworkRoles)
     : undefined;
   const leadChipPath = leadCharacter
-    ? pathFor(projection, leadCharacter, ["list-roleheadicon", "detail-roleportrait"])
+    ? pathFor(projection, leadCharacter, leadChipRoles)
+    : undefined;
+  const leadChipRole = leadCharacter
+    ? selectedRole(leadCharacter, leadChipRoles)
     : undefined;
 
   return (
@@ -170,6 +179,7 @@ export function AssetShowcase() {
                   src={leadChipPath}
                   alt={leadCharacter ? `Portrait du Resonator ${leadCharacter.id}` : "Portrait indisponible"}
                   role="chip"
+                  sourceRole={leadChipRole}
                 />
                 <span className={styles.chipCopy}>
                   <span className={styles.chipTitle}>Identity chip</span>
@@ -183,6 +193,7 @@ export function AssetShowcase() {
               src={leadArtworkPath}
               alt={leadCharacter ? `Artwork du Resonator ${leadCharacter.id}` : "Artwork indisponible"}
               role="artwork"
+              sourceRole={leadArtworkRole}
               className={styles.identityArtwork}
               sizes="(max-width: 980px) 100vw, 52vw"
             />
@@ -204,7 +215,7 @@ export function AssetShowcase() {
               projection={projection}
               entry={entry}
               mediaRole="portrait"
-              preferredRoles={["detail-roleportrait", "list-roleheadicon"]}
+              preferredRoles={["detail-roleportrait", "detail-roleheadiconlarge", "list-roleheadicon"]}
             />
           ))}
         </div>
@@ -214,7 +225,7 @@ export function AssetShowcase() {
         <V4SectionHeader
           eyebrow="Équipement"
           title="Armes et Echoes"
-          description="Les objets utilisent un cadrage contain pour préserver leur silhouette sans ajouter de gros aplats sombres."
+          description="Les objets utilisent d’abord leur asset de détail lorsqu’il existe, puis reviennent à l’icône catalogue sans l’agrandir excessivement."
         />
         <div className={styles.sectionGrid}>
           {samples.weapons.map((entry) => (
@@ -223,7 +234,7 @@ export function AssetShowcase() {
               projection={projection}
               entry={entry}
               mediaRole="weapon"
-              preferredRoles={["list-icon"]}
+              preferredRoles={["detail-icon", "list-icon"]}
             />
           ))}
         </div>
@@ -235,7 +246,7 @@ export function AssetShowcase() {
               projection={projection}
               entry={entry}
               mediaRole="echo"
-              preferredRoles={["list-icon"]}
+              preferredRoles={["detail-icon", "list-icon"]}
             />
           ))}
         </div>
