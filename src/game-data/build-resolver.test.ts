@@ -8,6 +8,10 @@ import type {
   WeaponCatalogEntry,
 } from "./schema";
 import type { EchoLoadoutV1 } from "./echo-loadout";
+import {
+  permanentBuildSourceKeyV1,
+  type BuildEffectSourceV1,
+} from "./build-effects";
 import { resolveExactBuildStatSheetV1 } from "./build-resolver";
 
 const importedAt = "2026-08-17T00:00:00.000Z";
@@ -192,6 +196,124 @@ describe("resolveExactBuildStatSheetV1", () => {
       { kind: "sonata-bonus", sonataSetId: sonata.id, pieces: 2, description: "Fixture permanent two-piece effect." },
       { kind: "sonata-bonus", sonataSetId: sonata.id, pieces: 5, description: "Fixture conditional five-piece effect." },
     ]);
+    expect(resolved.runtimeEffects).toEqual([]);
+    expect(resolved.permanentEffectAudit).toEqual([]);
+  });
+
+  it("accounts for reviewed permanent and runtime build effects without double counting", () => {
+    const buildEffects: readonly BuildEffectSourceV1[] = [
+      {
+        sourceKey: "fixture-character-nodes",
+        sourceId: character.id,
+        sourceType: "resonator",
+        sourceLabel: character.name,
+        coversPermanentSources: [
+          permanentBuildSourceKeyV1.characterPermanentNodes(character.id),
+        ],
+        permanentModifiers: [
+          { target: "critRate", mode: "percentage-point", value: 8 },
+        ],
+      },
+      {
+        sourceKey: "fixture-weapon-passive",
+        sourceId: weapon.id,
+        sourceType: "weapon",
+        sourceLabel: weapon.name,
+        coversPermanentSources: [
+          permanentBuildSourceKeyV1.weaponPassive(weapon.id),
+        ],
+        permanentModifiers: [
+          { target: "attack", mode: "base-percent", value: 10 },
+        ],
+        runtimeEffects: [
+          {
+            id: "fixture-weapon-amplify",
+            label: "Fixture weapon conditional Amplify",
+            source: { id: weapon.id, type: "weapon", label: weapon.name },
+            target: "self",
+            activationPolicy: "initially-active",
+            rules: [
+              {
+                id: "fixture-weapon-amplify-rule",
+                label: "20% conditional Amplify",
+                accounting: "runtime",
+                modifiers: [
+                  { kind: "damage-amplification", stacking: "additive", value: 20 },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        sourceKey: "fixture-sonata-2pc",
+        sourceId: sonata.id,
+        sourceType: "sonata",
+        sourceLabel: sonata.name,
+        coversPermanentSources: [
+          permanentBuildSourceKeyV1.sonataBonus(sonata.id, 2),
+        ],
+        permanentModifiers: [
+          { target: "elementalDamageBonus:fusion", mode: "percentage-point", value: 10 },
+        ],
+      },
+      {
+        sourceKey: "fixture-sonata-5pc",
+        sourceId: sonata.id,
+        sourceType: "sonata",
+        sourceLabel: sonata.name,
+        coversPermanentSources: [
+          permanentBuildSourceKeyV1.sonataBonus(sonata.id, 5),
+        ],
+        runtimeEffects: [
+          {
+            id: "fixture-sonata-runtime",
+            label: "Fixture Sonata conditional damage bonus",
+            source: { id: sonata.id, type: "sonata", label: sonata.name },
+            target: "self",
+            activationPolicy: "initially-active",
+            rules: [
+              {
+                id: "fixture-sonata-runtime-rule",
+                label: "15% conditional damage bonus",
+                accounting: "runtime",
+                modifiers: [
+                  { kind: "all-damage-bonus", stacking: "additive", value: 15 },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const resolved = resolveExactBuildStatSheetV1(database, {
+      ...validInput(),
+      buildEffects,
+    });
+
+    expect(resolved.complete).toBe(true);
+    expect(resolved.unresolvedPermanentSources).toEqual([]);
+    expect(resolved.statSheet.attack).toBeCloseTo(2_470.5);
+    expect(resolved.statSheet.critRate).toBeCloseTo(45.5);
+    expect(resolved.statSheet.elementalDamageBonus.fusion).toBeCloseTo(40);
+    expect(resolved.permanentEffectAudit).toHaveLength(3);
+    expect(resolved.runtimeEffects).toHaveLength(2);
+
+    // Runtime-only effects must not leak into the permanent panel stat sheet.
+    expect(resolved.statSheet.damageTypeBonus.basicAttack).toBe(0);
+    expect(resolved.runtimeEffects.map((instance) => instance.definition.id)).toEqual([
+      "fixture-weapon-amplify",
+      "fixture-sonata-runtime",
+    ]);
+    expect(new Set(resolved.coveredPermanentSourceKeys)).toEqual(
+      new Set([
+        permanentBuildSourceKeyV1.characterPermanentNodes(character.id),
+        permanentBuildSourceKeyV1.weaponPassive(weapon.id),
+        permanentBuildSourceKeyV1.sonataBonus(sonata.id, 2),
+        permanentBuildSourceKeyV1.sonataBonus(sonata.id, 5),
+      ]),
+    );
   });
 
   it("requires an explicit ascension side when a level has two exact source values", () => {
