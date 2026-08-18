@@ -27,7 +27,7 @@ const elementMap = { Aero: "aero", Glacio: "glacio", Electro: "electro", Fusion:
 const weaponTypeMap = { Broadblade: "broadblade", Gauntlets: "gauntlets", Pistols: "pistols", Rectifier: "rectifier", Sword: "sword" };
 const normalizeSemanticLabel = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
 const skillTypeMap = new Map([
-  [normalizeSemanticLabel("Basic Attack"), "basicAttack"],
+  [normalizeSemanticLabel("Normal Attack"), "basicAttack"],
   [normalizeSemanticLabel("Resonance Skill"), "resonanceSkill"],
   [normalizeSemanticLabel("Forte Circuit"), "forteCircuit"],
   [normalizeSemanticLabel("Resonance Liberation"), "resonanceLiberation"],
