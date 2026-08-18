@@ -108,7 +108,7 @@ assert.equal(serialized.includes("https://"), false, "projection must not expose
 
 {
   const source = manifestFixture();
-  source.entities.characters["1001"].assets["javascript:alert(1)"] = asset("f");
+  source.entities.characters["1001"].assets["unsafe role!"] = asset("f");
   assert.throws(() => projectWuwaUiAssetsV1(source), /safe manifest asset role/);
 }
 
