@@ -20,6 +20,8 @@ const echoCatalog = JSON.parse(
   sonataSets: readonly { id: string }[];
 };
 
+const promotedStatuses = new Set(["verified", "curated-balanced"]);
+
 describe("10R1 pinned community Echo presets", () => {
   it("only targets promoted non-excluded Resonators", () => {
     const promoted = new Set(roster10R1Ids);
@@ -29,11 +31,11 @@ describe("10R1 pinned community Echo presets", () => {
     }
   });
 
-  it("resolves every verified loadout through the authoritative Echo resolver", () => {
+  it("resolves every promoted loadout through the authoritative Echo resolver", () => {
     for (const [resonatorId, preset] of Object.entries(
       generatedCommunityEchoPresets10R1,
     )) {
-      if (preset.promotionStatus !== "verified") continue;
+      if (!promotedStatuses.has(preset.promotionStatus)) continue;
       expect(preset.echoLoadout.echoes).toHaveLength(5);
       const resolved = resolveEchoLoadoutV1(echoCatalog, preset.echoLoadout);
       expect(resolved.totalCost, resonatorId).toBeLessThanOrEqual(12);
@@ -51,25 +53,26 @@ describe("10R1 pinned community Echo presets", () => {
     }
   });
 
-  it("keeps blocked source candidates explicit and unpromoted", () => {
-    for (const preset of Object.values(generatedCommunityEchoPresets10R1)) {
-      if (preset.promotionStatus === "verified") continue;
-      expect(preset.promotionStatus).toBe("blocked-invalid-roll");
+  it("keeps curated presets explicit instead of presenting them as verbatim fixtures", () => {
+    const curatedIds = [
+      "augusta",
+      "calcharo",
+      "cantarella",
+      "cartethyia",
+      "ciaccona",
+    ] as const;
+    for (const resonatorId of curatedIds) {
+      const preset = generatedCommunityEchoPresets10R1[resonatorId];
+      expect(preset.promotionStatus, resonatorId).toBe("curated-balanced");
       expect("promotionNote" in preset && preset.promotionNote.length > 0).toBe(true);
     }
-    expect(generatedCommunityEchoPresets10R1.augusta.promotionStatus).toBe(
-      "blocked-invalid-roll",
-    );
-    expect(generatedCommunityEchoPresets10R1.cantarella.promotionStatus).toBe(
-      "blocked-invalid-roll",
-    );
-    expect(generatedCommunityEchoPresets10R1.ciaccona.promotionStatus).toBe(
-      "blocked-invalid-roll",
-    );
   });
 
-  it("keeps unresolved source gaps out instead of guessing", () => {
-    expect(generatedCommunityEchoPresets10R1).not.toHaveProperty("calcharo");
-    expect(generatedCommunityEchoPresets10R1).not.toHaveProperty("cartethyia");
+  it("preserves verbatim verified fixtures separately from curated presets", () => {
+    for (const resonatorId of ["brant", "carlotta", "changli"] as const) {
+      expect(generatedCommunityEchoPresets10R1[resonatorId].promotionStatus).toBe(
+        "verified",
+      );
+    }
   });
 });
