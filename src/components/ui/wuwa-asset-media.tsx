@@ -31,6 +31,7 @@ export const WUWA_RESONATOR_DISPLAY_ROLES = WUWA_RESONATOR_CARD_ROLES;
 export type WuwaAssetMediaRole =
   | "portrait"
   | "artwork"
+  | "hero"
   | "weapon"
   | "echo"
   | "chip"
