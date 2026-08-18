@@ -14,6 +14,7 @@ import type {
 } from "@/domain/models";
 import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa";
 import { fallacyOfNoReturn, rejuvenatingGlow, variation, verina, verinaPreset } from "./verina";
+import { requireResonatorUiPortraitPath } from "@/game-data/resonator-ui-asset-ids";
 
 const fixtureSource = {
   kind: "technical-fixture" as const,
@@ -33,7 +34,7 @@ const skillNames = {
 const withLocalUiPortrait = (resonator: Resonator): Resonator => ({
   ...resonator,
   portrait: {
-    src: `/api/wuwa/character-portrait/${encodeURIComponent(resonator.id)}` as `/${string}`,
+    src: requireResonatorUiPortraitPath(resonator.id),
     alt: `Portrait de ${resonator.name}`,
   },
 });
