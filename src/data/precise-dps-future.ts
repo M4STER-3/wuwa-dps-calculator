@@ -195,13 +195,11 @@ function resolveAction(
         `Precise DPS ${resonatorId}/${scenarioId} step ${stepIndex} pin ${pin.sourceAttributeId} resolves to ${pinned.length} actions. Inventory: ${actionInventory(actions)}`,
       );
     }
-    const action = pinned[0];
-    if (selector.talent && action.talent !== selector.talent) {
-      throw new Error(
-        `Precise DPS ${resonatorId}/${scenarioId} step ${stepIndex} pin ${pin.sourceAttributeId} has talent ${action.talent}, expected ${selector.talent}.`,
-      );
-    }
-    return action;
+    // A reviewed sourceAttributeId pin is authoritative over heuristic recipe
+    // fields such as talent/name. This is required for GameDatabase actions whose
+    // canonical talent classification differs from community-facing wording
+    // (for example Jinhsi's Incarnation attacks are Forte Circuit actions).
+    return pinned[0];
   }
 
   const matches = actions.filter((action) => matchesSelector(action, selector));
