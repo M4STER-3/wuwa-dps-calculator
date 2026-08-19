@@ -1,7 +1,6 @@
-import type { CombatAction, CombatEffect, Sonata, Weapon } from "@/domain/models";
+import type { CombatAction, CombatEffect, MainEcho, Sonata, Weapon } from "@/domain/models";
 import type { EffectDefinition } from "@/domain/effect-models";
 import {
-  fallacyOfNoReturn,
   rejuvenatingGlow as baseRejuvenatingGlow,
   variation as baseVariation,
   verina as baseVerina,
@@ -332,6 +331,87 @@ export const rejuvenatingGlow: Sonata = {
   ],
 };
 
+const fallacyAction: CombatAction = {
+  id: "fallacy-blast",
+  name: "Fallacy of No Return · Blast",
+  talent: "echoSkill",
+  damageType: "echoSkill",
+  scalingAttribute: "hp",
+  level: 10,
+  multipliers: [{ percent: 15.86, hits: 1 }],
+  cooldownSeconds: 20,
+  castDurationSeconds: unknown(),
+  recoverySeconds: unknown(),
+  hitTimingsSeconds: unknown(),
+  source: verinaSource,
+};
+
+const fallacyBuff: EffectDefinition = {
+  id: "fallacy-self-buff",
+  label: "Fallacy of No Return — self buff",
+  source: source("fallacy-of-no-return", "echo"),
+  target: "self",
+  activationPolicy: "triggered",
+  lifecycle: {
+    duration: { kind: "fixed", seconds: 20 },
+    refresh: "reset-duration",
+    uniqueness: "refresh-existing",
+  },
+  rules: [
+    {
+      id: "fallacy-er",
+      label: "+10% Energy Regen",
+      accounting: "runtime",
+      modifiers: [
+        {
+          kind: "runtime-stat",
+          stat: "energyRegen",
+          mode: "flat",
+          stacking: "additive",
+          value: { kind: "constant", value: 10 },
+        },
+      ],
+    },
+    {
+      id: "fallacy-atk",
+      label: "+10% ATK",
+      accounting: "runtime",
+      modifiers: [
+        {
+          kind: "runtime-stat",
+          stat: "attack",
+          mode: "percent",
+          stacking: "additive",
+          value: { kind: "constant", value: 10 },
+        },
+      ],
+    },
+  ],
+  triggers: [
+    {
+      id: "fallacy-cast",
+      event: "action-end",
+      predicates: [
+        { kind: "identity", field: "actionId", anyOf: ["fallacy-blast"] },
+      ],
+      operations: [{ kind: "activate-effect", effectId: "fallacy-self-buff" }],
+    },
+  ],
+};
+
+export const fallacyOfNoReturn: MainEcho = {
+  id: "fallacy-of-no-return",
+  name: "Fallacy of No Return",
+  sonataIds: ["rejuvenating-glow"],
+  skillDescription:
+    "Tap: 15.86% Max HP Spectro DMG. After cast, +10% Energy Regen to the wielder and +10% ATK to the team for 20s.",
+  action: fallacyAction,
+  effects: [
+    wrap(fallacyBuff, "Tap cast grants Verina +10% ER and the team/self +10% ATK for 20s."),
+  ],
+  source: verinaSource,
+};
+
 export const verina = {
   ...baseVerina,
   combat: baseVerina.combat
@@ -343,4 +423,4 @@ export const verina = {
     : undefined,
 };
 
-export { fallacyOfNoReturn, verinaPreset, verinaSource };
+export { verinaPreset, verinaSource };
