@@ -1,6 +1,7 @@
 import type { RuntimeBaseStatBasis } from "./combat-context";
 import type { DamageAmounts, DamageTarget } from "./damage-engine";
 import type { ActionDefinitionV02 } from "./effect-models";
+import { materializeWeaponForRank } from "./equipment-rank";
 import type { CombatAction, FinalStats, MainEcho, Resonator, Sonata, UserBuild, Weapon } from "./models";
 import { simulatePersonalCombat, type PersonalCombatResult } from "./personal-combat-simulation";
 import { emptyCombatState, type CombatEvent, type CombatState } from "./state-engine";
@@ -220,7 +221,7 @@ export function runTheoreticalPersonalRotation(
     baseStatBasis: request.baseStatBasis,
     actions: scenarioActions(request.scenario, actions),
     loadout: {
-      weapon: request.weapon,
+      weapon: materializeWeaponForRank(request.weapon, request.build.weapon.rank),
       sonata: request.sonata,
       mainEcho: request.mainEcho,
       extraEffects: request.scenario.extraEffects,
