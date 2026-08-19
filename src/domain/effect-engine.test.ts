@@ -3,10 +3,37 @@ import { aemeath, everbrightPolestar, sigillum, trailblazingStar } from "@/data/
 import { resolveActiveEffects, type EffectResolutionContext } from "./effect-engine";
 import type { ActiveEffectInstance, EffectDefinition, EffectModifier } from "./effect-models";
 
+const panelStats = {
+  hp: 10000,
+  attack: 1000,
+  defense: 1000,
+  critRate: 5,
+  critDamage: 150,
+  energyRegen: 100,
+  healingBonus: 0,
+  tuneBreakBoost: 0,
+  elementalDamageBonus: { aero: 0, glacio: 0, electro: 0, fusion: 0, havoc: 0, spectro: 0 },
+  damageTypeBonus: { basicAttack: 0, heavyAttack: 0, resonanceSkill: 0, resonanceLiberation: 0, introSkill: 0, echoSkill: 0 },
+};
 const context: EffectResolutionContext = {
   actorId: "actor", targetId: "enemy-1", teamMemberIds: ["actor", "ally"],
   element: "fusion", damageType: "resonanceLiberation", resonanceMode: "fusion-burst",
   actionId: "finale", actionCategories: ["ultimate"],
+};
+const expressionContext: EffectResolutionContext = {
+  ...context,
+  rank: 1,
+  combatContext: {
+    timestamp: 0,
+    actorId: "actor",
+    ownerId: "actor",
+    targetId: "enemy-1",
+    panelStats,
+    element: "fusion",
+    damageType: "resonanceLiberation",
+    resonanceMode: "fusion-burst",
+    actionId: "finale",
+  },
 };
 
 function definition(modifier: EffectModifier, selectors: EffectDefinition["rules"][number]["selectors"] = [], accounting: EffectDefinition["rules"][number]["accounting"] = "runtime"): EffectDefinition {
@@ -57,6 +84,17 @@ describe("Universal Effect & Modifier Engine V0.1 — generic fixtures", () => {
   it("linearly scales 4% through 30 resolved stacks", () => {
     const item = active(definition({ kind: "damage-amplification", valuePerStack: 4, maxStacks: 30, stacking: "additive" }), 30);
     expect(resolveActiveEffects([item], context).damageModifiers.damageAmplificationPercent).toBe(120);
+  });
+
+  it("evaluates exact rank expressions for ordinary damage modifier channels", () => {
+    const item = active(definition({
+      kind: "damage-type-bonus",
+      stacking: "additive",
+      valueExpression: { kind: "rank", values: { 1: 36, 2: 45, 3: 54, 4: 63, 5: 72 } },
+    }, [{ kind: "damage-type", anyOf: ["basicAttack"] }]));
+    expect(resolveActiveEffects([item], { ...expressionContext, damageType: "basicAttack", combatContext: { ...expressionContext.combatContext!, damageType: "basicAttack" }, rank: 1 }).damageModifiers.additionalDamageTypeBonusPercent).toBe(36);
+    expect(resolveActiveEffects([item], { ...expressionContext, damageType: "basicAttack", combatContext: { ...expressionContext.combatContext!, damageType: "basicAttack" }, rank: 5 }).damageModifiers.additionalDamageTypeBonusPercent).toBe(72);
+    expect(resolveActiveEffects([item], { ...expressionContext, damageType: "basicAttack", combatContext: { ...expressionContext.combatContext!, damageType: "basicAttack" }, rank: undefined }).diagnostics[0]?.code).toBe("missing-context");
   });
 
   it("does not emit rules already represented by finalStats", () => {
