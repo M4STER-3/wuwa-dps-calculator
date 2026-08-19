@@ -136,6 +136,7 @@ describe("User Echo Loadout V1 persistence", () => {
       id: "legacy-build",
       now: "2026-08-17T18:00:00.000Z",
     });
+    delete legacyBuild.echoLoadout;
     const parsed = parseCharacterBox(
       JSON.stringify({ schemaVersion: 1, builds: [legacyBuild] }),
     );

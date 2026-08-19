@@ -8,7 +8,7 @@ const outputPath = path.resolve(root, "src/generated/character-box-roster-baseli
 const outputDirectory = path.dirname(outputPath);
 const temporaryPath = path.join(outputDirectory, `.character-box-roster-baselines-10r1.${process.pid}.tmp`);
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
-const MAX_OUTPUT_BYTES = 128 * 1024;
+const MAX_OUTPUT_BYTES = 192 * 1024;
 const { entries: batch } = await loadRosterPromotionBatch(root, "10R1");
 
 function fail(message) { throw new Error(`Character Box 10R1 baseline projection: ${message}`); }
@@ -62,6 +62,9 @@ const rootRecord = record(database, "database");
 const characters = indexByWuwaId(rootRecord.characters, "characters");
 const weapons = indexByWuwaId(rootRecord.weapons, "weapons");
 const baselines = {};
+const runtimeBaseStats = {};
+const characterBases = {};
+const weaponBases = {};
 
 for (const entry of batch) {
   const character = characters.get(entry.wuwaId); const weapon = weapons.get(entry.weapon.wuwaId);
@@ -76,10 +79,12 @@ for (const entry of batch) {
   const baseStats = record(weapon.baseStats, `${entry.id}.weapon.baseStats`);
   const weaponAttack = exactLevel90(baseStats.attack, `${entry.id}.weapon.attack`);
   let hpPercent = 0; let attackPercent = 0; let defensePercent = 0;
+  let secondaryStat;
   if (baseStats.secondaryStat !== undefined) {
     const secondary = record(baseStats.secondaryStat, `${entry.id}.weapon.secondaryStat`);
     if (secondary.unit !== "percentage-points") fail(`${entry.id} weapon secondary unit is unsupported`);
     const amount = exactLevel90(secondary.progression, `${entry.id}.weapon.secondaryStat.progression`);
+    secondaryStat = { stat: secondary.stat, value: amount };
     switch (secondary.stat) {
       case "ATK": attackPercent += amount; break;
       case "HP": hpPercent += amount; break;
@@ -90,17 +95,33 @@ for (const entry of batch) {
       default: fail(`${entry.id} weapon secondary stat ${JSON.stringify(secondary.stat)} has no reviewed mapping`);
     }
   }
+  const attackBasis = characterAttack + weaponAttack;
   stats.hp = hp * (1 + hpPercent / 100);
-  stats.attack = (characterAttack + weaponAttack) * (1 + attackPercent / 100);
+  stats.attack = attackBasis * (1 + attackPercent / 100);
   stats.defense = defense * (1 + defensePercent / 100);
   baselines[entry.id] = stats;
+  characterBases[entry.id] = { hp, attack: characterAttack, defense, level: 90, weaponType: entry.weaponType };
+  weaponBases[entry.weapon.id] = { attack: weaponAttack, level: 90, type: entry.weaponType, ...(secondaryStat ? { secondaryStat } : {}) };
+  runtimeBaseStats[entry.id] = {
+    hp,
+    attack: attackBasis,
+    defense,
+    characterAttack,
+    weaponAttack,
+    characterLevel: 90,
+    weaponId: entry.weapon.id,
+    weaponLevel: 90,
+    ...(secondaryStat ? { weaponSecondaryStat: secondaryStat } : {}),
+  };
 }
 if (Object.keys(baselines).length !== batch.length) fail("projection size mismatch");
+if (Object.keys(runtimeBaseStats).length !== batch.length) fail("runtime base-stat projection size mismatch");
+if (Object.keys(characterBases).length !== batch.length || Object.keys(weaponBases).length !== batch.length) fail("permanent base projection size mismatch");
 
 await mkdir(outputDirectory, { recursive: true }); await assertRealDirectoryContained(path.dirname(inputPath), "input directory"); await assertRealDirectoryContained(outputDirectory, "output directory"); await rejectSymlink(outputPath, "output", true); await rejectSymlink(temporaryPath, "temporary output", true);
-const serialized = `/* Generated from roster-promotion-registry.json. Do not edit manually. */\nexport const generatedCharacterBoxRosterBaselines10R1 = ${JSON.stringify(baselines, null, 2)} as const;\n`;
+const serialized = `/* Generated from roster-promotion-registry.json. Do not edit manually. */\nexport const generatedCharacterBoxRosterBaselines10R1 = ${JSON.stringify(baselines, null, 2)} as const;\nexport const generatedCharacterBoxRuntimeBaseStats10R1 = ${JSON.stringify(runtimeBaseStats, null, 2)} as const;\nexport const generatedCharacterBoxCharacterBases10R1 = ${JSON.stringify(characterBases, null, 2)} as const;\nexport const generatedCharacterBoxWeaponBases10R1 = ${JSON.stringify(weaponBases, null, 2)} as const;\n`;
 const outputBytes = Buffer.byteLength(serialized);
 if (outputBytes <= 0 || outputBytes > MAX_OUTPUT_BYTES) fail(`output size ${outputBytes} is outside the allowed range`);
 try { await writeFile(temporaryPath, serialized, { encoding: "utf8", flag: "wx", mode: 0o644 }); await rename(temporaryPath, outputPath); }
 catch (error) { await rm(temporaryPath, { force: true }).catch(() => undefined); throw error; }
-console.log(`Generated ${path.relative(root, outputPath)} with ${Object.keys(baselines).length} exact level 90 baselines (${outputBytes} bytes).`);
+console.log(`Generated ${path.relative(root, outputPath)} with ${Object.keys(baselines).length} exact level 90 baselines, runtime bases and reusable character/weapon bases (${outputBytes} bytes).`);

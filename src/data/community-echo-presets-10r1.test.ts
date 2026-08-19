@@ -22,11 +22,11 @@ const echoCatalog = JSON.parse(
 
 const promotedStatuses = new Set(["verified", "curated-balanced"]);
 
-describe("10R1 pinned community Echo presets", () => {
-  it("only targets promoted non-excluded Resonators", () => {
-    const promoted = new Set(roster10R1Ids);
+describe("pinned community Echo presets", () => {
+  it("only targets supported non-excluded Resonators", () => {
+    const supported = new Set([...roster10R1Ids, "verina"]);
     for (const resonatorId of Object.keys(generatedCommunityEchoPresets10R1)) {
-      expect(promoted.has(resonatorId)).toBe(true);
+      expect(supported.has(resonatorId), resonatorId).toBe(true);
       expect(resonatorId).not.toBe("camellya");
     }
   });
@@ -53,13 +53,42 @@ describe("10R1 pinned community Echo presets", () => {
     }
   });
 
+  it("infers a Main Echo only when a source-omitted 43311 has one unambiguous 4-cost", () => {
+    for (const [resonatorId, preset] of Object.entries(
+      generatedCommunityEchoPresets10R1,
+    )) {
+      if (preset.mainEchoSelection !== "single-four-cost-default") continue;
+      const fourCostIds = preset.echoLoadout.echoes
+        .filter((equipped) => {
+          const catalogEcho = echoCatalog.echoes.find(
+            (echo) => echo.id === equipped.echoId,
+          );
+          return catalogEcho?.cost === 4;
+        })
+        .map((equipped) => equipped.echoId);
+      expect(fourCostIds, resonatorId).toHaveLength(1);
+      expect(preset.echoLoadout.mainEchoId, resonatorId).toBe(fourCostIds[0]);
+    }
+
+    expect(
+      generatedCommunityEchoPresets10R1.changli.mainEchoSelection,
+    ).toBe("single-four-cost-default");
+    expect(
+      generatedCommunityEchoPresets10R1.changli.echoLoadout.mainEchoId,
+    ).toBe(
+      generatedCommunityEchoPresets10R1.changli.echoLoadout.echoes[0].echoId,
+    );
+  });
+
   it("keeps curated presets explicit instead of presenting them as verbatim fixtures", () => {
     const curatedIds = [
       "augusta",
       "calcharo",
       "cantarella",
       "cartethyia",
+      "chisa",
       "ciaccona",
+      "verina",
     ] as const;
     for (const resonatorId of curatedIds) {
       const preset = generatedCommunityEchoPresets10R1[resonatorId];
@@ -69,7 +98,7 @@ describe("10R1 pinned community Echo presets", () => {
   });
 
   it("preserves verbatim verified fixtures separately from curated presets", () => {
-    for (const resonatorId of ["brant", "carlotta", "changli"] as const) {
+    for (const resonatorId of ["aemeath", "brant", "carlotta", "changli"] as const) {
       expect(generatedCommunityEchoPresets10R1[resonatorId].promotionStatus).toBe(
         "verified",
       );

@@ -3,11 +3,15 @@ import path from "node:path";
 import { projectEchoCatalogV1 } from "./lib/echo-catalog-projection.mjs";
 
 const MAX_SOURCE_BYTES = 16 * 1024 * 1024;
+const MAX_OUTPUT_BYTES = 512 * 1024;
 const root = path.resolve(process.cwd());
 const inputPath = path.resolve(root, "public/data/wuwa/game-database-v1.json");
 const outputPath = path.resolve(root, "public/data/wuwa/echo-catalog-v1.json");
+const modulePath = path.resolve(root, "src/generated/echo-catalog-v1.ts");
 const outputDirectory = path.dirname(outputPath);
+const moduleDirectory = path.dirname(modulePath);
 const temporaryPath = path.join(outputDirectory, `.echo-catalog-v1.${process.pid}.tmp`);
+const temporaryModulePath = path.join(moduleDirectory, `.echo-catalog-v1.${process.pid}.tmp`);
 
 function assertContained(candidate, label) {
   const relative = path.relative(root, candidate);
@@ -35,8 +39,26 @@ async function assertRealDirectoryContained(directory, label) {
   }
 }
 
+async function atomicWrite(target, temporary, content, label) {
+  const bytes = Buffer.byteLength(content);
+  if (bytes <= 0 || bytes > MAX_OUTPUT_BYTES) {
+    throw new Error(`${label} size ${bytes} is outside the allowed range`);
+  }
+  await rejectSymlink(target, label, true);
+  await rejectSymlink(temporary, `${label} temporary output`, true);
+  try {
+    await writeFile(temporary, content, { encoding: "utf8", flag: "wx", mode: 0o644 });
+    await rename(temporary, target);
+  } catch (error) {
+    await rm(temporary, { force: true }).catch(() => undefined);
+    throw error;
+  }
+  return bytes;
+}
+
 assertContained(inputPath, "Echo catalog input");
 assertContained(outputPath, "Echo catalog output");
+assertContained(modulePath, "Echo catalog module");
 await rejectSymlink(inputPath, "Echo catalog input");
 
 const inputMetadata = await stat(inputPath);
@@ -46,10 +68,10 @@ if (inputMetadata.size <= 0 || inputMetadata.size > MAX_SOURCE_BYTES) {
 }
 
 await mkdir(outputDirectory, { recursive: true });
+await mkdir(moduleDirectory, { recursive: true });
 await assertRealDirectoryContained(path.dirname(inputPath), "Echo catalog input directory");
 await assertRealDirectoryContained(outputDirectory, "Echo catalog output directory");
-await rejectSymlink(outputPath, "Echo catalog output", true);
-await rejectSymlink(temporaryPath, "Echo catalog temporary output", true);
+await assertRealDirectoryContained(moduleDirectory, "Echo catalog module directory");
 
 let source;
 try {
@@ -62,15 +84,10 @@ try {
 
 const projection = projectEchoCatalogV1(source);
 const serialized = `${JSON.stringify(projection)}\n`;
-
-try {
-  await writeFile(temporaryPath, serialized, { encoding: "utf8", flag: "wx", mode: 0o644 });
-  await rename(temporaryPath, outputPath);
-} catch (error) {
-  await rm(temporaryPath, { force: true }).catch(() => undefined);
-  throw error;
-}
+const moduleSerialized = `/* Generated browser-safe Echo catalog. Do not edit manually. */\nexport const generatedEchoCatalogV1 = ${JSON.stringify(projection)} as const;\n`;
+const bytes = await atomicWrite(outputPath, temporaryPath, serialized, "Echo catalog output");
+await atomicWrite(modulePath, temporaryModulePath, moduleSerialized, "Echo catalog module");
 
 console.log(
-  `Generated ${path.relative(root, outputPath)} with ${projection.echoes.length} Echoes and ${projection.sonataSets.length} Sonata Sets (${Buffer.byteLength(serialized)} bytes).`,
+  `Generated ${path.relative(root, outputPath)} and ${path.relative(root, modulePath)} with ${projection.echoes.length} Echoes and ${projection.sonataSets.length} Sonata Sets (${bytes} bytes JSON).`,
 );
