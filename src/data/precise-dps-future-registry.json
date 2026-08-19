@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "sourcePolicy": "Precise DPS targets are data-owned. A scenario stays partial until every character mechanic, equipment effect, resource transition, external dependency and timing used by that scenario is explicitly modeled. No missing mechanic may be replaced by an average or silent assumption.",
+  "entries": [
+    {
+      "id": "phrolova",
+      "name": "Phrolova",
+      "signatureWeaponName": "Lethean Elegy",
+      "mechanicsStatus": "partial",
+      "scenarios": [
+        { "id": "phrolova-opener-boss", "label": "Opener · Boss / Movement of Fate and Finality", "variant": "opener-boss" },
+        { "id": "phrolova-loop-boss", "label": "Loop · Boss / Movement of Fate and Finality", "variant": "loop-boss" },
+        { "id": "phrolova-opener-aoe", "label": "Opener · AoE / Murmurs in a Haunting Dream", "variant": "opener-aoe" },
+        { "id": "phrolova-loop-aoe", "label": "Loop · AoE / Murmurs in a Haunting Dream", "variant": "loop-aoe" }
+      ]
+    },
+    {
+      "id": "denia",
+      "name": "Denia",
+      "signatureWeaponName": "Forged Dwarf Star",
+      "mechanicsStatus": "partial",
+      "scenarios": [
+        { "id": "denia-fusion-burst", "label": "Fusion Burst", "resonanceMode": "fusion-burst", "reviewedDurationSeconds": 6.0 },
+        { "id": "denia-tune-strain", "label": "Tune Strain", "resonanceMode": "tune-strain", "reviewedDurationSeconds": 6.0 }
+      ]
+    },
+    {
+      "id": "lynae",
+      "name": "Lynae",
+      "signatureWeaponName": "Spectrum Blaster",
+      "mechanicsStatus": "partial",
+      "scenarios": [
+        { "id": "lynae-tune-rupture", "label": "Tune Rupture", "resonanceMode": "tune-rupture", "reviewedDurationSeconds": 7.1 },
+        { "id": "lynae-tune-strain", "label": "Tune Strain", "resonanceMode": "tune-strain", "reviewedDurationSeconds": 7.1 }
+      ]
+    },
+    {
+      "id": "mornye",
+      "name": "Mornye",
+      "signatureWeaponName": "Starfield Calibrator",
+      "mechanicsStatus": "partial",
+      "scenarios": [
+        { "id": "mornye-opener", "label": "Opener · Baseline → Wide Field Observation", "variant": "opener" },
+        { "id": "mornye-loop", "label": "Loop · Intro → Wide Field Observation", "variant": "loop" }
+      ]
+    },
+    {
+      "id": "qiuyuan",
+      "name": "Qiuyuan",
+      "signatureWeaponName": "Emerald Sentence",
+      "mechanicsStatus": "partial",
+      "scenarios": [
+        { "id": "qiuyuan-standard", "label": "Standard", "reviewedDurationSeconds": 6.35 }
+      ]
+    },
+    {
+      "id": "jinhsi",
+      "name": "Jinhsi",
+      "signatureWeaponName": "Ages of Harvest",
+      "mechanicsStatus": "partial",
+      "scenarios": [
+        { "id": "jinhsi-opener", "label": "Opener · Unison setup", "variant": "opener" },
+        { "id": "jinhsi-loop", "label": "Loop · Incarnation / Incandescence", "variant": "loop", "reviewedDurationSeconds": 10.2 }
+      ]
+    },
+    {
+      "id": "galbrena",
+      "name": "Galbrena",
+      "signatureWeaponName": "Lux & Umbra",
+      "mechanicsStatus": "partial",
+      "scenarios": [
+        { "id": "galbrena-standard", "label": "Standard · Demon Hypostasis", "reviewedDurationSeconds": 12.2 }
+      ]
+    },
+    {
+      "id": "iuno",
+      "name": "Iuno",
+      "signatureWeaponName": "Moongazer's Sigil",
+      "mechanicsStatus": "partial",
+      "scenarios": [
+        { "id": "iuno-main-dps", "label": "Main DPS · Lunar Cycle", "variant": "main-dps", "reviewedDurationSeconds": 8.43 },
+        { "id": "iuno-hybrid", "label": "Hybrid / Sub DPS · Full Moon Domain", "variant": "hybrid" }
+      ]
+    },
+    {
+      "id": "shorekeeper",
+      "name": "Shorekeeper",
+      "signatureWeaponName": "Stellar Symphony",
+      "mechanicsStatus": "partial",
+      "scenarios": [
+        { "id": "shorekeeper-opener", "label": "Opener · Stellarealm", "variant": "opener" },
+        { "id": "shorekeeper-loop", "label": "Loop · Intro / Stellarealm", "variant": "loop" }
+      ]
+    },
+    {
+      "id": "hiyuki",
+      "name": "Hiyuki",
+      "signatureWeaponName": "Frostburn",
+      "mechanicsStatus": "partial",
+      "scenarios": [
+        { "id": "hiyuki-opener", "label": "Opener · Inward Vision / Whiteout Bitterfrost", "variant": "opener" },
+        { "id": "hiyuki-loop", "label": "Loop · banked Bitterfrost", "variant": "loop" }
+      ]
+    }
+  ]
+}
