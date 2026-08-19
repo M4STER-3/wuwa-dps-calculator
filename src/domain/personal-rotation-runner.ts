@@ -7,7 +7,6 @@ import { buildTheoreticalRotationTimeline } from "./theoretical-rotation";
 import type { DamageTarget } from "./damage-engine";
 import type {
   PersonalRotationScenario,
-  RotationSpecialEventPreset,
   SequencePayloadOverride,
 } from "@/data/personal-rotation-presets";
 
@@ -33,11 +32,12 @@ export interface TheoreticalPersonalRotationResult {
 const highestApplicableOverride = (
   overrides: readonly SequencePayloadOverride[] | undefined,
   sequence: UserBuild["sequence"],
-): SequencePayloadOverride | undefined =>
-  [...(overrides ?? [])]
+): SequencePayloadOverride | undefined => {
+  const applicable = [...(overrides ?? [])]
     .filter((override) => override.minimumSequence <= sequence)
-    .sort((a, b) => a.minimumSequence - b.minimumSequence)
-    .at(-1);
+    .sort((a, b) => a.minimumSequence - b.minimumSequence);
+  return applicable[applicable.length - 1];
+};
 
 function compileSpecialEvents(
   scenario: PersonalRotationScenario,
