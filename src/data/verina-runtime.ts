@@ -5,6 +5,7 @@ import {
   variation as baseVariation,
   verina as baseVerina,
   verinaActions as baseActions,
+  verinaPhotosynthesisEffect,
   verinaPreset,
   verinaSource,
 } from "./verina";
@@ -83,6 +84,43 @@ const wrap = (definition: EffectDefinition, description: string): CombatEffect =
   structuredEffect: definition,
   source: verinaSource,
 });
+
+const photosynthesisRuntime: EffectDefinition = {
+  ...verinaPhotosynthesisEffect,
+  activationPolicy: "triggered",
+  triggers: [
+    {
+      id: "verina-apply-photosynthesis-mark",
+      event: "action-end",
+      predicates: [
+        { kind: "identity", field: "actionId", anyOf: ["verina-arboreal-flourish"] },
+      ],
+      operations: [
+        {
+          kind: "apply-status",
+          statusId: "photosynthesis-mark",
+          stacks: { kind: "constant", value: 1 },
+        },
+      ],
+    },
+    {
+      id: "verina-photosynthesis-coordinated-response",
+      event: "damage-dealt",
+      predicates: [{ kind: "target-has-status", id: "photosynthesis-mark" }],
+      cooldown: { seconds: 1, scope: "target" },
+      operations: [
+        {
+          kind: "emit-action",
+          action: {
+            actionId: "verina-coordinated-attack",
+            attribution: "coordinated",
+            snapshot: { stats: "hit", stacks: "tick" },
+          },
+        },
+      ],
+    },
+  ],
+};
 
 const personalHealingBuff: EffectDefinition = {
   id: "verina-gift-of-nature-self",
@@ -229,7 +267,13 @@ const sequenceEffects: readonly EffectDefinition[] = [
 ];
 
 export const verinaEffects: readonly CombatEffect[] = [
-  ...(baseVerina.combat?.effects ?? []),
+  ...(baseVerina.combat?.effects ?? []).filter(
+    (effect) => effect.id !== "verina-photosynthesis-mark",
+  ),
+  wrap(
+    photosynthesisRuntime,
+    "Arboreal Flourish applies the 12s mark; later personal damage can trigger Verina's coordinated attack once per target per second.",
+  ),
   wrap(personalHealingBuff, "Relevant personal healing grants Verina +20% ATK for 20s."),
   ...sequenceEffects.map((definition) =>
     wrap(definition, "Sequence-gated personal runtime effect."),
