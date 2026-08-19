@@ -1,6 +1,10 @@
-import { generatedCharacterBoxRuntimeBaseStats10R1 } from "@/generated/character-box-roster-baselines-10r1";
+import {
+  generatedCharacterBoxCharacterBases10R1,
+  generatedCharacterBoxWeaponBases10R1,
+} from "@/generated/character-box-roster-baselines-10r1";
 import { personalDpsRuntimeActionResourceOperations10R1 } from "@/data/personal-dps-runtime-action-overlays-10r1";
 import { resolvePersonalDpsRuntimeBundle10R1 } from "@/data/personal-dps-runtime-effects-10r1";
+import { resolvePersonalDpsBuildPassives10R1 } from "@/data/personal-dps-build-passives-10r1";
 import type { PersonalDpsProfileV1, PersonalDpsRotationStepV1 } from "./personal-dps-engine";
 import { simulatePersonalCombat, type PersonalDiagnostic } from "./personal-combat-simulation";
 import { resolveActiveEffects } from "./effect-engine";
@@ -146,34 +150,28 @@ function buildTimeline(
 }
 
 function runtimeBaseStatBasis(build: UserBuild) {
-  const registry = generatedCharacterBoxRuntimeBaseStats10R1 as Readonly<
-    Record<
-      string,
-      | {
-          hp: number;
-          attack: number;
-          defense: number;
-          characterLevel: number;
-          weaponId: string;
-          weaponLevel: number;
-        }
-      | undefined
-    >
+  const characters = generatedCharacterBoxCharacterBases10R1 as Readonly<
+    Record<string, { hp: number; attack: number; defense: number; level: number; weaponType: string } | undefined>
   >;
-  const basis = registry[build.resonatorId];
+  const weapons = generatedCharacterBoxWeaponBases10R1 as Readonly<
+    Record<string, { attack: number; level: number; type: string } | undefined>
+  >;
+  const character = characters[build.resonatorId];
+  const weapon = weapons[build.weapon.weaponId];
   if (
-    !basis ||
-    build.characterLevel !== basis.characterLevel ||
-    build.weapon.weaponId !== basis.weaponId ||
-    build.weapon.level !== basis.weaponLevel
+    !character ||
+    !weapon ||
+    build.characterLevel !== character.level ||
+    build.weapon.level !== weapon.level ||
+    weapon.type !== character.weaponType
   ) {
     return undefined;
   }
   return {
-    hp: basis.hp,
-    attack: basis.attack,
-    defense: basis.defense,
-    provenance: "Exact GameDatabase Lv90 character + equipped signature weapon base stats",
+    hp: character.hp,
+    attack: character.attack + weapon.attack,
+    defense: character.defense,
+    provenance: "Exact generated GameDatabase Lv90 character + equipped reviewed weapon base stats",
   };
 }
 
@@ -252,6 +250,7 @@ export function simulatePersonalDpsBuildV1(
   }
 
   const bundle = resolvePersonalDpsRuntimeBundle10R1(request.build);
+  const permanentPassives = resolvePersonalDpsBuildPassives10R1(request.build);
   const actions = overlayActions(request.profile, bundle.actions);
   const resonator = runtimeResonator(request.resonator, actions, bundle.resources);
   const standardLength = firstUncategorized < 0 ? steps.length : firstUncategorized;
@@ -262,7 +261,7 @@ export function simulatePersonalDpsBuildV1(
     target: request.target,
     scalingAttribute: request.scalingAttribute ?? request.profile.defaultScalingAttribute,
     actions,
-    loadout: { extraEffects: bundle.effects },
+    loadout: { extraEffects: [...permanentPassives, ...bundle.effects] },
     baseStatBasis: runtimeBaseStatBasis(request.build),
   });
 
