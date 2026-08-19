@@ -167,7 +167,7 @@ function resolveValue(modifier: EffectModifier, stacks: number | undefined, cont
   }
   if (modifier.valuePerStack !== undefined) {
     if (!Number.isInteger(stacks) || stacks! < 0) return { error: "A non-negative integer stack count is required.", code: "invalid-stacks" };
-    if (modifier.maxStacks !== undefined && (!Number.isInteger(modifier.maxStacks) || modifier.maxStacks < 0)) return { error: "maxStacks must be a non-negative integer.", code: "invalid-stacks" };
+    if (modifier.maxStacks !== undefined && (!Number.isInteger(modifier.maxStacks) || modifier.maxStacks < 0)) return { error: "maxStacks must be a non-negative integer.", code: "invalid-value" };
     if (!validNumber(modifier.valuePerStack)) return { error: "valuePerStack must be finite.", code: "invalid-value" };
     return { value: modifier.valuePerStack * Math.min(stacks!, modifier.maxStacks ?? stacks!) };
   }
@@ -177,7 +177,11 @@ function resolveValue(modifier: EffectModifier, stacks: number | undefined, cont
 
 function matchScope(scope: EffectTargetScope, instance: ActiveEffectInstance, context: EffectResolutionContext): string | undefined {
   const affected = instance.affectedEntityIds;
-  if (affected && !affected.includes(scope === "enemy" ? context.targetId : context.actorId)) return "target-not-in-active-instance-scope";
+  const recipientId = scope === "enemy" ? context.targetId : context.actorId;
+  if (affected && !affected.includes(recipientId)) return "target-not-in-active-instance-scope";
+  if ((scope === "incoming-resonator" || scope === "active-resonator") && !affected) {
+    return `scope-${scope}-recipient-unresolved`;
+  }
   if (scope === "self" && context.actorId !== instance.ownerId) return "scope-self-mismatch";
   if (scope === "enemy" && !context.targetId) return "missing-target-context";
   if (scope === "team" && !context.teamMemberIds.includes(context.actorId)) return "scope-team-mismatch";
