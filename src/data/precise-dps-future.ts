@@ -9,6 +9,7 @@ import type {
 import type { TemporalProfileId } from "@/domain/temporal-engine";
 import type { TheoreticalRotationPreset } from "@/domain/theoretical-rotation";
 import { generatedPreciseDpsFutureProjection } from "@/generated/precise-dps-future-projection";
+import { applyPreciseQiuyuanActionPatches } from "./precise-dps-qiuyuan-core";
 import {
   applyPreciseSpecialActionPatches,
   preciseScenarioMechanicsFor,
@@ -24,6 +25,7 @@ type ProjectedAction = CombatAction & {
 };
 
 type ActionSelector = {
+  actionId?: string;
   talent?: CombatAction["talent"];
   sourceSkillId?: string;
   sourceAttributeId?: string;
@@ -119,6 +121,7 @@ const containsAll = (value: string, needles: readonly string[]): boolean => {
 };
 
 function matchesSelector(action: ProjectedAction, selector: ActionSelector): boolean {
+  if (selector.actionId && action.id !== selector.actionId) return false;
   if (selector.talent && action.talent !== selector.talent) return false;
   if (selector.sourceSkillId && action.sourceSkillId !== selector.sourceSkillId) return false;
   if (selector.sourceAttributeId && action.sourceAttributeId !== selector.sourceAttributeId) return false;
@@ -140,6 +143,7 @@ function parseSelector(raw: unknown, label: string): ActionSelector {
         ? value
         : (() => { throw new Error(`${label} has an invalid string selector.`); })();
   return {
+    ...(typeof input.actionId === "string" ? { actionId: input.actionId } : {}),
     ...(typeof input.talent === "string" ? { talent: input.talent as CombatAction["talent"] } : {}),
     ...(typeof input.sourceSkillId === "string" ? { sourceSkillId: input.sourceSkillId } : {}),
     ...(typeof input.sourceAttributeId === "string" ? { sourceAttributeId: input.sourceAttributeId } : {}),
@@ -279,13 +283,16 @@ export const preciseDpsFutureResonators: readonly Resonator[] = registry.entries
   ];
   if (!projected) throw new Error(`Missing precise projection for ${entry.id}.`);
   const model = entry.combatModel;
-  const actions = applyPreciseSpecialActionPatches(
+  const specialActions = applyPreciseSpecialActionPatches(
     entry.id,
     applyPreciseDamageTypeOverrides(
       entry.id,
       projected.actions as unknown as readonly ProjectedAction[],
     ),
   ) as readonly ProjectedAction[];
+  const actions = (entry.id === "qiuyuan"
+    ? applyPreciseQiuyuanActionPatches(specialActions)
+    : specialActions) as readonly ProjectedAction[];
   const duration = oneReviewedDuration(entry);
   const combat: ResonatorCombatData = {
     level10Only: false,
