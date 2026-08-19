@@ -11,6 +11,7 @@ on:
       - "scripts/lib/roster-promotion-registry.mjs"
       - "scripts/generate-character-box-roster-10r1.mjs"
       - "scripts/generate-character-box-roster-baselines-10r1.mjs"
+      - "scripts/generate-character-box-combat-10r1.mjs"
       - "scripts/generate-character-box-roster-media-10r1.mjs"
       - "scripts/generate-character-box-community-echo-presets.mjs"
       - "scripts/generate-wuwa-ui-asset-projection-v1.mjs"
@@ -49,6 +50,7 @@ jobs:
           node --check scripts/generate-wuwa-ui-asset-projection-v1.mjs
           node --check scripts/generate-character-box-roster-10r1.mjs
           node --check scripts/generate-character-box-roster-baselines-10r1.mjs
+          node --check scripts/generate-character-box-combat-10r1.mjs
           node --check scripts/generate-character-box-roster-media-10r1.mjs
           node --check scripts/generate-character-box-community-echo-presets.mjs
 
@@ -60,6 +62,9 @@ jobs:
 
       - name: Generate exact 10R1 stat baselines
         run: node scripts/generate-character-box-roster-baselines-10r1.mjs
+
+      - name: Generate universal 10R1 combat projection
+        run: node scripts/generate-character-box-combat-10r1.mjs
 
       - name: Generate verified 10R1 portrait projection
         run: node scripts/generate-character-box-roster-media-10r1.mjs
