@@ -5,6 +5,7 @@ import {
 } from "@/generated/character-box-roster-10r1";
 import { generatedCharacterBoxRosterMedia10R1 } from "@/generated/character-box-roster-media-10r1";
 import { generatedCharacterBoxCombat10R1 } from "@/generated/character-box-combat-10r1";
+import { roster10R1 } from "./roster-10r1";
 
 const projectedSource = {
   kind: "verified-game-data" as const,
@@ -60,7 +61,13 @@ export const roster10R1PromotedResonators: readonly Resonator[] =
 
 export const roster10R1PromotedWeapons: readonly Weapon[] =
   generatedCharacterBoxWeapons10R1.map((entry) => {
-    const combat = generatedCharacterBoxCombat10R1[entry.id];
+    const owner = roster10R1.find(
+      (candidate) => candidate.signatureWeapon.id === entry.id,
+    );
+    if (!owner) {
+      throw new Error(`Missing reviewed owner for signature weapon ${entry.id}`);
+    }
+    const combat = generatedCharacterBoxCombat10R1[owner.id];
     return {
       id: entry.id,
       name: entry.name,
