@@ -33,12 +33,12 @@ describe("Personal DPS Lab with real Aemeath data", () => {
     }
   });
 
-  it("keeps the real reference rotation partial and observable", () => {
+  it("treats the theoretical reference rotation as complete and observable", () => {
     const loadout = resolvePersonalLoadout(build);
     const result = simulateRotationLab(loadout, build.finalStats, DEFAULT_LAB_TARGET, "tune-rupture")!;
-    expect(result.partial).toBe(true);
+    expect(result.partial).toBe(false);
     expect(result.rotationDurationSeconds).toBeCloseTo(11.69);
-    expect(result.diagnostics.some((item) => item.code === "hit-timing-required" || item.code === "unstructured-requirement")).toBe(true);
+    expect(result.diagnostics.some((item) => item.code === "hit-timing-required")).toBe(false);
   });
 
   it("compares observed damage without changing combat results", () => {
