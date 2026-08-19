@@ -100,9 +100,20 @@ export function applyPreciseShorekeeperActionPatches(
         ],
       };
     }
+    if (sourceAttributeId === "1505026") {
+      return {
+        ...action,
+        damageType: "basicAttack" as const,
+        notes: [
+          ...(action.notes ?? []),
+          "Game damage data classifies Flare Star Butterfly as Basic Attack DMG.",
+        ],
+      };
+    }
     if (sourceAttributeId === "1505027") {
       return {
         ...action,
+        damageType: "heavyAttack" as const,
         resourceOperations: [
           ...(action.resourceOperations ?? []),
           {
@@ -111,6 +122,20 @@ export function applyPreciseShorekeeperActionPatches(
             amount: 5,
             stage: "before-action" as const,
           },
+        ],
+        notes: [
+          ...(action.notes ?? []),
+          "Game damage data classifies Illation as Heavy Attack DMG.",
+        ],
+      };
+    }
+    if (sourceAttributeId === "1505028") {
+      return {
+        ...action,
+        damageType: "basicAttack" as const,
+        notes: [
+          ...(action.notes ?? []),
+          "Game damage data classifies Transmutation as Basic Attack DMG.",
         ],
       };
     }
