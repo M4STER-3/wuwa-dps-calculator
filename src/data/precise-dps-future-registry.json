@@ -188,14 +188,14 @@
           "reviewedDurationSeconds": 6.35,
           "eligibility": "S0–S2 standard Hybrid rotation; optional normal Resonance Skill omitted because it is an Energy-routing choice rather than a fixed damage requirement.",
           "steps": [
-            { "selector": { "talent": "introSkill", "sourceSkillNameIncludes": ["Attack the Must-Defend"] } },
-            { "selector": { "nameIncludes": ["Inkwash", "Stage 3"] } },
-            { "selector": { "nameIncludes": ["Inkwash", "Stage 4"] } },
-            { "selector": { "talent": "resonanceLiberation", "sourceSkillNameIncludes": ["Sundering Strike"] } },
-            { "selector": { "nameIncludes": ["To Teach"] } },
-            { "selector": { "nameIncludes": ["To Save"] } },
-            { "selector": { "nameIncludes": ["To Sacrifice"] } },
-            { "selector": { "talent": "outroSkill", "sourceSkillNameIncludes": ["Strike Before Ready"] } }
+            { "selector": { "actionId": "precise-qiuyuan-intro-attack-the-must-defend" } },
+            { "selector": { "sourceAttributeId": "1308023" } },
+            { "selector": { "sourceAttributeId": "1308024" } },
+            { "selector": { "sourceAttributeId": "1308014" } },
+            { "selector": { "sourceAttributeId": "1308025" } },
+            { "selector": { "sourceAttributeId": "1308026" } },
+            { "selector": { "sourceAttributeId": "1308027" } },
+            { "selector": { "actionId": "precise-qiuyuan-outro-strike-before-ready" } }
           ]
         },
         {
@@ -204,20 +204,20 @@
           "variant": "s3-dps",
           "eligibility": "S3+ only; assumes full Concerto Energy is available for Straw Cape in Drizzly Rain after the first Forte cycle.",
           "steps": [
-            { "selector": { "talent": "introSkill", "sourceSkillNameIncludes": ["Attack the Must-Defend"] } },
-            { "selector": { "nameIncludes": ["Inkwash", "Stage 3"] } },
-            { "selector": { "nameIncludes": ["Inkwash", "Stage 4"] } },
-            { "selector": { "talent": "resonanceLiberation", "sourceSkillNameIncludes": ["Sundering Strike"] } },
-            { "selector": { "nameIncludes": ["To Teach"] } },
-            { "selector": { "nameIncludes": ["To Save"] } },
-            { "selector": { "nameIncludes": ["To Sacrifice"] } },
-            { "selector": { "nameIncludes": ["Straw Cape in Drizzly Rain"] } },
-            { "selector": { "nameIncludes": ["Inkwash", "Stage 3"] } },
-            { "selector": { "nameIncludes": ["Inkwash", "Stage 4"] } },
-            { "selector": { "nameIncludes": ["To Teach"] } },
-            { "selector": { "nameIncludes": ["To Save"] } },
-            { "selector": { "nameIncludes": ["To Sacrifice"] } },
-            { "label": "S3 replacement Outro / handoff", "profileId": "outro" }
+            { "selector": { "actionId": "precise-qiuyuan-intro-attack-the-must-defend" } },
+            { "selector": { "sourceAttributeId": "1308023" } },
+            { "selector": { "sourceAttributeId": "1308024" } },
+            { "selector": { "sourceAttributeId": "1308014" } },
+            { "selector": { "sourceAttributeId": "1308025" } },
+            { "selector": { "sourceAttributeId": "1308026" } },
+            { "selector": { "sourceAttributeId": "1308027" } },
+            { "selector": { "actionId": "precise-qiuyuan-s3-straw-cape-in-drizzly-rain" } },
+            { "selector": { "sourceAttributeId": "1308023" } },
+            { "selector": { "sourceAttributeId": "1308024" } },
+            { "selector": { "sourceAttributeId": "1308025" } },
+            { "selector": { "sourceAttributeId": "1308026" } },
+            { "selector": { "sourceAttributeId": "1308027" } },
+            { "selector": { "actionId": "precise-qiuyuan-s3-outro-sheath-fallen-new-shoots-revealed" } }
           ]
         }
       ]
