@@ -4,7 +4,7 @@ import type { CombatAction, FinalStats, MainEcho, Resonator, Sonata, UserBuild, 
 import { simulatePersonalCombat, type PersonalCombatResult } from "./personal-combat-simulation";
 import { emptyCombatState, type CombatEvent, type CombatState } from "./state-engine";
 import { buildTheoreticalRotationTimeline } from "./theoretical-rotation";
-import type { DamageTarget } from "./damage-engine";
+import type { DamageAmounts, DamageTarget } from "./damage-engine";
 import type {
   PersonalRotationScenario,
   SequencePayloadOverride,
@@ -132,6 +132,70 @@ function scenarioActions(
   }));
 }
 
+const addAmounts = (a: DamageAmounts, b: DamageAmounts): DamageAmounts => ({
+  nonCrit: a.nonCrit + b.nonCrit,
+  crit: a.crit + b.crit,
+  expected: a.expected + b.expected,
+});
+
+function withFixedScenarioDamage(
+  simulation: PersonalCombatResult,
+  events: readonly CombatEvent[],
+  resonatorId: string,
+): PersonalCombatResult {
+  const fixed = events.flatMap((event) => {
+    const amount = Number(event.payload?.fixedDamageAmount);
+    if (!Number.isFinite(amount) || amount < 0) return [];
+    return [{ event, amount }];
+  });
+  if (!fixed.length) return simulation;
+
+  let fixedTotal = 0;
+  const perAction = { ...simulation.perAction };
+  for (const entry of fixed) {
+    fixedTotal += entry.amount;
+    const actionId = entry.event.actionId ?? "scenario-fixed-damage";
+    const amounts = { nonCrit: entry.amount, crit: entry.amount, expected: entry.amount };
+    perAction[actionId] = addAmounts(
+      perAction[actionId] ?? { nonCrit: 0, crit: 0, expected: 0 },
+      amounts,
+    );
+  }
+  const fixedAmounts = { nonCrit: fixedTotal, crit: fixedTotal, expected: fixedTotal };
+  const personalDamage = addAmounts(simulation.personalDamage, fixedAmounts);
+  const duration = simulation.rotationDurationSeconds;
+  const personalDps = duration > 0
+    ? {
+        nonCrit: personalDamage.nonCrit / duration,
+        crit: personalDamage.crit / duration,
+        expected: personalDamage.expected / duration,
+      }
+    : simulation.personalDps;
+
+  return {
+    ...simulation,
+    personalDamage,
+    personalDps,
+    breakdown: {
+      ...simulation.breakdown,
+      direct: addAmounts(simulation.breakdown.direct, fixedAmounts),
+    },
+    perAction,
+    perSource: {
+      ...simulation.perSource,
+      [resonatorId]: addAmounts(
+        simulation.perSource[resonatorId] ?? { nonCrit: 0, crit: 0, expected: 0 },
+        fixedAmounts,
+      ),
+    },
+    coverage: {
+      ...simulation.coverage,
+      relevantSupported: simulation.coverage.relevantSupported + fixed.length,
+      directDamageActions: simulation.coverage.directDamageActions + fixed.length,
+    },
+  };
+}
+
 export function runTheoreticalPersonalRotation(
   request: TheoreticalPersonalRotationRequest,
 ): TheoreticalPersonalRotationResult {
@@ -141,9 +205,10 @@ export function runTheoreticalPersonalRotation(
     );
   }
   const targetId = request.target.id ?? "training-target";
+  const actions = [...request.actions, ...(request.scenario.extraActions ?? [])];
   const timeline = buildTheoreticalRotationTimeline(
     request.scenario.rotation,
-    request.actions,
+    actions,
   );
   const externalEvents = compileSpecialEvents(
     request.scenario,
@@ -153,14 +218,14 @@ export function runTheoreticalPersonalRotation(
     targetId,
   );
   const build = { ...request.build, finalStats: request.stats };
-  const simulation = simulatePersonalCombat({
+  const rawSimulation = simulatePersonalCombat({
     resonator: request.resonator,
     build,
     timeline,
     target: { ...request.target, id: targetId },
     resonanceMode: request.scenario.resonanceMode ?? request.resonanceMode,
     baseStatBasis: request.baseStatBasis,
-    actions: scenarioActions(request.scenario, request.actions),
+    actions: scenarioActions(request.scenario, actions),
     loadout: {
       weapon: request.weapon,
       sonata: request.sonata,
@@ -175,5 +240,10 @@ export function runTheoreticalPersonalRotation(
     ),
     externalEvents,
   });
+  const simulation = withFixedScenarioDamage(
+    rawSimulation,
+    externalEvents,
+    request.resonator.id,
+  );
   return { scenario: request.scenario, simulation };
 }
