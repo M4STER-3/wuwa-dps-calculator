@@ -43,17 +43,22 @@ const skillNames = {
   introSkill: "Intro Skill",
 } as const;
 
+const promotedPortraitByResonatorId = new Map(
+  roster10R1PromotedResonators.flatMap((resonator) =>
+    resonator.portrait ? [[resonator.id, resonator.portrait] as const] : [],
+  ),
+);
+
 const withOptionalLocalUiPortrait = (resonator: Resonator): Resonator => {
   const portraitPath = getResonatorUiPortraitPath(resonator.id);
-  return portraitPath
+  const generatedPortrait = promotedPortraitByResonatorId.get(resonator.id);
+  const portrait = portraitPath
     ? {
-        ...resonator,
-        portrait: {
-          src: portraitPath,
-          alt: `Portrait de ${resonator.name}`,
-        },
+        src: portraitPath,
+        alt: `Portrait de ${resonator.name}`,
       }
-    : resonator;
+    : generatedPortrait;
+  return portrait ? { ...resonator, portrait } : resonator;
 };
 
 const rich10R1Ids = new Set(["aemeath", "calcharo", "chisa"]);
