@@ -193,12 +193,22 @@ export function materializeCharacterBoxFinalStats10R1(
   const selectedMainEcho = build.echoLoadout.mainEchoId;
   const aemeathMain = mainEchoId(generatedCommunityEchoPresets10R1.aemeath);
   const calcharoMain = mainEchoId(generatedCommunityEchoPresets10R1.calcharo);
+  const changliNightmareInfernoRider =
+    generatedCommunityEchoPresets10R1.changli.echoLoadout.echoes[0]?.echoId;
   if (selectedMainEcho && selectedMainEcho === aemeathMain && build.resonatorId === "aemeath") {
     stats.damageTypeBonus.resonanceLiberation += 25;
   }
   if (selectedMainEcho && selectedMainEcho === calcharoMain && build.resonatorId === "calcharo") {
     stats.elementalDamageBonus.electro += 12;
     stats.damageTypeBonus.resonanceLiberation += 12;
+  }
+  if (
+    selectedMainEcho &&
+    selectedMainEcho === changliNightmareInfernoRider &&
+    build.resonatorId === "changli"
+  ) {
+    stats.elementalDamageBonus.fusion += 12;
+    stats.damageTypeBonus.resonanceSkill += 12;
   }
 
   return stats;
