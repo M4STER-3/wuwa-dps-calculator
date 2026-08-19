@@ -46,14 +46,14 @@
           "resonanceMode": "tune-rupture",
           "reviewedDurationSeconds": 7.1,
           "steps": [
-            { "selector": { "talent": "introSkill" } },
+            { "selector": { "sourceAttributeId": "1509029" } },
             { "selector": { "sourceAttributeId": "1509010" } },
             { "selector": { "sourceAttributeId": "1509006" } },
-            { "selector": { "nameIncludes": ["Spark Collision", "Lv. 3"] } },
-            { "selector": { "nameIncludes": ["Polychrome Leap", "Stage 1"] } },
-            { "selector": { "nameIncludes": ["Polychrome Leap", "Stage 2"] } },
-            { "selector": { "nameIncludes": ["Polychrome Leap", "Stage 3"] } },
-            { "selector": { "nameIncludes": ["Visual Impact"] } },
+            { "selector": { "sourceAttributeId": "1509013" } },
+            { "selector": { "sourceAttributeId": "1509020" } },
+            { "selector": { "sourceAttributeId": "1509021" } },
+            { "selector": { "sourceAttributeId": "1509022" } },
+            { "selector": { "sourceAttributeId": "1509009" } },
             { "label": "Outro / handoff", "profileId": "outro" }
           ]
         },
