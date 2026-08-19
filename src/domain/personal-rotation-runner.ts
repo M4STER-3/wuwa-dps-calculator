@@ -106,19 +106,36 @@ function compileSpecialEvents(
   return events;
 }
 
+function resourceCapForSequence(
+  resource: NonNullable<Resonator["combat"]>["resources"][number],
+  sequence: UserBuild["sequence"],
+): number {
+  const applicable = Object.entries(resource.capBySequence ?? {})
+    .map(([required, cap]) => ({ required: Number(required), cap }))
+    .filter((entry) => Number.isInteger(entry.required) && entry.required <= sequence && typeof entry.cap === "number")
+    .sort((a, b) => b.required - a.required);
+  const cap = applicable[0]?.cap ?? resource.cap;
+  if (!Number.isFinite(cap) || cap <= 0) {
+    throw new Error(`Resource ${resource.id} has invalid cap ${String(cap)} at S${sequence}.`);
+  }
+  return cap;
+}
+
 function initialStateForScenario(
   scenario: PersonalRotationScenario,
   resonator: Resonator,
   stats: FinalStats,
   targetId: string,
+  sequence: UserBuild["sequence"],
 ): CombatState {
   const resources = Object.fromEntries(
     (resonator.combat?.resources ?? []).map((resource) => {
+      const cap = resourceCapForSequence(resource, sequence);
       const current = scenario.initialResources?.[resource.id] ?? 0;
-      if (!Number.isFinite(current) || current < 0 || current > resource.cap) {
-        throw new Error(`Rotation scenario ${scenario.id} has invalid initial ${resource.id}: ${current}/${resource.cap}.`);
+      if (!Number.isFinite(current) || current < 0 || current > cap) {
+        throw new Error(`Rotation scenario ${scenario.id} has invalid initial ${resource.id}: ${current}/${cap} at S${sequence}.`);
       }
-      return [resource.id, { current, max: resource.cap }];
+      return [resource.id, { current, max: cap }];
     }),
   );
   return emptyCombatState({
@@ -226,7 +243,13 @@ export function runTheoreticalPersonalRotation(
       mainEcho: request.mainEcho,
       extraEffects: request.scenario.extraEffects,
     },
-    initialState: initialStateForScenario(request.scenario, request.resonator, request.stats, targetId),
+    initialState: initialStateForScenario(
+      request.scenario,
+      request.resonator,
+      request.stats,
+      targetId,
+      request.build.sequence,
+    ),
     externalEvents,
   });
   return {
