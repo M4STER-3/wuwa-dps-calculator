@@ -20,6 +20,8 @@ type ProjectedAction = CombatAction & {
 
 interface ActionSelector {
   talent?: SkillType;
+  sourceSkillId?: string;
+  sourceAttributeId?: string;
   nameIncludes: readonly string[];
   nameExcludes: readonly string[];
   sourceSkillNameIncludes: readonly string[];
@@ -98,6 +100,15 @@ function textArray(value: unknown, label: string): readonly string[] {
   return value.map((item, index) => text(item, `${label}[${index}]`, 160));
 }
 
+function optionalSourceId(value: unknown, label: string): string | undefined {
+  if (value === undefined) return undefined;
+  const parsed = text(value, label, 160);
+  if (!/^[A-Za-z0-9._:-]+$/.test(parsed)) {
+    return fail(`${label} contains unsupported characters`);
+  }
+  return parsed;
+}
+
 function optionalTalent(value: unknown, label: string): SkillType | undefined {
   if (value === undefined) return undefined;
   const parsed = text(value, label, 80);
@@ -141,6 +152,11 @@ function parseSelector(value: unknown, label: string): ActionSelector {
   const raw = record(value, label);
   return {
     talent: optionalTalent(raw.talent, `${label}.talent`),
+    sourceSkillId: optionalSourceId(raw.sourceSkillId, `${label}.sourceSkillId`),
+    sourceAttributeId: optionalSourceId(
+      raw.sourceAttributeId,
+      `${label}.sourceAttributeId`,
+    ),
     nameIncludes: textArray(raw.nameIncludes, `${label}.nameIncludes`),
     nameExcludes: textArray(raw.nameExcludes, `${label}.nameExcludes`),
     sourceSkillNameIncludes: textArray(
@@ -244,6 +260,13 @@ function includesEvery(haystack: string, needles: readonly string[]): boolean {
 
 function matchesSelector(action: ProjectedAction, selector: ActionSelector): boolean {
   if (selector.talent && action.talent !== selector.talent) return false;
+  if (selector.sourceSkillId && action.sourceSkillId !== selector.sourceSkillId) return false;
+  if (
+    selector.sourceAttributeId &&
+    action.sourceAttributeId !== selector.sourceAttributeId
+  ) {
+    return false;
+  }
   if (!includesEvery(action.name, selector.nameIncludes)) return false;
   const normalizedName = normalize(action.name);
   if (selector.nameExcludes.some((needle) => normalizedName.includes(normalize(needle)))) {
@@ -308,7 +331,13 @@ function resolveRotationAction(
   stepIndex: number,
 ): ProjectedAction {
   let matches = actions.filter((action) => matchesSelector(action, step.selector));
-  if (matches.length === 0 && step.allowTalentFallback && step.selector.talent) {
+  if (
+    matches.length === 0 &&
+    step.allowTalentFallback &&
+    step.selector.talent &&
+    !step.selector.sourceSkillId &&
+    !step.selector.sourceAttributeId
+  ) {
     matches = actions.filter((action) => action.talent === step.selector.talent);
   }
   if (matches.length !== 1) {
