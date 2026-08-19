@@ -53,6 +53,33 @@ describe("pinned community Echo presets", () => {
     }
   });
 
+  it("infers a Main Echo only when a source-omitted 43311 has one unambiguous 4-cost", () => {
+    for (const [resonatorId, preset] of Object.entries(
+      generatedCommunityEchoPresets10R1,
+    )) {
+      if (preset.mainEchoSelection !== "single-four-cost-default") continue;
+      const fourCostIds = preset.echoLoadout.echoes
+        .filter((equipped) => {
+          const catalogEcho = echoCatalog.echoes.find(
+            (echo) => echo.id === equipped.echoId,
+          );
+          return catalogEcho?.cost === 4;
+        })
+        .map((equipped) => equipped.echoId);
+      expect(fourCostIds, resonatorId).toHaveLength(1);
+      expect(preset.echoLoadout.mainEchoId, resonatorId).toBe(fourCostIds[0]);
+    }
+
+    expect(
+      generatedCommunityEchoPresets10R1.changli.mainEchoSelection,
+    ).toBe("single-four-cost-default");
+    expect(
+      generatedCommunityEchoPresets10R1.changli.echoLoadout.mainEchoId,
+    ).toBe(
+      generatedCommunityEchoPresets10R1.changli.echoLoadout.echoes[0].echoId,
+    );
+  });
+
   it("keeps curated presets explicit instead of presenting them as verbatim fixtures", () => {
     const curatedIds = [
       "augusta",
