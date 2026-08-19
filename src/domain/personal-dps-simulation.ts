@@ -5,6 +5,7 @@ import {
 import { personalDpsRuntimeActionResourceOperations10R1 } from "@/data/personal-dps-runtime-action-overlays-10r1";
 import { resolveReviewedPersonalDpsRuntimeBundle10R1 } from "@/data/personal-dps-runtime-reviewed-10r1";
 import { resolvePersonalDpsBuildPassives10R1 } from "@/data/personal-dps-build-passives-10r1";
+import { resolvePersonalDpsRotationContext10R1 } from "@/data/personal-dps-rotation-context-10r1";
 import type { PersonalDpsProfileV1, PersonalDpsRotationStepV1 } from "./personal-dps-engine";
 import { simulatePersonalCombat, type PersonalDiagnostic } from "./personal-combat-simulation";
 import { resolveActiveEffects } from "./effect-engine";
@@ -236,6 +237,7 @@ export function simulatePersonalDpsBuildV1(
   request: PersonalDpsSimulationRequestV1,
 ): PersonalDpsSimulationResultV1 {
   const { rotation, steps } = expandRotation(request.profile, request.rotationId);
+  const rotationContext = resolvePersonalDpsRotationContext10R1(rotation.id);
   const timeline = buildTimeline(rotation, steps);
   const firstUncategorized = steps.findIndex(
     (step) => step.rotationStep.damageCategory === "uncategorized",
@@ -259,6 +261,9 @@ export function simulatePersonalDpsBuildV1(
     build: request.build,
     timeline: prefixTimeline(timeline, standardLength),
     target: request.target,
+    ...(rotationContext.resonanceMode
+      ? { resonanceMode: rotationContext.resonanceMode }
+      : {}),
     scalingAttribute: request.scalingAttribute ?? request.profile.defaultScalingAttribute,
     actions,
     loadout: { extraEffects: [...permanentPassives, ...bundle.effects] },
@@ -280,6 +285,9 @@ export function simulatePersonalDpsBuildV1(
         teamMemberIds: [resonator.id],
         element: request.profile.element,
         actionId: step.action.id,
+        ...(rotationContext.resonanceMode
+          ? { resonanceMode: rotationContext.resonanceMode }
+          : {}),
       });
       const result = calculateUncategorizedDamageV1({
         action: step.action,
