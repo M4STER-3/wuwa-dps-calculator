@@ -22,7 +22,7 @@
           {"selector":{"nameIncludes":["Heavy Attack - Thunderoar: Backstep"]}},
           {"selector":{"nameIncludes":["Heavy Attack - Thunderoar: Spinslash"]}},
           {"selector":{"nameIncludes":["Sword of Eternal Oath"]}},
-          {"selector":{"nameIncludes":["Undying Sunlight: Strike"]}},
+          {"selector":{"nameIncludes":["Undying Sunlight: Strike"],"nameExcludes":["Dodge Counter"]}},
           {"selector":{"nameIncludes":["Undying Sunlight: Leap"]}},
           {"selector":{"nameIncludes":["Undying Sunlight: Plunge"]}},
           {"label":"Resonance Liberation - Sublime is the Sun","profileId":"very-short"},
@@ -66,7 +66,7 @@
         "name": "Cantarella S0 · Standard Rotation",
         "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
         "steps": [
-          {"selector":{"talent":"introSkill","nameIncludes":["Ripple"]},"allowTalentFallback":true},
+          {"selector":{"talent":"introSkill","nameIncludes":["Ripple"]}},
           {"selector":{"talent":"basicAttack","nameIncludes":["Stage 3"],"nameExcludes":["Phantom"]}},
           {"selector":{"nameIncludes":["Graceful Step"]}},
           {"selector":{"nameIncludes":["Flowing Suffocation"]}},
@@ -120,13 +120,13 @@
         "name": "Cartethyia S0 · Basic Rotation",
         "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
         "steps": [
-          {"selector":{"talent":"introSkill"}},
+          {"selector":{"talent":"introSkill","nameIncludes":["Sword to Mark Tide's Trace"]}},
           {"selector":{"talent":"basicAttack","nameIncludes":["Cartethyia","Stage 2"]}},
           {"selector":{"talent":"basicAttack","nameIncludes":["Cartethyia","Stage 3"]}},
           {"selector":{"talent":"basicAttack","nameIncludes":["Cartethyia","Stage 4"]}},
           {"selector":{"sourceSkillNameIncludes":["Sword to Bear Their Names"]}},
           {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack - Cartethyia"]}},
-          {"selector":{"talent":"resonanceLiberation","nameIncludes":["Knight"]},"allowTalentFallback":true},
+          {"label":"Resonance Liberation - A Knight's Heartfelt Prayers","profileId":"form-switch-short"},
           {"selector":{"nameIncludes":["Sword to Answer Waves' Call"]}},
           {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Mid-air","Stage 3"]}},
           {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 3"]}},
@@ -136,7 +136,7 @@
           {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 3"]}},
           {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 4"]}},
           {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 5"]}},
-          {"selector":{"talent":"resonanceLiberation","nameIncludes":["Howling Squall"]},"allowTalentFallback":true},
+          {"selector":{"talent":"resonanceLiberation","nameIncludes":["Blade of Howling Squall"]}},
           {"label":"Outro / handoff","profileId":"outro"}
         ]
       }
