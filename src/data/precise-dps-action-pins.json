@@ -1,17 +1,21 @@
 {
   "version": 1,
   "pins": [
-    {
-      "resonatorId": "jinhsi",
-      "scenarioId": "jinhsi-opener",
-      "stepIndex": 4,
-      "sourceAttributeId": "1304012"
-    },
-    {
-      "resonatorId": "jinhsi",
-      "scenarioId": "jinhsi-loop",
-      "stepIndex": 1,
-      "sourceAttributeId": "1304012"
-    }
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-opener", "stepIndex": 4, "sourceAttributeId": "1304012" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-opener", "stepIndex": 5, "sourceAttributeId": "1304016" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-opener", "stepIndex": 6, "sourceAttributeId": "1304023" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-opener", "stepIndex": 7, "sourceAttributeId": "1304024" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-opener", "stepIndex": 8, "sourceAttributeId": "1304025" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-opener", "stepIndex": 9, "sourceAttributeId": "1304026" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-opener", "stepIndex": 10, "sourceAttributeId": "1304030" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-loop", "stepIndex": 0, "sourceAttributeId": "1304020" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-loop", "stepIndex": 1, "sourceAttributeId": "1304012" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-loop", "stepIndex": 2, "sourceAttributeId": "1304016" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-loop", "stepIndex": 3, "sourceAttributeId": "1304027" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-loop", "stepIndex": 4, "sourceAttributeId": "1304023" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-loop", "stepIndex": 5, "sourceAttributeId": "1304024" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-loop", "stepIndex": 6, "sourceAttributeId": "1304025" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-loop", "stepIndex": 7, "sourceAttributeId": "1304026" },
+    { "resonatorId": "jinhsi", "scenarioId": "jinhsi-loop", "stepIndex": 8, "sourceAttributeId": "1304030" }
   ]
 }
