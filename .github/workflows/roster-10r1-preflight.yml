@@ -6,6 +6,7 @@ on:
       - "src/data/roster-promotion-registry.json"
       - "src/data/community-echo-preset-registry.json"
       - "src/data/character-box-future-dps-registry.json"
+      - "src/data/precise-dps-future-registry.json"
       - "src/data/**"
       - "src/domain/**"
       - "src/game-data/**"
@@ -16,6 +17,7 @@ on:
       - "scripts/generate-character-box-roster-baselines-10r1.mjs"
       - "scripts/generate-character-box-combat-10r1.mjs"
       - "scripts/generate-character-box-future-dps-prep.mjs"
+      - "scripts/generate-precise-dps-future-projection.mjs"
       - "scripts/generate-character-box-roster-media-10r1.mjs"
       - "scripts/generate-character-box-community-echo-presets.mjs"
       - "scripts/generate-wuwa-ui-asset-projection-v1.mjs"
@@ -56,6 +58,7 @@ jobs:
           node --check scripts/generate-character-box-roster-baselines-10r1.mjs
           node --check scripts/generate-character-box-combat-10r1.mjs
           node --check scripts/generate-character-box-future-dps-prep.mjs
+          node --check scripts/generate-precise-dps-future-projection.mjs
           node --check scripts/generate-character-box-roster-media-10r1.mjs
           node --check scripts/generate-character-box-community-echo-presets.mjs
 
@@ -73,6 +76,9 @@ jobs:
 
       - name: Generate future DPS preparation projection
         run: node scripts/generate-character-box-future-dps-prep.mjs
+
+      - name: Generate precise future DPS projection
+        run: node scripts/generate-precise-dps-future-projection.mjs
 
       - name: Generate verified 10R1 portrait projection
         run: node scripts/generate-character-box-roster-media-10r1.mjs
