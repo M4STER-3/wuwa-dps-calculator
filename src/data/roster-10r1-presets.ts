@@ -1,6 +1,8 @@
 import type { RecommendedBuildPreset } from "@/domain/models";
 import { generatedCharacterBoxRosterBaselines10R1 } from "@/generated/character-box-roster-baselines-10r1";
+import { generatedCharacterBoxCombat10R1 } from "@/generated/character-box-combat-10r1";
 import { generatedCommunityEchoPresets10R1 } from "@/generated/community-echo-presets-10r1";
+import { applyEchoLoadoutStatsV1 } from "@/game-data/echo-loadout-stats";
 import { roster10R1 } from "./roster-10r1";
 
 const RESONATORS_WITH_RICH_PRESETS = new Set(["aemeath", "calcharo", "chisa"]);
@@ -14,10 +16,10 @@ const communityPresetsByResonator = generatedCommunityEchoPresets10R1 as Readonl
 
 const baselineSource = {
   kind: "verified-game-data" as const,
-  source: "WUWA GameDatabase V1 · exact Lv90 baseline",
-  verifiedAt: "2026-08-18",
+  source: "WUWA GameDatabase V1 · exact Lv90 baseline + reviewed Echo resolver",
+  verifiedAt: "2026-08-19",
   notes:
-    "Baseline déterministe couvrant uniquement les statistiques permanentes déjà structurées : base personnage, base arme et statistique secondaire de l’arme. Les nodes permanents du personnage et le passif d’arme ne sont pas intégrés ici.",
+    "Baseline déterministe : base personnage, base arme, statistique secondaire d’arme et cinq Echoes validés sont appliqués exactement une fois. Les nodes permanents du personnage, passifs d’arme et effets Sonata/Main Echo non structurés restent hors panel.",
 };
 
 const allSkillLevels10 = {
@@ -29,21 +31,23 @@ const allSkillLevels10 = {
 } as const;
 
 /**
- * Universal fallback baseline for newly promoted Resonators.
- * Adding a reviewed registry entry automatically receives this exact baseline
- * unless that Resonator already owns a richer curated preset. Echo loadouts can
- * be verbatim verified community fixtures or explicit WUWA LAB curated-balanced
- * presets; both must resolve entirely through local GameDatabase ids and roll tables.
+ * Universal fallback preset for newly promoted Resonators.
+ * A reviewed registry row + a promoted Echo recipe automatically receives an exact
+ * endgame panel without character-specific code. UserBuild.finalStats remains the
+ * sole permanent-stat source consumed by combat engines.
  */
 export const roster10R1BaselinePresets: readonly RecommendedBuildPreset[] =
   roster10R1
     .filter((entry) => !RESONATORS_WITH_RICH_PRESETS.has(entry.id))
     .map((registry) => {
-      const finalStats = generatedCharacterBoxRosterBaselines10R1[
+      const baseline = generatedCharacterBoxRosterBaselines10R1[
         registry.id as keyof typeof generatedCharacterBoxRosterBaselines10R1
       ];
-      if (!finalStats) {
-        throw new Error(`Missing exact generated baseline for ${registry.id}`);
+      const combat = generatedCharacterBoxCombat10R1[
+        registry.id as keyof typeof generatedCharacterBoxCombat10R1
+      ];
+      if (!baseline || !combat) {
+        throw new Error(`Missing exact generated baseline/combat projection for ${registry.id}`);
       }
 
       const communityPreset = communityPresetsByResonator[registry.id];
@@ -52,6 +56,18 @@ export const roster10R1BaselinePresets: readonly RecommendedBuildPreset[] =
         communityPreset?.promotionStatus === "curated-balanced"
           ? communityPreset
           : undefined;
+
+      const finalStats = promotedCommunityPreset
+        ? applyEchoLoadoutStatsV1(
+            baseline,
+            {
+              hp: combat.baseStats.hp,
+              attack: combat.baseStats.attack + combat.weaponLevel90.baseAttack,
+              defense: combat.baseStats.defense,
+            },
+            promotedCommunityPreset.echoLoadout,
+          ).finalStats
+        : baseline;
 
       return {
         id: `${registry.id}-s0-l90-signature-baseline-10r1`,
@@ -70,15 +86,17 @@ export const roster10R1BaselinePresets: readonly RecommendedBuildPreset[] =
           ? { echoLoadout: promotedCommunityPreset.echoLoadout }
           : {}),
         notes: [
-          "Baseline endgame de départ : personnage Lv90, S0, talents Lv10, arme signature Lv90 R1.",
-          "UserBuild.finalStats contient uniquement les sources permanentes actuellement résolues par le pipeline exact ; aucune valeur manquante n’est inventée.",
-          "Nodes permanents et passif d’arme restent explicitement non résolus à ce checkpoint.",
+          "Baseline endgame : personnage Lv90, S0, talents Lv10, arme signature Lv90 R1.",
+          promotedCommunityPreset
+            ? "Les statistiques permanentes des cinq Echoes validés sont résolues dans finalStats exactement une fois via Echo Resolver V1."
+            : "Aucun Echo promu n’est appliqué au panel ; aucune valeur manquante n’est inventée.",
+          "Nodes permanents, passif d’arme et effets Sonata/Main Echo non structurés restent explicitement non résolus à ce checkpoint.",
           ...(promotedCommunityPreset
             ? [
                 promotedCommunityPreset.promotionStatus === "verified"
                   ? `Echo loadout communautaire vérifié : ${promotedCommunityPreset.name} (${promotedCommunityPreset.author}), source pin ${promotedCommunityPreset.sourceBlobSha}.`
                   : `Echo loadout WUWA LAB curated-balanced : ${promotedCommunityPreset.name}. ${promotedCommunityPreset.promotionNote}`,
-                "Les identités Echo/Sonata ont été résolues vers les IDs locaux et chaque roll passe le resolver Echo V1.",
+                "Les identités Echo/Sonata et chaque roll passent les resolvers locaux avant d’atteindre le calculateur.",
               ]
             : [
                 communityPreset
