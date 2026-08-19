@@ -4,7 +4,7 @@ import {
   everbrightPolestar,
   sigillum,
   trailblazingStar,
-} from "./aemeath";
+} from "./aemeath-runtime";
 import {
   calcharo,
   calcharoPreset,
