@@ -133,7 +133,6 @@ const spectrumTeamStacks: EffectDefinition = {
 
 const MORN = {
   liberation: "precise-mornye-attr-1209021",
-  syntonyField: "precise-mornye-attr-1209028",
 } as const;
 
 const starfieldPermanent: EffectDefinition = {
@@ -207,6 +206,100 @@ const starfieldCritWindow: EffectDefinition = {
   }],
 };
 
+const forgedPermanent: EffectDefinition = {
+  id: "precise-forged-dwarf-star-permanent",
+  label: "Forged Dwarf Star · permanent ATK",
+  source: { id: "precise-denia-signature", type: "weapon", label: "Forged Dwarf Star" },
+  target: "self",
+  activationPolicy: "initially-active",
+  rules: [{
+    id: "forged-atk",
+    label: "ATK +12/15/18/21/24%",
+    accounting: "already-in-final-stats",
+    modifiers: [{
+      kind: "runtime-stat",
+      stat: "attack",
+      mode: "percent",
+      stacking: "additive",
+      value: rank([12, 15, 18, 21, 24]),
+    }],
+  }],
+};
+
+const forgedLiberationWindow: EffectDefinition = {
+  id: "precise-forged-dwarf-star-liberation-window",
+  label: "Forged Dwarf Star · Liberation DMG window",
+  source: { id: "precise-denia-signature", type: "weapon", label: "Forged Dwarf Star" },
+  target: "self",
+  activationPolicy: "triggered",
+  lifecycle: {
+    duration: { kind: "fixed", seconds: 5 },
+    refresh: "reset-duration",
+    uniqueness: "refresh-existing",
+  },
+  rules: [{
+    id: "forged-liberation-dmg",
+    label: "Resonance Liberation DMG +36/45/54/63/72% for 5s",
+    accounting: "runtime",
+    selectors: [{ kind: "damage-type", anyOf: ["resonanceLiberation"] }],
+    modifiers: [{
+      kind: "damage-type-bonus",
+      stacking: "additive",
+      valueExpression: rank([36, 45, 54, 63, 72]),
+    }],
+  }],
+  triggers: [{
+    id: "forged-window-on-fusion-burst",
+    event: "fusion-burst",
+    operations: [{ kind: "activate-effect", effectId: "precise-forged-dwarf-star-liberation-window" }],
+  }],
+};
+
+const forgedTeamAtkWindow: EffectDefinition = {
+  id: "precise-forged-dwarf-star-team-atk-window",
+  label: "Forged Dwarf Star · team ATK window",
+  source: { id: "precise-denia-signature", type: "weapon", label: "Forged Dwarf Star" },
+  target: "team",
+  activationPolicy: "triggered",
+  lifecycle: {
+    duration: { kind: "fixed", seconds: 15 },
+    refresh: "reset-duration",
+    uniqueness: "refresh-existing",
+  },
+  rules: [{
+    id: "forged-team-atk",
+    label: "Team ATK +24/30/36/42/48% for 15s",
+    accounting: "runtime",
+    modifiers: [{
+      kind: "runtime-stat",
+      stat: "attack",
+      mode: "percent",
+      stacking: "additive",
+      value: rank([24, 30, 36, 42, 48]),
+    }],
+  }],
+  triggers: [{
+    id: "forged-team-atk-on-fusion-burst-during-window",
+    event: "fusion-burst",
+    predicates: [{ kind: "has-effect", id: "precise-forged-dwarf-star-liberation-window" }],
+    operations: [{ kind: "activate-effect", effectId: "precise-forged-dwarf-star-team-atk-window" }],
+  }],
+};
+
+const forgedTuneStrainPending: EffectDefinition = {
+  id: "precise-forged-dwarf-star-tune-strain-pending",
+  label: "Forged Dwarf Star · Tune Strain trigger path pending",
+  source: { id: "precise-denia-signature", type: "weapon", label: "Forged Dwarf Star" },
+  target: "self",
+  teamContextRequired: true,
+  rules: [{
+    id: "forged-tune-strain-trigger-pending",
+    label: "Tune Strain - Shifting must activate the same 5s/15s windows once Denia emits a structured Shifting event.",
+    accounting: "informational",
+    modifiers: [],
+  }],
+};
+
 const spectrumEffects: readonly CombatEffect[] = [
   effect("spectrum-permanent", "Attendance Exemption Protocol · ATK", "permanent", spectrumPermanent),
   effect("spectrum-basic-window", "Attendance Exemption Protocol · Basic window", "Intro / Basic hit", spectrumBasicWindow),
@@ -216,6 +309,12 @@ const starfieldEffects: readonly CombatEffect[] = [
   effect("starfield-permanent", "Definite Solution · DEF", "permanent", starfieldPermanent),
   effect("starfield-concerto", "Definite Solution · Concerto", "reviewed trigger pending GameDatabase conflict resolution", starfieldConcerto),
   effect("starfield-crit-window", "Definite Solution · team Crit DMG", "healing", starfieldCritWindow),
+];
+const forgedEffects: readonly CombatEffect[] = [
+  effect("forged-permanent", "Dissolution · ATK", "permanent", forgedPermanent),
+  effect("forged-liberation-window", "Dissolution · Liberation window", "Fusion Burst / Tune Strain - Shifting", forgedLiberationWindow),
+  effect("forged-team-atk", "Dissolution · team ATK", "team Fusion Burst / Tune Strain - Shifting", forgedTeamAtkWindow),
+  effect("forged-tune-strain-pending", "Dissolution · Tune Strain path", "structured Shifting pending", forgedTuneStrainPending),
 ];
 
 export function applyPreciseWeaponMechanics(resonatorId: string, weapon: Weapon): Weapon {
@@ -233,6 +332,14 @@ export function applyPreciseWeaponMechanics(resonatorId: string, weapon: Weapon)
       level90Stats: { ...weapon.level90Stats!, energyRegen: 77.04 },
       effects: starfieldEffects,
       passiveDescription: "Partiel · Starfield Calibrator R1–R5 structuré. DEF permanent reste upstream; soin/Concerto exigent leur vrai contexte d'événement.",
+    };
+  }
+  if (resonatorId === "denia") {
+    return {
+      ...weapon,
+      level90Stats: { ...weapon.level90Stats!, critRate: 36 },
+      effects: forgedEffects,
+      passiveDescription: "Partiel · Forged Dwarf Star R1–R5 structuré. Fusion Burst est exécutable; Tune Strain attend l'événement Shifting structuré; ATK permanent reste upstream.",
     };
   }
   return weapon;
