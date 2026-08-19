@@ -1,8 +1,6 @@
 import type { CombatEventKind, EffectDefinition } from "@/domain/effect-models";
 import type { Sequence } from "@/domain/models";
-import type {
-  TheoreticalRotationPreset,
-} from "@/domain/theoretical-rotation";
+import type { TheoreticalRotationPreset } from "@/domain/theoretical-rotation";
 
 export interface RotationEventAnchor {
   stepIndex: number;
@@ -230,7 +228,7 @@ const calcharo: PersonalRotationScenario = {
       { actionId: "calcharo-skill-2" },
       { actionId: "calcharo-skill-3" },
       { actionId: "calcharo-mercy" },
-      { actionId: "nightmare-thundering-mephis-skill" },
+      { actionId: "nightmare-thundering-mephis" },
       { actionId: "calcharo-liberation" },
       { actionId: "calcharo-hounds-1" },
       { actionId: "calcharo-hounds-2" },
@@ -270,9 +268,8 @@ const chisa: PersonalRotationScenario = {
     name: "Chisa full Ring Chainsaw",
     steps: [
       { actionId: "chisa-intro" },
-      { actionId: "chisa-eye-of-unraveling" },
       { actionId: "chisa-moment-of-nihility" },
-      { actionId: "threnodian-collapsing-horizon" },
+      { actionId: "threnodian-horizon" },
       { actionId: "chisa-serrated-loop" },
       { actionId: "chisa-sawring-blitz-1" },
       { actionId: "chisa-sawring-blitz-2-hold" },
@@ -293,7 +290,7 @@ const chisa: PersonalRotationScenario = {
       id: "chisa-s1-fixed-snare-damage",
       kind: "custom",
       actionId: "chisa-s1-fixed-snare-damage",
-      anchor: { stepIndex: 1, at: "end", offsetSeconds: 0.002 },
+      anchor: { stepIndex: 3, at: "end", offsetSeconds: 0.002 },
       minimumSequence: 1,
       payload: { fixedDamageAmount: 61803 },
     },
@@ -301,7 +298,7 @@ const chisa: PersonalRotationScenario = {
   notes: [
     "This is a full-Ring personal damage window, so Ring starts at 100 instead of inventing unknown per-hit generation values.",
     "Moment of Nihility precedes Chainsaw attacks so Woven Myriad and All Ends Here are represented by their runtime triggers.",
-    "S1 fixed Snare damage is emitted only for S1+; its once-per-target rule is represented by a single scenario event.",
+    "Serrated Loop applies Unseen Snare in the full-Ring scenario. S1 fixed Snare damage is emitted only for S1+ and once per target.",
   ],
 };
 
