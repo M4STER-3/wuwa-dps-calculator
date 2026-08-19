@@ -9,6 +9,7 @@ import {
   applyPrecisePhrolovaMechanics,
   applyPrecisePhrolovaWeaponMechanics,
 } from "./precise-dps-phrolova";
+import { applyPrecisePhrolovaTeamCycleMechanics } from "./precise-dps-phrolova-team";
 import {
   applyPreciseQiuyuanMechanics,
   applyPreciseQiuyuanWeaponMechanics,
@@ -28,10 +29,12 @@ export type PreciseDpsLoadoutWeapon = {
 export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutureResonators.map(
   (resonator) =>
     applyPreciseShorekeeperMechanics(
-      applyPrecisePhrolovaMechanics(
-        applyPreciseQiuyuanMechanics(
-          applyPreciseJinhsiMechanics(
-            applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+      applyPrecisePhrolovaTeamCycleMechanics(
+        applyPrecisePhrolovaMechanics(
+          applyPreciseQiuyuanMechanics(
+            applyPreciseJinhsiMechanics(
+              applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+            ),
           ),
         ),
       ),
