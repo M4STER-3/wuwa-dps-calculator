@@ -21,6 +21,7 @@ import {
   type Sequence,
   type UserBuild,
 } from "@/domain/models";
+import { replaceEchoLoadoutStatsV1 } from "@/game-data/echo-loadout-stats";
 import { getResonatorUiAssetId } from "@/game-data/resonator-ui-asset-ids";
 import {
   createBrowserCharacterBoxStorage,
@@ -493,7 +494,44 @@ function BuildEditor({
     </label>
   );
   const equippedWeapon = weapons.find((item) => item.id === build.weapon.weaponId);
+  const characterBase = resonator.baseStats?.find(
+    (entry) => entry.level === build.characterLevel,
+  );
+  const weaponBase =
+    build.weapon.level === 90 ? equippedWeapon?.level90Stats : undefined;
+  const echoStatBasis =
+    characterBase && weaponBase
+      ? {
+          hp: characterBase.hp,
+          attack: characterBase.attack + weaponBase.baseAttack,
+          defense: characterBase.defense,
+        }
+      : undefined;
   const echoCount = build.echoLoadout?.echoes.length ?? 0;
+
+  const changeEchoLoadout = (echoLoadout: UserBuild["echoLoadout"]) => {
+    if (!echoStatBasis) {
+      onChange({ ...build, echoLoadout });
+      return;
+    }
+    try {
+      const resolved = replaceEchoLoadoutStatsV1(
+        build.finalStats,
+        echoStatBasis,
+        build.echoLoadout,
+        echoLoadout,
+      );
+      onChange({ ...build, echoLoadout, finalStats: resolved.finalStats });
+    } catch (error) {
+      console.error(
+        "Unable to replace Echo permanent stats without double counting",
+        error instanceof Error ? error.message : "unknown error",
+      );
+      window.alert(
+        "Les stats Echo n’ont pas été sauvegardées : le panneau permanent actuel ne permet pas un remplacement sûr sans double comptage.",
+      );
+    }
+  };
 
   return (
     <ModalShell
@@ -528,7 +566,7 @@ function BuildEditor({
           </div>
           <div className={styles.ruleNotice}>
             <strong>Règle anti-double comptage.</strong><br />
-            L’arme et le loadout Echo sont des entrées structurées du Build Resolver. Les moteurs de combat continuent à consommer uniquement <code>UserBuild.finalStats</code>. Les stats finales seront écrites automatiquement lorsque toutes les sources permanentes seront résolues.
+            L’arme et le loadout Echo sont des entrées structurées du Build Resolver. Les moteurs de combat continuent à consommer uniquement <code>UserBuild.finalStats</code>. À chaque changement d’Echo, l’ancienne contribution permanente est retirée avant d’appliquer la nouvelle.
           </div>
         </aside>
 
@@ -622,7 +660,7 @@ function BuildEditor({
               <EchoLoadoutChoice
                 key={build.id}
                 value={build.echoLoadout}
-                onChange={(echoLoadout) => onChange({ ...build, echoLoadout })}
+                onChange={changeEchoLoadout}
               />
             </EditorSection>
 
