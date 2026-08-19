@@ -1,0 +1,197 @@
+{
+  "version": 1,
+  "sourcePolicy": "Current reviewed community rotations are selectors over exact GameDatabase actions; unresolved mechanics stay explicit and never invent motion values.",
+  "resonators": {
+    "augusta": {
+      "defaultScalingAttribute": "attack",
+      "actionOverrides": [
+        {"nameIncludes":["Sword of Eternal Oath"],"damageType":"heavyAttack"},
+        {"nameIncludes":["Undying Sunlight: Plunge"],"damageType":"heavyAttack"},
+        {"nameIncludes":["Sunborne"],"damageType":"heavyAttack"},
+        {"nameIncludes":["Everbright Protector"],"damageType":"heavyAttack"}
+      ],
+      "rotation": {
+        "id": "augusta-s0-standard-data-v0.1",
+        "name": "Augusta S0 · Core Rotation",
+        "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
+        "steps": [
+          {"selector":{"talent":"introSkill"}},
+          {"selector":{"nameIncludes":["Heavy Attack - Thunderoar: Backstep"]}},
+          {"selector":{"nameIncludes":["Heavy Attack - Thunderoar: Spinslash"]}},
+          {"selector":{"sourceSkillNameIncludes":["Warrior's Blade"],"nameIncludes":["Skill"]}},
+          {"selector":{"nameIncludes":["Heavy Attack - Thunderoar: Backstep"]}},
+          {"selector":{"nameIncludes":["Heavy Attack - Thunderoar: Spinslash"]}},
+          {"selector":{"nameIncludes":["Sword of Eternal Oath"]}},
+          {"selector":{"nameIncludes":["Undying Sunlight: Strike"]}},
+          {"selector":{"nameIncludes":["Undying Sunlight: Leap"]}},
+          {"selector":{"nameIncludes":["Undying Sunlight: Plunge"]}},
+          {"label":"Resonance Liberation - Sublime is the Sun","profileId":"very-short"},
+          {"selector":{"nameIncludes":["Sunborne"]},"repeat":9},
+          {"selector":{"nameIncludes":["Everbright Protector"]}},
+          {"label":"Outro / handoff","profileId":"outro"}
+        ]
+      }
+    },
+    "brant": {
+      "defaultScalingAttribute": "attack",
+      "actionOverrides": [
+        {"nameIncludes":["Returned from Ashes"],"damageType":"basicAttack"}
+      ],
+      "rotation": {
+        "id": "brant-s0-standard-data-v0.1",
+        "name": "Brant S0 · Standard Rotation",
+        "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
+        "steps": [
+          {"selector":{"talent":"introSkill"}},
+          {"selector":{"talent":"resonanceLiberation"}},
+          {"selector":{"nameIncludes":["Mid-air Attack Stage 2"],"nameExcludes":["Charged","Flip"]}},
+          {"selector":{"nameIncludes":["Mid-air Attack Stage 2","Charged"]}},
+          {"selector":{"nameIncludes":["Mid-air Attack Stage 2","Flip"]}},
+          {"selector":{"nameIncludes":["Mid-air Attack Stage 3"],"nameExcludes":["Flip"]}},
+          {"selector":{"nameIncludes":["Mid-air Attack Stage 3","Flip"]}},
+          {"selector":{"nameIncludes":["Returned from Ashes"]}},
+          {"label":"Outro / handoff","profileId":"outro"}
+        ]
+      }
+    },
+    "cantarella": {
+      "defaultScalingAttribute": "attack",
+      "actionOverrides": [
+        {"nameIncludes":["Flowing Suffocation"],"damageType":"basicAttack"},
+        {"nameIncludes":["Flickering Reverie"],"damageType":"echoSkill"},
+        {"nameIncludes":["Perception Drain"],"damageType":"basicAttack"}
+      ],
+      "rotation": {
+        "id": "cantarella-s0-standard-data-v0.1",
+        "name": "Cantarella S0 · Standard Rotation",
+        "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
+        "steps": [
+          {"selector":{"talent":"introSkill","nameIncludes":["Ripple"]},"allowTalentFallback":true},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Stage 3"],"nameExcludes":["Phantom"]}},
+          {"selector":{"nameIncludes":["Graceful Step"]}},
+          {"selector":{"nameIncludes":["Flowing Suffocation"]}},
+          {"selector":{"nameIncludes":["Delusive Dive"]}},
+          {"selector":{"nameIncludes":["Flickering Reverie"]}},
+          {"selector":{"nameIncludes":["Phantom Sting","Stage 1"]}},
+          {"selector":{"nameIncludes":["Phantom Sting","Stage 2"]}},
+          {"selector":{"nameIncludes":["Phantom Sting","Stage 3"]}},
+          {"selector":{"nameIncludes":["Perception Drain"]}},
+          {"label":"Echo / swap-cancel","profileId":"echo-skill"},
+          {"label":"Outro / handoff","profileId":"outro"}
+        ]
+      }
+    },
+    "carlotta": {
+      "defaultScalingAttribute": "attack",
+      "actionOverrides": [
+        {"nameIncludes":["Death Knell"],"damageType":"resonanceSkill"},
+        {"nameIncludes":["Fatal Finale"],"damageType":"resonanceSkill"},
+        {"nameIncludes":["Imminent Oblivion"],"damageType":"resonanceSkill"}
+      ],
+      "rotation": {
+        "id": "carlotta-s0-burst-data-v0.1",
+        "name": "Carlotta S0 · Burst Rotation",
+        "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
+        "steps": [
+          {"selector":{"talent":"introSkill"}},
+          {"selector":{"nameIncludes":["Art of Violence"]}},
+          {"selector":{"nameIncludes":["Chromatic Splendor"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack"],"nameExcludes":["Customary"]}},
+          {"selector":{"nameIncludes":["Imminent Oblivion"]}},
+          {"selector":{"nameIncludes":["Era of New Wave"]}},
+          {"selector":{"nameIncludes":["Death Knell"]},"repeat":4},
+          {"selector":{"nameIncludes":["Fatal Finale"]}},
+          {"selector":{"nameIncludes":["Art of Violence"]}},
+          {"selector":{"nameIncludes":["Chromatic Splendor"]}},
+          {"label":"Echo / swap-cancel","profileId":"echo-skill"},
+          {"label":"Outro / handoff","profileId":"outro"}
+        ]
+      }
+    },
+    "cartethyia": {
+      "defaultScalingAttribute": "hp",
+      "actionOverrides": [
+        {"sourceSkillNameIncludes":["Sword to Bear Their Names"],"damageType":"basicAttack"},
+        {"nameIncludes":["Heavy Attack - Fleurdelys"],"damageType":"basicAttack"},
+        {"nameIncludes":["Enhanced Heavy Attack - Fleurdelys"],"damageType":"basicAttack"}
+      ],
+      "rotation": {
+        "id": "cartethyia-s0-basic-data-v0.1",
+        "name": "Cartethyia S0 · Basic Rotation",
+        "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
+        "steps": [
+          {"selector":{"talent":"introSkill"}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Cartethyia","Stage 2"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Cartethyia","Stage 3"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Cartethyia","Stage 4"]}},
+          {"selector":{"sourceSkillNameIncludes":["Sword to Bear Their Names"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack - Cartethyia"]}},
+          {"selector":{"talent":"resonanceLiberation","nameIncludes":["Knight"]},"allowTalentFallback":true},
+          {"selector":{"nameIncludes":["Sword to Answer Waves' Call"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Mid-air","Stage 3"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 3"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 4"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 5"]}},
+          {"selector":{"nameIncludes":["May Tempest Break the Tides"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 3"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 4"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 5"]}},
+          {"selector":{"talent":"resonanceLiberation","nameIncludes":["Howling Squall"]},"allowTalentFallback":true},
+          {"label":"Outro / handoff","profileId":"outro"}
+        ]
+      }
+    },
+    "changli": {
+      "defaultScalingAttribute": "attack",
+      "actionOverrides": [
+        {"nameIncludes":["True Sight","Conquest"],"damageType":"resonanceSkill"},
+        {"nameIncludes":["True Sight","Charge"],"damageType":"resonanceSkill"},
+        {"nameIncludes":["Flaming Sacrifice"],"damageType":"resonanceSkill"}
+      ],
+      "rotation": {
+        "id": "changli-s0-standard-data-v0.1",
+        "name": "Changli S0 · Standard Rotation",
+        "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
+        "steps": [
+          {"selector":{"talent":"introSkill"}},
+          {"selector":{"nameIncludes":["True Sight","Charge"]}},
+          {"selector":{"sourceSkillNameIncludes":["Tripartite Flames"],"nameIncludes":["True Sight","Capture"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Heavy Attack"],"nameExcludes":["Mid-air"]}},
+          {"selector":{"nameIncludes":["True Sight","Charge"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack"],"nameExcludes":["Stage 4"]}},
+          {"label":"Dash cancel","profileId":"very-short"},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack Stage 4"]}},
+          {"selector":{"nameIncludes":["True Sight","Charge"]}},
+          {"selector":{"sourceSkillNameIncludes":["Tripartite Flames"],"nameIncludes":["True Sight","Capture"]}},
+          {"selector":{"nameIncludes":["True Sight","Conquest"]}},
+          {"selector":{"nameIncludes":["Flaming Sacrifice"]}},
+          {"selector":{"talent":"resonanceLiberation"}},
+          {"selector":{"nameIncludes":["Flaming Sacrifice"]}},
+          {"label":"Outro / handoff","profileId":"outro"}
+        ]
+      }
+    },
+    "ciaccona": {
+      "defaultScalingAttribute": "attack",
+      "actionOverrides": [],
+      "rotation": {
+        "id": "ciaccona-s0-basic-data-v0.1",
+        "name": "Ciaccona S0 · Basic Rotation",
+        "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
+        "steps": [
+          {"selector":{"talent":"introSkill"}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Basic Attack Stage 3"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Basic Attack Stage 4"]}},
+          {"label":"Jump cancel","profileId":"very-short"},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack Stage 1"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack Stage 2"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Basic Attack Stage 4"]}},
+          {"selector":{"talent":"resonanceSkill"}},
+          {"selector":{"nameIncludes":["Quadruple Downbeat"]}},
+          {"selector":{"talent":"resonanceLiberation"}},
+          {"label":"Outro / handoff","profileId":"outro"}
+        ]
+      }
+    }
+  }
+}
