@@ -303,7 +303,7 @@ function matchSelector(
       actual = context.targetId;
       break;
   }
-  if (actual === undefined) return "unsupported";
+  if (actual === undefined) return "ignored";
   const values = selector.anyOf as readonly string[];
   const matched = Array.isArray(actual)
     ? actual.some((value) => values.includes(value))
