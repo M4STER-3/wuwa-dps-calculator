@@ -114,28 +114,57 @@ const collapsedCores: EffectDefinition = {
         },
       ],
     },
-    ...Array.from({ length: 5 }, (_, index) => ({
-      id: `shorekeeper-illation-convert-core-${index + 1}`,
-      event: "action-start" as const,
+    {
+      id: "shorekeeper-illation-start-core-drain",
+      event: "action-start",
       predicates: [and(
         actionPredicate(SHOREKEEPER_NATIVE.illation),
-        resource("collapsed-core", "gte", index + 1),
+        resource("collapsed-core", "available"),
       )],
-      operations: [{
-        kind: "emit-action" as const,
-        action: {
-          actionId: SHOREKEEPER_NATIVE.flareStarButterfly,
-          attribution: "follow-up" as const,
-          delaySeconds: 0.0001 * (index + 1),
-          snapshot: { stats: "trigger" as const, stacks: "trigger" as const },
+      operations: [
+        {
+          kind: "resource",
+          operation: "consume",
+          resourceId: "collapsed-core",
+          amount: constant(1),
         },
-      }],
-    })),
+        {
+          kind: "emit-action",
+          action: {
+            actionId: SHOREKEEPER_NATIVE.flareStarButterfly,
+            attribution: "follow-up",
+            delaySeconds: 0.0001,
+            snapshot: { stats: "trigger", stacks: "trigger" },
+          },
+        },
+        { kind: "emit-event", eventKind: "custom", delaySeconds: 0.0002 },
+      ],
+    },
     {
-      id: "shorekeeper-illation-consume-cores",
-      event: "action-end",
-      predicates: [actionPredicate(SHOREKEEPER_NATIVE.illation)],
-      operations: [{ kind: "resource", operation: "consume-all", resourceId: "collapsed-core" }],
+      id: "shorekeeper-illation-continue-core-drain",
+      event: "custom",
+      predicates: [and(
+        actionPredicate(SHOREKEEPER_NATIVE.illation),
+        resource("collapsed-core", "available"),
+      )],
+      operations: [
+        {
+          kind: "resource",
+          operation: "consume",
+          resourceId: "collapsed-core",
+          amount: constant(1),
+        },
+        {
+          kind: "emit-action",
+          action: {
+            actionId: SHOREKEEPER_NATIVE.flareStarButterfly,
+            attribution: "follow-up",
+            delaySeconds: 0.0001,
+            snapshot: { stats: "trigger", stacks: "trigger" },
+          },
+        },
+        { kind: "emit-event", eventKind: "custom", delaySeconds: 0.0002 },
+      ],
     },
   ],
 };
