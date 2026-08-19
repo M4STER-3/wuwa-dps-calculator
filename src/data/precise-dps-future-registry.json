@@ -29,9 +29,41 @@
       "name": "Lynae",
       "signatureWeaponName": "Spectrum Blaster",
       "mechanicsStatus": "partial",
+      "combatModel": {
+        "forms": ["Optical Sampling Stage", "Kaleidoscopic Parade"],
+        "defaultForm": "Optical Sampling Stage",
+        "modes": ["tune-rupture", "tune-strain"],
+        "resources": [
+          { "id": "overflow", "name": "Overflow", "cap": 120 },
+          { "id": "lumiflow", "name": "Lumiflow", "cap": 120 },
+          { "id": "true-color", "name": "True Color", "cap": 3 }
+        ]
+      },
       "scenarios": [
-        { "id": "lynae-tune-rupture", "label": "Tune Rupture", "resonanceMode": "tune-rupture", "reviewedDurationSeconds": 7.1 },
-        { "id": "lynae-tune-strain", "label": "Tune Strain", "resonanceMode": "tune-strain", "reviewedDurationSeconds": 7.1 }
+        {
+          "id": "lynae-tune-rupture",
+          "label": "Tune Rupture",
+          "resonanceMode": "tune-rupture",
+          "reviewedDurationSeconds": 7.1,
+          "steps": [
+            { "selector": { "talent": "introSkill" } },
+            { "selector": { "talent": "resonanceLiberation", "sourceSkillNameIncludes": ["Prismatic Overblast"] } },
+            { "selector": { "talent": "resonanceSkill", "sourceSkillNameIncludes": ["Lynae-Style Palettes"] } },
+            { "selector": { "nameIncludes": ["Spark Collision", "Lv. 3"] } },
+            { "selector": { "nameIncludes": ["Polychrome Leap", "Stage 1"] } },
+            { "selector": { "nameIncludes": ["Polychrome Leap", "Stage 2"] } },
+            { "selector": { "nameIncludes": ["Polychrome Leap", "Stage 3"] } },
+            { "selector": { "nameIncludes": ["Visual Impact"] } },
+            { "label": "Outro / handoff", "profileId": "outro" }
+          ]
+        },
+        {
+          "id": "lynae-tune-strain",
+          "label": "Tune Strain",
+          "resonanceMode": "tune-strain",
+          "reviewedDurationSeconds": 7.1,
+          "stepsFromScenario": "lynae-tune-rupture"
+        }
       ]
     },
     {
@@ -39,9 +71,64 @@
       "name": "Mornye",
       "signatureWeaponName": "Starfield Calibrator",
       "mechanicsStatus": "partial",
+      "combatModel": {
+        "forms": ["Baseline Mode", "Wide Field Observation Mode"],
+        "defaultForm": "Baseline Mode",
+        "modes": [],
+        "resources": [
+          { "id": "rest-mass-energy", "name": "Rest Mass Energy", "cap": 100 },
+          { "id": "relative-momentum", "name": "Relative Momentum", "cap": 100 }
+        ]
+      },
       "scenarios": [
-        { "id": "mornye-opener", "label": "Opener · Baseline → Wide Field Observation", "variant": "opener" },
-        { "id": "mornye-loop", "label": "Loop · Intro → Wide Field Observation", "variant": "loop" }
+        {
+          "id": "mornye-opener",
+          "label": "Opener · Baseline → Wide Field Observation",
+          "variant": "opener",
+          "steps": [
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Stage 1"], "nameExcludes": ["Wide Field"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Stage 2"], "nameExcludes": ["Wide Field"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Stage 3"], "nameExcludes": ["Wide Field"] } },
+            { "selector": { "nameIncludes": ["Geopotential Shift"] } },
+            { "selector": { "nameIncludes": ["Wide Field", "Stage 1"] } },
+            { "selector": { "nameIncludes": ["Wide Field", "Stage 2"] } },
+            { "selector": { "nameIncludes": ["Wide Field", "Stage 3"] } },
+            { "selector": { "sourceSkillNameIncludes": ["Distributed Array"] } },
+            { "selector": { "nameIncludes": ["Inversion"] } },
+            { "selector": { "talent": "resonanceLiberation" } },
+            { "label": "Outro / handoff", "profileId": "outro" }
+          ]
+        },
+        {
+          "id": "mornye-loop",
+          "label": "Loop · Intro → Wide Field Observation",
+          "variant": "loop",
+          "steps": [
+            { "selector": { "talent": "introSkill" } },
+            { "selector": { "nameIncludes": ["Wide Field", "Stage 1"] } },
+            { "selector": { "nameIncludes": ["Wide Field", "Stage 2"] } },
+            { "selector": { "nameIncludes": ["Wide Field", "Stage 3"] } },
+            { "selector": { "sourceSkillNameIncludes": ["Distributed Array"] } },
+            { "selector": { "nameIncludes": ["Inversion"] } },
+            { "selector": { "talent": "resonanceLiberation" } },
+            { "label": "Outro / handoff", "profileId": "outro" }
+          ]
+        },
+        {
+          "id": "mornye-loop-forte-skip",
+          "label": "Loop S0 · Forte skip · no Tune applier",
+          "variant": "loop-forte-skip",
+          "eligibility": "S0 only; no Tune Rupture/Strain applier; R4+ Concerto weapon or equivalent Concerto routing.",
+          "steps": [
+            { "selector": { "talent": "introSkill" } },
+            { "selector": { "nameIncludes": ["Wide Field", "Stage 1"] } },
+            { "selector": { "nameIncludes": ["Wide Field", "Stage 2"] } },
+            { "selector": { "nameIncludes": ["Wide Field", "Stage 3"] } },
+            { "selector": { "talent": "resonanceLiberation" } },
+            { "selector": { "sourceSkillNameIncludes": ["Distributed Array"] } },
+            { "label": "Swap / handoff", "profileId": "outro" }
+          ]
+        }
       ]
     },
     {
