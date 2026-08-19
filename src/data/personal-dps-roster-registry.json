@@ -158,9 +158,9 @@
           {"selector":{"sourceSkillNameIncludes":["Tripartite Flames"],"nameIncludes":["True Sight","Capture"]}},
           {"selector":{"talent":"basicAttack","nameIncludes":["Heavy Attack"],"nameExcludes":["Mid-air"]}},
           {"selector":{"nameIncludes":["True Sight","Charge"]}},
-          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack"],"nameExcludes":["Stage 4"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack 3"]}},
           {"label":"Dash cancel","profileId":"very-short"},
-          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack Stage 4"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack 4"]}},
           {"selector":{"nameIncludes":["True Sight","Charge"]}},
           {"selector":{"sourceSkillNameIncludes":["Tripartite Flames"],"nameIncludes":["True Sight","Capture"]}},
           {"selector":{"nameIncludes":["True Sight","Conquest"]}},
@@ -180,15 +180,15 @@
         "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
         "steps": [
           {"selector":{"talent":"introSkill"}},
-          {"selector":{"talent":"basicAttack","nameIncludes":["Basic Attack Stage 3"]}},
-          {"selector":{"talent":"basicAttack","nameIncludes":["Basic Attack Stage 4"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Stage 3"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Stage 4"]}},
           {"label":"Jump cancel","profileId":"very-short"},
           {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack Stage 1"]}},
           {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack Stage 2"]}},
-          {"selector":{"talent":"basicAttack","nameIncludes":["Basic Attack Stage 4"]}},
-          {"selector":{"talent":"resonanceSkill"}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Stage 4"]}},
+          {"selector":{"talent":"resonanceSkill","nameIncludes":["Skill"]}},
           {"selector":{"nameIncludes":["Quadruple Downbeat"]}},
-          {"selector":{"talent":"resonanceLiberation"}},
+          {"selector":{"talent":"resonanceLiberation","nameIncludes":["Improvised Symphonic Poem Skill"]}},
           {"label":"Outro / handoff","profileId":"outro"}
         ]
       }
