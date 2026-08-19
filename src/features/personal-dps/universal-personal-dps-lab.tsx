@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { emptyCharacterBox } from "@/domain/character-box";
-import { calculatePersonalDpsV1 } from "@/domain/personal-dps-engine";
-import type { Element, TalentLevel } from "@/domain/models";
+import {
+  simulatePersonalDpsBuildV1,
+  type PersonalDpsSimulationResultV1,
+} from "@/domain/personal-dps-simulation";
 import { personalDpsPilotProfiles10R1 } from "@/data/personal-dps-pilots-10r1";
+import { resonators } from "@/data/catalog";
 import {
   getBrowserCharacterBoxSnapshot,
   subscribeToBrowserCharacterBox,
@@ -24,19 +27,6 @@ const pilotName: Readonly<Record<string, string>> = {
   changli: "Changli",
 };
 
-const pilotElements: Readonly<Record<string, Element>> = {
-  aemeath: "fusion",
-  calcharo: "electro",
-  changli: "fusion",
-};
-
-function toTalentLevel(value: number): TalentLevel {
-  if (!Number.isInteger(value) || value < 1 || value > 10) {
-    throw new Error(`Invalid saved talent level: ${value}`);
-  }
-  return value as TalentLevel;
-}
-
 export function UniversalPersonalDpsLab() {
   const box = useSyncExternalStore(
     subscribeToBrowserCharacterBox,
@@ -53,6 +43,9 @@ export function UniversalPersonalDpsLab() {
         (candidate) => candidate.resonatorId === build.resonatorId,
       )
     : undefined;
+  const resonator = build
+    ? resonators.find((candidate) => candidate.id === build.resonatorId)
+    : undefined;
   const [enemyLevel, setEnemyLevel] = useState(90);
   const [enemyResistance, setEnemyResistance] = useState(0.1);
   const [rotationId, setRotationId] = useState("");
@@ -61,33 +54,26 @@ export function UniversalPersonalDpsLab() {
       ? rotationId
       : profile?.rotations[0]?.id ?? "";
 
-  const element = profile
-    ? pilotElements[profile.resonatorId] ?? profile.element
-    : undefined;
-  const skillLevels = build
-    ? {
-        basicAttack: toTalentLevel(build.skillLevels.basicAttack),
-        resonanceSkill: toTalentLevel(build.skillLevels.resonanceSkill),
-        forteCircuit: toTalentLevel(build.skillLevels.forteCircuit),
-        resonanceLiberation: toTalentLevel(build.skillLevels.resonanceLiberation),
-        introSkill: toTalentLevel(build.skillLevels.introSkill),
-      }
-    : undefined;
-  const result =
-    build && profile && selectedRotationId && element
-      ? calculatePersonalDpsV1({
-          profile,
-          rotationId: selectedRotationId,
-          finalStats: build.finalStats,
-          attackerLevel: build.characterLevel,
-          skillLevels,
-          target: {
-            level: enemyLevel,
-            elementalResistance: { [element]: enemyResistance },
-            physicalResistance: 0.1,
-          },
-        })
-      : undefined;
+  let result: PersonalDpsSimulationResultV1 | undefined;
+  let calculationError: string | undefined;
+  if (build && profile && resonator && selectedRotationId) {
+    try {
+      result = simulatePersonalDpsBuildV1({
+        profile,
+        resonator,
+        build,
+        rotationId: selectedRotationId,
+        target: {
+          id: "personal-dps-target",
+          level: enemyLevel,
+          elementalResistance: { [profile.element]: enemyResistance },
+          physicalResistance: 0.1,
+        },
+      });
+    } catch (error) {
+      calculationError = error instanceof Error ? error.message : "Calcul indisponible.";
+    }
+  }
 
   if (!pilotBuilds.length) {
     return (
@@ -110,6 +96,14 @@ export function UniversalPersonalDpsLab() {
   const selectedRotation = profile?.rotations.find(
     (rotation) => rotation.id === selectedRotationId,
   );
+  const actionNames = new Map(
+    profile?.actions.map((action) => [action.id, action.name] as const) ?? [],
+  );
+  const timingLabel = result
+    ? `${format(result.rotationDurationSeconds)} s · ${
+        result.timingConfidence === "estimated-calibrated" ? "calibré" : "estimé"
+      }`
+    : "timing indisponible";
 
   return (
     <main className="lab-shell" style={{ maxWidth: 1050 }}>
@@ -117,7 +111,7 @@ export function UniversalPersonalDpsLab() {
         <div>
           <p className="eyebrow">DPS PERSONNEL · BUILD SAUVEGARDÉ</p>
           <h1>Calcul DPS</h1>
-          <p>Choisis ton build. Les statistiques viennent automatiquement de Character Box.</p>
+          <p>Le build fournit les stats, la séquence, l’arme et les Echoes. Ici, on lit le résultat.</p>
         </div>
         <Link className="lab-link" href="/character-box">← Modifier le build</Link>
       </header>
@@ -159,34 +153,27 @@ export function UniversalPersonalDpsLab() {
             <span>{pilotName[profile?.resonatorId ?? ""] ?? profile?.resonatorId}</span>
             <span>{profile?.element}</span>
             <span>Lv{build?.characterLevel} · S{build?.sequence}</span>
-            <span>
-              {selectedRotation?.durationSeconds
-                ? `${selectedRotation.durationSeconds}s`
-                : "durée à valider"}
-            </span>
+            <span>{timingLabel}</span>
           </div>
         </Panel>
 
         <Panel title="Résultat">
           {!result ? (
-            <div className="unsupported">Calcul indisponible.</div>
+            <div className="unsupported">{calculationError ?? "Calcul indisponible."}</div>
           ) : (
             <>
               <div className="damage-cards" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))" }}>
                 <Metric label="Dégâts de rotation" value={result.totals.expected} featured />
-                {result.dps ? (
-                  <Metric label="DPS attendu" value={result.dps.expected} featured />
-                ) : (
-                  <div>
-                    <small>DPS attendu</small>
-                    <strong>—</strong>
-                    <span className="hint">Durée non vérifiée</span>
-                  </div>
-                )}
+                <Metric label="DPS attendu" value={result.dps.expected} featured />
               </div>
+              <p className="hint">
+                {result.timingConfidence === "estimated-calibrated"
+                  ? "Timing calibré sur la durée totale de rotation vérifiée."
+                  : "Timing estimé avec les mêmes profils temporels universels qu’Aemeath."}
+              </p>
               {result.status === "partial" && (
                 <p className="warning">
-                  Certaines étapes ne sont pas encore supportées et ne sont jamais remplacées par zéro.
+                  Certaines mécaniques restent signalées dans les détails ; aucune valeur manquante n’est remplacée silencieusement par zéro.
                 </p>
               )}
             </>
@@ -197,7 +184,7 @@ export function UniversalPersonalDpsLab() {
           <summary style={{ cursor: "pointer", fontWeight: 700 }}>Options détaillées</summary>
           <div style={{ marginTop: 16 }}>
             <p className="hint">
-              Ces réglages concernent uniquement la cible. Les stats du personnage restent celles du build sauvegardé.
+              Ces réglages concernent uniquement la cible. Toutes les données du personnage viennent du build sauvegardé.
             </p>
             <div className="stat-grid">
               <label>
@@ -220,7 +207,7 @@ export function UniversalPersonalDpsLab() {
                 />
               </label>
             </div>
-            <h3>Stats utilisées</h3>
+            <h3>Build utilisé</h3>
             <div className="action-meta">
               <span>ATK {format(build?.finalStats.attack ?? 0)}</span>
               <span>HP {format(build?.finalStats.hp ?? 0)}</span>
@@ -248,18 +235,14 @@ export function UniversalPersonalDpsLab() {
                 <thead>
                   <tr>
                     <th>Action</th>
-                    <th>×</th>
-                    <th>Type</th>
                     <th>Attendu</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {result?.resolvedSteps.map((step) => (
-                    <tr key={`${step.index}-${step.actionId}`}>
-                      <td>{step.actionName}</td>
-                      <td>{step.count}</td>
-                      <td>{step.result.effectiveDamageType}</td>
-                      <td>{format(step.subtotal.expected)}</td>
+                  {Object.entries(result?.perAction ?? {}).map(([actionId, amounts]) => (
+                    <tr key={actionId}>
+                      <td>{actionNames.get(actionId) ?? actionId}</td>
+                      <td>{format(amounts.expected)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -269,14 +252,25 @@ export function UniversalPersonalDpsLab() {
         </details>
 
         <details className="lab-panel">
-          <summary style={{ cursor: "pointer", fontWeight: 700 }}>Validation et sources</summary>
+          <summary style={{ cursor: "pointer", fontWeight: 700 }}>Mécaniques et validation</summary>
           <div style={{ marginTop: 16 }}>
             <p className="hint">
-              Les dégâts des trois pilotes sont comparés automatiquement à des fixtures WutheringTools avec les mêmes statistiques. Aucun timing non vérifié n’est transformé en DPS/s.
+              Le runtime applique les effets structurés de séquence, aptitudes, arme et Sonata au fil de la rotation. Les bonus permanents restent uniquement dans finalStats pour éviter le double comptage.
             </p>
             <p className="hint">
-              Aemeath utilise actuellement une durée totale communautaire calibrée. Les durées individuelles restent estimées par profils temporels jusqu’à disponibilité de mesures d’animation fiables.
+              Les Motion Values de base restent comparées aux fixtures WutheringTools avec les mêmes stats. Aemeath garde sa cible 11,69 s ; les autres utilisent les mêmes profils temporels estimés.
             </p>
+            {result?.diagnostics.length ? (
+              <ul>
+                {result.diagnostics.slice(0, 12).map((diagnostic, index) => (
+                  <li key={`${diagnostic.code}-${index}`} className="hint">
+                    {diagnostic.code} : {diagnostic.message}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="hint">Aucun diagnostic runtime pour cette rotation.</p>
+            )}
           </div>
         </details>
       </div>
