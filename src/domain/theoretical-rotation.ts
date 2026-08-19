@@ -63,13 +63,15 @@ export function inferTheoreticalProfile(action: CombatAction): TemporalProfileId
  * Uniformly distributes theoretical hit events inside the shared action window.
  * This exists so hit-triggered passives/set bonuses are simulated consistently
  * for every character without pretending we know exact animation frames.
+ * A zero-MV action returns an empty hit list: it is a real timeline action but
+ * does not claim a missing damage-hit timestamp.
  */
 export function theoreticalHitTimings(
   action: CombatAction,
   profileId: TemporalProfileId,
 ): readonly number[] | null {
   const hits = hitCount(action);
-  if (hits <= 0) return null;
+  if (hits <= 0) return [];
   const duration = temporalProfilesV01[profileId].durationSeconds;
   return Array.from(
     { length: hits },
