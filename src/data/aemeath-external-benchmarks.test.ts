@@ -68,7 +68,10 @@ describe("real Game Data integration — Aemeath recommended build", () => {
     const heavy = run("mech-heavy-2", ["before-all-sounds"]);
     if (![baseline, permanent, everbright, trailblazing, heavy].every((item) => isStandardDamage(item.damage))) throw new Error("Expected standard damage");
     if (!isStandardDamage(baseline.damage) || !isStandardDamage(permanent.damage) || !isStandardDamage(everbright.damage) || !isStandardDamage(trailblazing.damage) || !isStandardDamage(heavy.damage)) return;
-    expect(permanent.damage.total).toEqual(baseline.damage.total);
+    expect(permanent.damage.allDamageBonusPercent).toBe(12);
+    expect(permanent.damage.additionalElementalDamageBonusPercent).toBe(10);
+    expect(permanent.damage.additionalDamageTypeBonusPercent).toBe(25);
+    expect(permanent.damage.total.expected).toBeGreaterThan(baseline.damage.total.expected);
     expect(everbright.damage).toMatchObject({ defenseIgnore: 0.32, resistanceIgnore: 0.1 });
     expect(trailblazing.damage.rawCritRatePercent).toBe(baseline.damage.rawCritRatePercent + 20);
     expect(trailblazing.damage.additionalElementalDamageBonusPercent).toBe(20);
