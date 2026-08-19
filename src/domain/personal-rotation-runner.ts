@@ -1,14 +1,12 @@
 import type { RuntimeBaseStatBasis } from "./combat-context";
+import type { DamageAmounts, DamageTarget } from "./damage-engine";
 import type { ActionDefinitionV02 } from "./effect-models";
 import type { CombatAction, FinalStats, MainEcho, Resonator, Sonata, UserBuild, Weapon } from "./models";
 import { simulatePersonalCombat, type PersonalCombatResult } from "./personal-combat-simulation";
 import { emptyCombatState, type CombatEvent, type CombatState } from "./state-engine";
 import { buildTheoreticalRotationTimeline } from "./theoretical-rotation";
-import type { DamageAmounts, DamageTarget } from "./damage-engine";
-import type {
-  PersonalRotationScenario,
-  SequencePayloadOverride,
-} from "@/data/personal-rotation-presets";
+import type { TemporalRotationDefinition } from "./temporal-engine";
+import type { PersonalRotationScenario, SequencePayloadOverride } from "@/data/personal-rotation-presets";
 
 export interface TheoreticalPersonalRotationRequest {
   scenario: PersonalRotationScenario;
@@ -39,6 +37,32 @@ const highestApplicableOverride = (
   return applicable[applicable.length - 1];
 };
 
+function reviewedRotationTarget(
+  resonator: Resonator,
+  sequence: UserBuild["sequence"],
+): TemporalRotationDefinition["targetDuration"] | undefined {
+  const eligible = (resonator.combat?.rotations ?? []).filter(
+    (rotation) =>
+      rotation.policy === "no-quickswap" &&
+      rotation.sequence <= sequence &&
+      typeof rotation.totalDurationSeconds.value === "number" &&
+      Number.isFinite(rotation.totalDurationSeconds.value) &&
+      rotation.totalDurationSeconds.value > 0,
+  );
+  if (!eligible.length) return undefined;
+  const highestSequence = Math.max(...eligible.map((rotation) => rotation.sequence));
+  const candidates = eligible.filter((rotation) => rotation.sequence === highestSequence);
+  if (candidates.length !== 1) return undefined;
+  const rotation = candidates[0]!;
+  return {
+    seconds: rotation.totalDurationSeconds.value!,
+    confidence: rotation.totalDurationSeconds.confidence,
+    source: [rotation.source.source, rotation.totalDurationSeconds.sourceNote]
+      .filter(Boolean)
+      .join(" · "),
+  };
+}
+
 function compileSpecialEvents(
   scenario: PersonalRotationScenario,
   timeline: ReturnType<typeof buildTheoreticalRotationTimeline>,
@@ -51,18 +75,10 @@ function compileSpecialEvents(
     if (preset.minimumSequence !== undefined && build.sequence < preset.minimumSequence) continue;
     if (preset.maximumSequence !== undefined && build.sequence > preset.maximumSequence) continue;
     const anchor = timeline.entries[preset.anchor.stepIndex];
-    if (!anchor) {
-      throw new Error(
-        `Rotation scenario ${scenario.id} references missing step ${preset.anchor.stepIndex} for ${preset.id}.`,
-      );
-    }
-    const baseTime = preset.anchor.at === "start"
-      ? anchor.startTimeSeconds
-      : anchor.endTimeSeconds;
+    if (!anchor) throw new Error(`Rotation scenario ${scenario.id} references missing step ${preset.anchor.stepIndex} for ${preset.id}.`);
+    const baseTime = preset.anchor.at === "start" ? anchor.startTimeSeconds : anchor.endTimeSeconds;
     const repeat = preset.repeat ?? 1;
-    if (!Number.isInteger(repeat) || repeat <= 0) {
-      throw new Error(`Rotation special event ${preset.id} has an invalid repeat count.`);
-    }
+    if (!Number.isInteger(repeat) || repeat <= 0) throw new Error(`Rotation special event ${preset.id} has an invalid repeat count.`);
     const override = highestApplicableOverride(preset.sequenceOverrides, build.sequence);
     for (let index = 0; index < repeat; index += 1) {
       const payload = {
@@ -99,26 +115,21 @@ function initialStateForScenario(
     (resonator.combat?.resources ?? []).map((resource) => {
       const current = scenario.initialResources?.[resource.id] ?? 0;
       if (!Number.isFinite(current) || current < 0 || current > resource.cap) {
-        throw new Error(
-          `Rotation scenario ${scenario.id} has invalid initial ${resource.id}: ${current}/${resource.cap}.`,
-        );
+        throw new Error(`Rotation scenario ${scenario.id} has invalid initial ${resource.id}: ${current}/${resource.cap}.`);
       }
       return [resource.id, { current, max: resource.cap }];
     }),
   );
-  return emptyCombatState(
-    {
-      [resonator.id]: {
-        hp: stats.hp,
-        maxHp: stats.hp,
-        onField: true,
-        form: resonator.combat?.defaultForm,
-        namedStates: ["ground"],
-        resources,
-      },
+  return emptyCombatState({
+    [resonator.id]: {
+      hp: stats.hp,
+      maxHp: stats.hp,
+      onField: true,
+      form: resonator.combat?.defaultForm,
+      namedStates: ["ground"],
+      resources,
     },
-    [targetId],
-  );
+  }, [targetId]);
 }
 
 function scenarioActions(
@@ -126,10 +137,7 @@ function scenarioActions(
   actions: readonly CombatAction[],
 ): readonly (ActionDefinitionV02 | CombatAction)[] {
   if (!scenario.assumeLegacyRequirementsSatisfied) return actions;
-  return actions.map((action) => ({
-    action,
-    requirements: [],
-  }));
+  return actions.map((action) => ({ action, requirements: [] }));
 }
 
 const addAmounts = (a: DamageAmounts, b: DamageAmounts): DamageAmounts => ({
@@ -145,48 +153,34 @@ function withFixedScenarioDamage(
 ): PersonalCombatResult {
   const fixed = events.flatMap((event) => {
     const amount = Number(event.payload?.fixedDamageAmount);
-    if (!Number.isFinite(amount) || amount < 0) return [];
-    return [{ event, amount }];
+    return Number.isFinite(amount) && amount >= 0 ? [{ event, amount }] : [];
   });
   if (!fixed.length) return simulation;
-
   let fixedTotal = 0;
   const perAction = { ...simulation.perAction };
   for (const entry of fixed) {
     fixedTotal += entry.amount;
     const actionId = entry.event.actionId ?? "scenario-fixed-damage";
     const amounts = { nonCrit: entry.amount, crit: entry.amount, expected: entry.amount };
-    perAction[actionId] = addAmounts(
-      perAction[actionId] ?? { nonCrit: 0, crit: 0, expected: 0 },
-      amounts,
-    );
+    perAction[actionId] = addAmounts(perAction[actionId] ?? { nonCrit: 0, crit: 0, expected: 0 }, amounts);
   }
   const fixedAmounts = { nonCrit: fixedTotal, crit: fixedTotal, expected: fixedTotal };
   const personalDamage = addAmounts(simulation.personalDamage, fixedAmounts);
   const duration = simulation.rotationDurationSeconds;
-  const personalDps = duration > 0
-    ? {
-        nonCrit: personalDamage.nonCrit / duration,
-        crit: personalDamage.crit / duration,
-        expected: personalDamage.expected / duration,
-      }
-    : simulation.personalDps;
-
+  const personalDps = duration > 0 ? {
+    nonCrit: personalDamage.nonCrit / duration,
+    crit: personalDamage.crit / duration,
+    expected: personalDamage.expected / duration,
+  } : simulation.personalDps;
   return {
     ...simulation,
     personalDamage,
     personalDps,
-    breakdown: {
-      ...simulation.breakdown,
-      direct: addAmounts(simulation.breakdown.direct, fixedAmounts),
-    },
+    breakdown: { ...simulation.breakdown, direct: addAmounts(simulation.breakdown.direct, fixedAmounts) },
     perAction,
     perSource: {
       ...simulation.perSource,
-      [resonatorId]: addAmounts(
-        simulation.perSource[resonatorId] ?? { nonCrit: 0, crit: 0, expected: 0 },
-        fixedAmounts,
-      ),
+      [resonatorId]: addAmounts(simulation.perSource[resonatorId] ?? { nonCrit: 0, crit: 0, expected: 0 }, fixedAmounts),
     },
     coverage: {
       ...simulation.coverage,
@@ -200,23 +194,16 @@ export function runTheoreticalPersonalRotation(
   request: TheoreticalPersonalRotationRequest,
 ): TheoreticalPersonalRotationResult {
   if (request.scenario.resonatorId !== request.resonator.id) {
-    throw new Error(
-      `Rotation scenario ${request.scenario.id} belongs to ${request.scenario.resonatorId}, not ${request.resonator.id}.`,
-    );
+    throw new Error(`Rotation scenario ${request.scenario.id} belongs to ${request.scenario.resonatorId}, not ${request.resonator.id}.`);
   }
   const targetId = request.target.id ?? "training-target";
   const actions = [...request.actions, ...(request.scenario.extraActions ?? [])];
   const timeline = buildTheoreticalRotationTimeline(
     request.scenario.rotation,
     actions,
+    reviewedRotationTarget(request.resonator, request.build.sequence),
   );
-  const externalEvents = compileSpecialEvents(
-    request.scenario,
-    timeline,
-    request.build,
-    request.resonator.id,
-    targetId,
-  );
+  const externalEvents = compileSpecialEvents(request.scenario, timeline, request.build, request.resonator.id, targetId);
   const build = { ...request.build, finalStats: request.stats };
   const rawSimulation = simulatePersonalCombat({
     resonator: request.resonator,
@@ -232,18 +219,11 @@ export function runTheoreticalPersonalRotation(
       mainEcho: request.mainEcho,
       extraEffects: request.scenario.extraEffects,
     },
-    initialState: initialStateForScenario(
-      request.scenario,
-      request.resonator,
-      request.stats,
-      targetId,
-    ),
+    initialState: initialStateForScenario(request.scenario, request.resonator, request.stats, targetId),
     externalEvents,
   });
-  const simulation = withFixedScenarioDamage(
-    rawSimulation,
-    externalEvents,
-    request.resonator.id,
-  );
-  return { scenario: request.scenario, simulation };
+  return {
+    scenario: request.scenario,
+    simulation: withFixedScenarioDamage(rawSimulation, externalEvents, request.resonator.id),
+  };
 }
