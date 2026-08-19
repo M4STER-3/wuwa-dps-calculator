@@ -7,10 +7,13 @@ import {
 } from "./temporal-engine";
 
 export interface TheoreticalRotationStep {
-  actionId: string;
+  /** Omit for a non-damaging transition such as jump/outro/swap preparation. */
+  actionId?: string;
+  /** Required for a non-action step; optional display override otherwise. */
+  label?: string;
   /** Optional profile override for non-standard transforms/cancels. */
   profileId?: TemporalProfileId;
-  /** Repeat the same action without duplicating data rows. */
+  /** Repeat the same action/transition without duplicating data rows. */
   repeat?: number;
   notes?: readonly string[];
 }
@@ -78,23 +81,29 @@ export function buildTheoreticalRotationTimeline(
 ): TemporalTimeline {
   const actionsById = new Map(actions.map((action) => [action.id, action]));
   const steps = preset.steps.flatMap((step, stepIndex) => {
-    const action = actionsById.get(step.actionId);
-    if (!action) {
+    const action = step.actionId ? actionsById.get(step.actionId) : undefined;
+    if (step.actionId && !action) {
       throw new Error(
         `Theoretical rotation ${preset.id} references unknown action ${step.actionId}.`,
+      );
+    }
+    if (!action && !step.label) {
+      throw new Error(
+        `Theoretical rotation ${preset.id} step ${stepIndex} needs an actionId or label.`,
       );
     }
     const repeat = step.repeat ?? 1;
     if (!Number.isInteger(repeat) || repeat <= 0) {
       throw new Error(
-        `Theoretical rotation ${preset.id} has invalid repeat for ${step.actionId}.`,
+        `Theoretical rotation ${preset.id} has invalid repeat at step ${stepIndex}.`,
       );
     }
-    const profileId = step.profileId ?? inferTheoreticalProfile(action);
+    const profileId =
+      step.profileId ?? (action ? inferTheoreticalProfile(action) : "very-short");
     return Array.from({ length: repeat }, (_, repeatIndex) => ({
-      id: `${preset.id}:${stepIndex}:${repeatIndex}:${action.id}`,
-      label: action.name,
-      actionId: action.id,
+      id: `${preset.id}:${stepIndex}:${repeatIndex}:${action?.id ?? "transition"}`,
+      label: step.label ?? action!.name,
+      ...(action ? { actionId: action.id } : {}),
       rotationStepIndex: stepIndex,
       duration: {
         confidence: "estimated-default" as const,
@@ -104,7 +113,7 @@ export function buildTheoreticalRotationTimeline(
       },
       recoverySeconds: null,
       cancelTimingSeconds: null,
-      hitTimingsSeconds: theoreticalHitTimings(action, profileId),
+      hitTimingsSeconds: action ? theoreticalHitTimings(action, profileId) : null,
       notes: step.notes ?? [],
     }));
   });
