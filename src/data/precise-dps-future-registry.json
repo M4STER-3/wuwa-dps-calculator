@@ -42,7 +42,7 @@
             { "selector": { "talent": "resonanceLiberation", "nameIncludes": ["Final Act", "Stagecraft Form"] } },
             { "selector": { "talent": "basicAttack", "nameIncludes": ["Basic Attack", "Breakdown Form", "Stage 1"] } },
             { "selector": { "talent": "basicAttack", "nameIncludes": ["Basic Attack", "Breakdown Form", "Stage 2"] } },
-            { "label": "Jump cancel", "profileId": "jump" },
+            { "label": "Jump cancel", "profileId": "very-short" },
             { "selector": { "talent": "basicAttack", "nameIncludes": ["Mid-air Attack", "Breakdown Form", "Stage 1"] } },
             { "selector": { "talent": "basicAttack", "nameIncludes": ["Mid-air Attack", "Breakdown Form", "Stage 2"] } },
             { "selector": { "talent": "resonanceSkill", "nameIncludes": ["Banish", "Breakdown Form", "Stage 1"] } },
