@@ -79,7 +79,7 @@ describe("Galbrena precise DPS runtime", () => {
       ["sinflame", 100],
       ["purging-flame", 100],
     ]);
-    expect(simulation.timeline.finalDurationSeconds).toBeCloseTo(12.2, 10);
+    expect(simulation.rotationDurationSeconds).toBeCloseTo(12.2, 10);
   });
 
   it("uses the reference Echo event to reach 24 Afterflame before Ascent and exits Demon after depletion", () => {
