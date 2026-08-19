@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "sourcePolicy": "Future DPS entries are preparation-only. Exact GameDatabase data is projected when available; missing release data remains explicit and no weapon, rotation, timing, or mechanic is invented.",
+  "entries": [
+    { "id": "phrolova", "name": "Phrolova" },
+    { "id": "denia", "name": "Denia" },
+    { "id": "lynae", "name": "Lynae" },
+    { "id": "mornye", "name": "Mornye" },
+    { "id": "qiuyuan", "name": "Qiuyuan" },
+    { "id": "jinhsi", "name": "Jinhsi" },
+    { "id": "galbrena", "name": "Galbrena" },
+    { "id": "iuno", "name": "Iuno" },
+    { "id": "shorekeeper", "name": "Shorekeeper", "displayName": "Gardienne du littoral" },
+    { "id": "hiyuki", "name": "Hiyuki" }
+  ],
+  "visualOverrides": {
+    "cantarella": {
+      "heroArtwork": "off",
+      "label": "Image off",
+      "note": "Portrait tête uniquement"
+    }
+  }
+}
