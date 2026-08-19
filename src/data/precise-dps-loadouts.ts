@@ -9,6 +9,10 @@ import {
 import { applyGalbrenaReferenceDuration } from "./precise-dps-galbrena-scenario";
 import { applyPreciseInitialStateAnchors } from "./precise-dps-initial-state-anchors";
 import {
+  applyPreciseIunoMechanics,
+  applyPreciseIunoWeaponMechanics,
+} from "./precise-dps-iuno";
+import {
   applyPreciseJinhsiMechanics,
   applyPreciseJinhsiWeaponMechanics,
 } from "./precise-dps-jinhsi";
@@ -72,15 +76,17 @@ export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutur
   (resonator) =>
     applyPreciseNeutralOutroDamageTypes(
       applyPreciseInitialStateAnchors(
-        applyPreciseShorekeeperMechanics(
-          applyPrecisePhrolovaCorrections(
-            applyPrecisePhrolovaAftersoundMechanics(
-              applyPrecisePhrolovaTeamCycleMechanics(
-                applyPrecisePhrolovaMechanics(
-                  applyGalbrenaLoadoutMechanics(
-                    applyPreciseQiuyuanMechanics(
-                      applyPreciseJinhsiMechanics(
-                        applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+        applyPreciseIunoMechanics(
+          applyPreciseShorekeeperMechanics(
+            applyPrecisePhrolovaCorrections(
+              applyPrecisePhrolovaAftersoundMechanics(
+                applyPrecisePhrolovaTeamCycleMechanics(
+                  applyPrecisePhrolovaMechanics(
+                    applyGalbrenaLoadoutMechanics(
+                      applyPreciseQiuyuanMechanics(
+                        applyPreciseJinhsiMechanics(
+                          applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+                        ),
                       ),
                     ),
                   ),
@@ -102,11 +108,12 @@ export const preciseDpsLoadoutWeapons: readonly PreciseDpsLoadoutWeapon[] = prec
   const qiuyuanWeapon = applyPreciseQiuyuanWeaponMechanics(resonator.id, jinhsiWeapon);
   const phrolovaWeapon = applyPrecisePhrolovaWeaponMechanics(resonator.id, qiuyuanWeapon);
   const galbrenaWeapon = applyPreciseGalbrenaWeaponMechanics(resonator.id, phrolovaWeapon);
+  const iunoWeapon = applyPreciseIunoWeaponMechanics(resonator.id, galbrenaWeapon);
   const ratioNormalizedWeapon = resonator.id === "phrolova"
-    ? normalizeExplicitWeaponRatioPercentRules(galbrenaWeapon, phrolovaRatioPatches)
+    ? normalizeExplicitWeaponRatioPercentRules(iunoWeapon, phrolovaRatioPatches)
     : resonator.id === "galbrena"
-      ? normalizeExplicitWeaponRatioPercentRules(galbrenaWeapon, galbrenaRatioPatches)
-      : galbrenaWeapon;
+      ? normalizeExplicitWeaponRatioPercentRules(iunoWeapon, galbrenaRatioPatches)
+      : iunoWeapon;
   return {
     resonatorId: resonator.id,
     weapon: applyPreciseShorekeeperWeaponMechanics(resonator.id, ratioNormalizedWeapon),
