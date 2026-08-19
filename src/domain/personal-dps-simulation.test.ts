@@ -5,6 +5,7 @@ import {
   calcharoPersonalDpsProfile10R1,
   changliPersonalDpsProfile10R1,
 } from "@/data/personal-dps-pilots-10r1";
+import { materializeCharacterBoxBuild10R1 } from "@/game-data/character-box-final-stats-10r1";
 import { createBuildFromPreset } from "./character-box";
 import { simulatePersonalDpsBuildV1 } from "./personal-dps-simulation";
 import type { PersonalDpsProfileV1 } from "./personal-dps-engine";
@@ -14,10 +15,12 @@ function fixture(resonatorId: string, profile: PersonalDpsProfileV1) {
   const preset = presets.find((candidate) => candidate.resonatorId === resonatorId);
   const resonator = resonators.find((candidate) => candidate.id === resonatorId);
   if (!preset || !resonator) throw new Error(`Missing ${resonatorId} fixture.`);
-  const build = createBuildFromPreset(preset, {
-    id: `runtime-${resonatorId}`,
-    now: "2026-08-19T00:00:00.000Z",
-  });
+  const build = materializeCharacterBoxBuild10R1(
+    createBuildFromPreset(preset, {
+      id: `runtime-${resonatorId}`,
+      now: "2026-08-19T00:00:00.000Z",
+    }),
+  );
   return { build, resonator, profile };
 }
 
@@ -58,12 +61,45 @@ describe("universal personal DPS runtime simulation", () => {
     expect(changli.dps.expected).toBeGreaterThan(0);
   });
 
-  it("applies Calcharo resonance-chain damage rules and S6 emitted phantoms", () => {
+  it("applies Calcharo S2 after Intro and S3 across the Deathblade Gear window", () => {
     const base = fixture("calcharo", calcharoPersonalDpsProfile10R1);
     const s0 = simulate({ ...base, build: atSequence(base.build, 0) });
+    const s2 = simulate({ ...base, build: atSequence(base.build, 2) });
+    const s3 = simulate({ ...base, build: atSequence(base.build, 3) });
+
+    expect(
+      s2.perAction["calcharo-extermination-order-1"]!.expected,
+    ).toBeGreaterThan(
+      s0.perAction["calcharo-extermination-order-1"]!.expected,
+    );
+    expect(
+      s2.perAction["calcharo-extermination-order-2"]!.expected,
+    ).toBeGreaterThan(
+      s0.perAction["calcharo-extermination-order-2"]!.expected,
+    );
+    expect(s2.perAction["calcharo-wanted-outlaw"]!.expected).toBeCloseTo(
+      s0.perAction["calcharo-wanted-outlaw"]!.expected,
+      8,
+    );
+
+    expect(s3.perAction["calcharo-hounds-roar-1"]!.expected).toBeGreaterThan(
+      s2.perAction["calcharo-hounds-roar-1"]!.expected,
+    );
+    expect(s3.perAction["calcharo-death-messenger"]!.expected).toBeGreaterThan(
+      s2.perAction["calcharo-death-messenger"]!.expected,
+    );
+  });
+
+  it("applies Calcharo S5 Intro damage and S6 emitted phantoms", () => {
+    const base = fixture("calcharo", calcharoPersonalDpsProfile10R1);
+    const s4 = simulate({ ...base, build: atSequence(base.build, 4) });
+    const s5 = simulate({ ...base, build: atSequence(base.build, 5) });
     const s6 = simulate({ ...base, build: atSequence(base.build, 6) });
 
-    expect(s6.totals.expected).toBeGreaterThan(s0.totals.expected);
+    expect(s5.perAction["calcharo-wanted-outlaw"]!.expected).toBeGreaterThan(
+      s4.perAction["calcharo-wanted-outlaw"]!.expected,
+    );
+    expect(s6.totals.expected).toBeGreaterThan(s5.totals.expected);
     expect(s6.perAction["calcharo-s6-phantom"]?.expected ?? 0).toBeGreaterThan(0);
   });
 
@@ -72,6 +108,9 @@ describe("universal personal DPS runtime simulation", () => {
     const s0 = simulate({ ...base, build: atSequence(base.build, 0) });
     const s6 = simulate({ ...base, build: atSequence(base.build, 6) });
 
+    expect(base.build.echoLoadout?.mainEchoId).toBeDefined();
+    expect(base.build.finalStats.elementalDamageBonus.fusion).toBeGreaterThan(0);
+    expect(base.build.finalStats.damageTypeBonus.resonanceSkill).toBeGreaterThan(0);
     expect(s0.perAction["changli-flaming-sacrifice"]?.expected ?? 0).toBeGreaterThan(0);
     expect(s6.totals.expected).toBeGreaterThan(s0.totals.expected);
     expect(s6.dps.expected).toBeGreaterThan(s0.dps.expected);
