@@ -186,3 +186,89 @@ export function applyEchoLoadoutStatsV1(
 
   return { finalStats, audit };
 }
+
+function subtractEchoContribution(
+  panelWithCurrentEchoes: FinalStats,
+  panelPlusOneMoreCopy: FinalStats,
+): FinalStats {
+  const result = clone(panelWithCurrentEchoes);
+  const scalarKeys = [
+    "hp",
+    "attack",
+    "defense",
+    "critRate",
+    "critDamage",
+    "energyRegen",
+    "healingBonus",
+    "tuneBreakBoost",
+  ] as const;
+
+  for (const key of scalarKeys) {
+    result[key] -= panelPlusOneMoreCopy[key] - panelWithCurrentEchoes[key];
+    if (!Number.isFinite(result[key]) || result[key] < -1e-9) {
+      throw new Error(
+        `Cannot remove the current Echo contribution from ${key}; panel accounting is inconsistent.`,
+      );
+    }
+    if (result[key] < 0) result[key] = 0;
+  }
+
+  for (const key of Object.keys(result.elementalDamageBonus) as Element[]) {
+    result.elementalDamageBonus[key] -=
+      panelPlusOneMoreCopy.elementalDamageBonus[key] -
+      panelWithCurrentEchoes.elementalDamageBonus[key];
+    if (!Number.isFinite(result.elementalDamageBonus[key]) || result.elementalDamageBonus[key] < -1e-9) {
+      throw new Error(
+        `Cannot remove the current Echo contribution from elementalDamageBonus:${key}.`,
+      );
+    }
+    if (result.elementalDamageBonus[key] < 0) result.elementalDamageBonus[key] = 0;
+  }
+
+  for (const key of Object.keys(result.damageTypeBonus) as DamageType[]) {
+    result.damageTypeBonus[key] -=
+      panelPlusOneMoreCopy.damageTypeBonus[key] -
+      panelWithCurrentEchoes.damageTypeBonus[key];
+    if (!Number.isFinite(result.damageTypeBonus[key]) || result.damageTypeBonus[key] < -1e-9) {
+      throw new Error(
+        `Cannot remove the current Echo contribution from damageTypeBonus:${key}.`,
+      );
+    }
+    if (result.damageTypeBonus[key] < 0) result.damageTypeBonus[key] = 0;
+  }
+
+  return result;
+}
+
+/**
+ * Replaces a persisted Echo loadout without accumulating its permanent stats.
+ * The current loadout is removed exactly once, then the next loadout is applied.
+ * This keeps repeated roll edits drift-free while preserving finalStats as the
+ * sole permanent-stat source consumed by combat engines.
+ */
+export function replaceEchoLoadoutStatsV1(
+  panelWithCurrentEchoes: FinalStats,
+  basis: EchoLoadoutBaseStatBasisV1,
+  currentLoadout: UserEchoLoadoutV1 | undefined,
+  nextLoadout: UserEchoLoadoutV1 | undefined,
+): EchoLoadoutStatResolutionV1 {
+  let panelWithoutEchoes = clone(panelWithCurrentEchoes);
+
+  if (currentLoadout) {
+    const duplicatedCurrent = applyEchoLoadoutStatsV1(
+      panelWithCurrentEchoes,
+      basis,
+      currentLoadout,
+    ).finalStats;
+    panelWithoutEchoes = subtractEchoContribution(
+      panelWithCurrentEchoes,
+      duplicatedCurrent,
+    );
+  }
+
+  if (!nextLoadout) {
+    return { finalStats: panelWithoutEchoes, audit: [] };
+  }
+
+  return applyEchoLoadoutStatsV1(panelWithoutEchoes, basis, nextLoadout);
+}
