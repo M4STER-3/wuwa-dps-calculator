@@ -57,6 +57,19 @@ function run(
   }).simulation;
 }
 
+function runtimeContext(result: ReturnType<typeof run>) {
+  return JSON.stringify({
+    diagnostics: result.diagnostics,
+    stateDiagnostics: result.stateDiagnostics,
+    hitEvents: result.eventLog
+      .filter((entry) => entry.kind === "action-hit")
+      .map((entry) => ({ id: entry.id, actionId: entry.actionId, timestamp: entry.timestamp })),
+    resourceTransitions: result.stateTransitions.filter((entry) =>
+      entry.kind.includes("resource"),
+    ),
+  });
+}
+
 describe("Shorekeeper precise DPS runtime", () => {
   it("pins native GameDatabase actions and adds zero-MV End Loop as an explicit timeline action", () => {
     const resonator = findPreciseDpsResonator("shorekeeper")!;
@@ -70,22 +83,29 @@ describe("Shorekeeper precise DPS runtime", () => {
 
   it("executes exact Empirical Data 1+1+2+1 and consumes all 5 on every Illation", () => {
     const result = run("shorekeeper-opener", 0);
-    expect(result.finalState.actors.shorekeeper?.resources["empirical-data"]?.current).toBe(0);
+    const context = runtimeContext(result);
+    expect(result.finalState.actors.shorekeeper?.resources["empirical-data"]?.current, context).toBe(0);
     const empirical = result.stateTransitions.filter((entry) =>
       entry.kind.startsWith("action-resource-") && entry.detail.startsWith("empirical-data:"),
     );
-    expect(empirical.some((entry) => entry.detail === "empirical-data:0->1")).toBe(true);
-    expect(empirical.some((entry) => entry.detail === "empirical-data:3->5")).toBe(true);
-    expect(empirical.filter((entry) => entry.detail === "empirical-data:5->0")).toHaveLength(2);
+    for (const transition of [
+      "empirical-data:0->1",
+      "empirical-data:1->2",
+      "empirical-data:2->4",
+      "empirical-data:4->5",
+    ]) {
+      expect(empirical.some((entry) => entry.detail === transition), context).toBe(true);
+    }
+    expect(empirical.filter((entry) => entry.detail === "empirical-data:5->0"), context).toHaveLength(2);
   });
 
-  it("derives six Flare Star Butterflies per BA1-4 → Illation cycle from live Collapsed Core state", () => {
+  it("derives seven Flare Star Butterflies per BA1-4 → Illation cycle from exact hit cardinality", () => {
     const opener = run("shorekeeper-opener", 0);
     const loop = run("shorekeeper-loop", 0);
     const openerFlares = opener.audits.filter((entry) => entry.actionId === SHOREKEEPER_NATIVE.flareStarButterfly);
     const loopFlares = loop.audits.filter((entry) => entry.actionId === SHOREKEEPER_NATIVE.flareStarButterfly);
-    expect(openerFlares).toHaveLength(12);
-    expect(loopFlares).toHaveLength(6);
+    expect(openerFlares, runtimeContext(opener)).toHaveLength(14);
+    expect(loopFlares, runtimeContext(loop)).toHaveLength(7);
     expect(opener.finalState.actors.shorekeeper?.resources["collapsed-core"]?.current).toBe(0);
     expect(loop.finalState.actors.shorekeeper?.resources["collapsed-core"]?.current).toBe(0);
   });
