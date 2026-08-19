@@ -1,5 +1,6 @@
-import type { Weapon } from "@/domain/models";
+import type { Resonator, Weapon } from "@/domain/models";
 import { preciseDpsFutureResonators, preciseDpsFutureWeapons } from "./precise-dps-future";
+import { applyPreciseResourceMechanics } from "./precise-dps-resource-mechanics";
 import { applyPreciseWeaponMechanics } from "./precise-dps-weapons";
 
 export type PreciseDpsLoadoutWeapon = {
@@ -7,12 +8,20 @@ export type PreciseDpsLoadoutWeapon = {
   weapon: Weapon;
 };
 
-export const preciseDpsLoadoutWeapons: readonly PreciseDpsLoadoutWeapon[] = preciseDpsFutureResonators.map((resonator, index) => {
+export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutureResonators.map(
+  applyPreciseResourceMechanics,
+);
+
+export const preciseDpsLoadoutWeapons: readonly PreciseDpsLoadoutWeapon[] = preciseDpsLoadoutResonators.map((resonator, index) => {
   const baseWeapon = preciseDpsFutureWeapons[index];
   if (!baseWeapon) throw new Error(`Missing precise weapon for ${resonator.id}.`);
   if (baseWeapon.type !== resonator.weaponType) throw new Error(`Precise weapon type mismatch for ${resonator.id}.`);
   return { resonatorId: resonator.id, weapon: applyPreciseWeaponMechanics(resonator.id, baseWeapon) };
 });
+
+export function findPreciseDpsResonator(resonatorId: string): Resonator | undefined {
+  return preciseDpsLoadoutResonators.find((entry) => entry.id === resonatorId);
+}
 
 export function findPreciseDpsWeapon(resonatorId: string): Weapon | undefined {
   return preciseDpsLoadoutWeapons.find((entry) => entry.resonatorId === resonatorId)?.weapon;
