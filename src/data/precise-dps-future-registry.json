@@ -48,7 +48,7 @@
           "steps": [
             { "selector": { "talent": "introSkill" } },
             { "selector": { "sourceAttributeId": "1509010" } },
-            { "selector": { "talent": "resonanceSkill", "sourceSkillNameIncludes": ["Lynae-Style Palettes"] } },
+            { "selector": { "sourceAttributeId": "1509006" } },
             { "selector": { "nameIncludes": ["Spark Collision", "Lv. 3"] } },
             { "selector": { "nameIncludes": ["Polychrome Leap", "Stage 1"] } },
             { "selector": { "nameIncludes": ["Polychrome Leap", "Stage 2"] } },
