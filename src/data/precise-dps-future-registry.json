@@ -172,8 +172,54 @@
       "name": "Qiuyuan",
       "signatureWeaponName": "Emerald Sentence",
       "mechanicsStatus": "partial",
+      "combatModel": {
+        "forms": ["Baseline", "Inksplash of Mind"],
+        "defaultForm": "Baseline",
+        "modes": [],
+        "resources": [
+          { "id": "swordsters-soliloquy", "name": "Swordster's Soliloquy", "cap": 600 }
+        ]
+      },
       "scenarios": [
-        { "id": "qiuyuan-standard", "label": "Standard", "reviewedDurationSeconds": 6.35 }
+        {
+          "id": "qiuyuan-standard",
+          "label": "Standard Hybrid · S0–S2",
+          "variant": "hybrid",
+          "reviewedDurationSeconds": 6.35,
+          "eligibility": "S0–S2 standard Hybrid rotation; optional normal Resonance Skill omitted because it is an Energy-routing choice rather than a fixed damage requirement.",
+          "steps": [
+            { "selector": { "talent": "introSkill", "sourceSkillNameIncludes": ["Attack the Must-Defend"] } },
+            { "selector": { "nameIncludes": ["Inkwash", "Stage 3"] } },
+            { "selector": { "nameIncludes": ["Inkwash", "Stage 4"] } },
+            { "selector": { "talent": "resonanceLiberation", "sourceSkillNameIncludes": ["Sundering Strike"] } },
+            { "selector": { "nameIncludes": ["To Teach"] } },
+            { "selector": { "nameIncludes": ["To Save"] } },
+            { "selector": { "nameIncludes": ["To Sacrifice"] } },
+            { "selector": { "talent": "outroSkill", "sourceSkillNameIncludes": ["Strike Before Ready"] } }
+          ]
+        },
+        {
+          "id": "qiuyuan-s3-dps",
+          "label": "S3+ DPS · Straw Cape second Forte cycle",
+          "variant": "s3-dps",
+          "eligibility": "S3+ only; assumes full Concerto Energy is available for Straw Cape in Drizzly Rain after the first Forte cycle.",
+          "steps": [
+            { "selector": { "talent": "introSkill", "sourceSkillNameIncludes": ["Attack the Must-Defend"] } },
+            { "selector": { "nameIncludes": ["Inkwash", "Stage 3"] } },
+            { "selector": { "nameIncludes": ["Inkwash", "Stage 4"] } },
+            { "selector": { "talent": "resonanceLiberation", "sourceSkillNameIncludes": ["Sundering Strike"] } },
+            { "selector": { "nameIncludes": ["To Teach"] } },
+            { "selector": { "nameIncludes": ["To Save"] } },
+            { "selector": { "nameIncludes": ["To Sacrifice"] } },
+            { "selector": { "nameIncludes": ["Straw Cape in Drizzly Rain"] } },
+            { "selector": { "nameIncludes": ["Inkwash", "Stage 3"] } },
+            { "selector": { "nameIncludes": ["Inkwash", "Stage 4"] } },
+            { "selector": { "nameIncludes": ["To Teach"] } },
+            { "selector": { "nameIncludes": ["To Save"] } },
+            { "selector": { "nameIncludes": ["To Sacrifice"] } },
+            { "label": "S3 replacement Outro / handoff", "profileId": "outro" }
+          ]
+        }
       ]
     },
     {
