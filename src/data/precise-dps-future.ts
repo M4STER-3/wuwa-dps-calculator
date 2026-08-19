@@ -10,6 +10,7 @@ import type { TemporalProfileId } from "@/domain/temporal-engine";
 import type { TheoreticalRotationPreset } from "@/domain/theoretical-rotation";
 import { generatedPreciseDpsFutureProjection } from "@/generated/precise-dps-future-projection";
 import { applyPreciseQiuyuanActionPatches } from "./precise-dps-qiuyuan-core";
+import { applyPreciseShorekeeperActionPatches } from "./precise-dps-shorekeeper-core";
 import {
   applyPreciseSpecialActionPatches,
   preciseScenarioMechanicsFor,
@@ -199,10 +200,6 @@ function resolveAction(
         `Precise DPS ${resonatorId}/${scenarioId} step ${stepIndex} pin ${pin.sourceAttributeId} resolves to ${pinned.length} actions. Inventory: ${actionInventory(actions)}`,
       );
     }
-    // A reviewed sourceAttributeId pin is authoritative over heuristic recipe
-    // fields such as talent/name. This is required for GameDatabase actions whose
-    // canonical talent classification differs from community-facing wording
-    // (for example Jinhsi's Incarnation attacks are Forte Circuit actions).
     return pinned[0];
   }
 
@@ -290,9 +287,12 @@ export const preciseDpsFutureResonators: readonly Resonator[] = registry.entries
       projected.actions as unknown as readonly ProjectedAction[],
     ),
   ) as readonly ProjectedAction[];
-  const actions = (entry.id === "qiuyuan"
+  const qiuyuanActions = (entry.id === "qiuyuan"
     ? applyPreciseQiuyuanActionPatches(specialActions)
     : specialActions) as readonly ProjectedAction[];
+  const actions = (entry.id === "shorekeeper"
+    ? applyPreciseShorekeeperActionPatches(qiuyuanActions)
+    : qiuyuanActions) as readonly ProjectedAction[];
   const duration = oneReviewedDuration(entry);
   const combat: ResonatorCombatData = {
     level10Only: false,
