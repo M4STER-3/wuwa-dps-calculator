@@ -62,6 +62,7 @@ const rootRecord = record(database, "database");
 const characters = indexByWuwaId(rootRecord.characters, "characters");
 const weapons = indexByWuwaId(rootRecord.weapons, "weapons");
 const baselines = {};
+const runtimeBaseStats = {};
 
 for (const entry of batch) {
   const character = characters.get(entry.wuwaId); const weapon = weapons.get(entry.weapon.wuwaId);
@@ -90,17 +91,27 @@ for (const entry of batch) {
       default: fail(`${entry.id} weapon secondary stat ${JSON.stringify(secondary.stat)} has no reviewed mapping`);
     }
   }
+  const attackBasis = characterAttack + weaponAttack;
   stats.hp = hp * (1 + hpPercent / 100);
-  stats.attack = (characterAttack + weaponAttack) * (1 + attackPercent / 100);
+  stats.attack = attackBasis * (1 + attackPercent / 100);
   stats.defense = defense * (1 + defensePercent / 100);
   baselines[entry.id] = stats;
+  runtimeBaseStats[entry.id] = {
+    hp,
+    attack: attackBasis,
+    defense,
+    characterLevel: 90,
+    weaponId: entry.weapon.id,
+    weaponLevel: 90,
+  };
 }
 if (Object.keys(baselines).length !== batch.length) fail("projection size mismatch");
+if (Object.keys(runtimeBaseStats).length !== batch.length) fail("runtime base-stat projection size mismatch");
 
 await mkdir(outputDirectory, { recursive: true }); await assertRealDirectoryContained(path.dirname(inputPath), "input directory"); await assertRealDirectoryContained(outputDirectory, "output directory"); await rejectSymlink(outputPath, "output", true); await rejectSymlink(temporaryPath, "temporary output", true);
-const serialized = `/* Generated from roster-promotion-registry.json. Do not edit manually. */\nexport const generatedCharacterBoxRosterBaselines10R1 = ${JSON.stringify(baselines, null, 2)} as const;\n`;
+const serialized = `/* Generated from roster-promotion-registry.json. Do not edit manually. */\nexport const generatedCharacterBoxRosterBaselines10R1 = ${JSON.stringify(baselines, null, 2)} as const;\nexport const generatedCharacterBoxRuntimeBaseStats10R1 = ${JSON.stringify(runtimeBaseStats, null, 2)} as const;\n`;
 const outputBytes = Buffer.byteLength(serialized);
 if (outputBytes <= 0 || outputBytes > MAX_OUTPUT_BYTES) fail(`output size ${outputBytes} is outside the allowed range`);
 try { await writeFile(temporaryPath, serialized, { encoding: "utf8", flag: "wx", mode: 0o644 }); await rename(temporaryPath, outputPath); }
 catch (error) { await rm(temporaryPath, { force: true }).catch(() => undefined); throw error; }
-console.log(`Generated ${path.relative(root, outputPath)} with ${Object.keys(baselines).length} exact level 90 baselines (${outputBytes} bytes).`);
+console.log(`Generated ${path.relative(root, outputPath)} with ${Object.keys(baselines).length} exact level 90 baselines and runtime bases (${outputBytes} bytes).`);
