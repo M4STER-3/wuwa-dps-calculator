@@ -86,6 +86,8 @@ export interface CombatResource {
   id: string;
   name: string;
   cap: number;
+  /** Sparse exact cap replacements gated by Resonance Sequence; the highest applicable Sequence wins. */
+  capBySequence?: Readonly<Partial<Record<Sequence, number>>>;
   naturalRegeneration?: DataValue<number>;
   notes: readonly string[];
   /** Game-rule meaning; runtime logic must not infer this from the resource id. */
