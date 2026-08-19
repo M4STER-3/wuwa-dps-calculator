@@ -1,8 +1,9 @@
-import type { DamageType } from "@/domain/damage-engine";
-import type { Element, FinalStats } from "@/domain/models";
+import { damageBonusTypes, type Element, type FinalStats } from "@/domain/models";
 import type { UserEchoLoadoutV1 } from "@/domain/user-echo-loadout";
 import { reviewedEchoStatTableV1 } from "./echo-stats-v1";
 import type { EchoStatApplication, EchoStatTarget } from "./schema";
+
+type DamageBonusType = (typeof damageBonusTypes)[number];
 
 export interface EchoLoadoutBaseStatBasisV1 {
   hp: number;
@@ -73,8 +74,8 @@ function apply(
   }
 
   if (target.startsWith("damageTypeBonus:")) {
-    const damageType = target.slice("damageTypeBonus:".length) as DamageType;
-    if (!(damageType in stats.damageTypeBonus)) {
+    const damageType = target.slice("damageTypeBonus:".length) as DamageBonusType;
+    if (!damageBonusTypes.includes(damageType)) {
       throw new Error(`Unknown Echo damage-type target ${target}.`);
     }
     stats.damageTypeBonus[damageType] += value;
@@ -225,7 +226,7 @@ function subtractEchoContribution(
     if (result.elementalDamageBonus[key] < 0) result.elementalDamageBonus[key] = 0;
   }
 
-  for (const key of Object.keys(result.damageTypeBonus) as DamageType[]) {
+  for (const key of Object.keys(result.damageTypeBonus) as DamageBonusType[]) {
     result.damageTypeBonus[key] -=
       panelPlusOneMoreCopy.damageTypeBonus[key] -
       panelWithCurrentEchoes.damageTypeBonus[key];
