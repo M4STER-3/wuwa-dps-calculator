@@ -94,14 +94,14 @@
         "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
         "steps": [
           {"selector":{"talent":"introSkill"}},
-          {"selector":{"nameIncludes":["Art of Violence"]}},
+          {"selector":{"talent":"resonanceSkill","sourceSkillNameIncludes":["Art of Violence"],"nameIncludes":["Skill DMG"]}},
           {"selector":{"nameIncludes":["Chromatic Splendor"]}},
           {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack"],"nameExcludes":["Customary"]}},
           {"selector":{"nameIncludes":["Imminent Oblivion"]}},
           {"selector":{"nameIncludes":["Era of New Wave"]}},
           {"selector":{"nameIncludes":["Death Knell"]},"repeat":4},
           {"selector":{"nameIncludes":["Fatal Finale"]}},
-          {"selector":{"nameIncludes":["Art of Violence"]}},
+          {"selector":{"talent":"resonanceSkill","sourceSkillNameIncludes":["Art of Violence"],"nameIncludes":["Skill DMG"]}},
           {"selector":{"nameIncludes":["Chromatic Splendor"]}},
           {"label":"Echo / swap-cancel","profileId":"echo-skill"},
           {"label":"Outro / handoff","profileId":"outro"}
