@@ -86,16 +86,16 @@
           "label": "Opener · Baseline → Wide Field Observation",
           "variant": "opener",
           "steps": [
-            { "selector": { "talent": "basicAttack", "nameIncludes": ["Stage 1"], "nameExcludes": ["Wide Field"] } },
-            { "selector": { "talent": "basicAttack", "nameIncludes": ["Stage 2"], "nameExcludes": ["Wide Field"] } },
-            { "selector": { "talent": "basicAttack", "nameIncludes": ["Stage 3"], "nameExcludes": ["Wide Field"] } },
-            { "selector": { "nameIncludes": ["Geopotential Shift"] } },
-            { "selector": { "nameIncludes": ["Wide Field", "Stage 1"] } },
-            { "selector": { "nameIncludes": ["Wide Field", "Stage 2"] } },
-            { "selector": { "nameIncludes": ["Wide Field", "Stage 3"] } },
-            { "selector": { "sourceSkillNameIncludes": ["Distributed Array"] } },
-            { "selector": { "nameIncludes": ["Inversion"] } },
-            { "selector": { "talent": "resonanceLiberation" } },
+            { "selector": { "sourceAttributeId": "1209001" } },
+            { "selector": { "sourceAttributeId": "1209002" } },
+            { "selector": { "sourceAttributeId": "1209003" } },
+            { "selector": { "sourceAttributeId": "1209029" } },
+            { "selector": { "sourceAttributeId": "1209005" } },
+            { "selector": { "sourceAttributeId": "1209006" } },
+            { "selector": { "sourceAttributeId": "1209007" } },
+            { "selector": { "sourceAttributeId": "1209017" } },
+            { "selector": { "sourceAttributeId": "1209030" } },
+            { "selector": { "sourceAttributeId": "1209021" } },
             { "label": "Outro / handoff", "profileId": "outro" }
           ]
         },
@@ -104,13 +104,13 @@
           "label": "Loop · Intro → Wide Field Observation",
           "variant": "loop",
           "steps": [
-            { "selector": { "talent": "introSkill" } },
-            { "selector": { "nameIncludes": ["Wide Field", "Stage 1"] } },
-            { "selector": { "nameIncludes": ["Wide Field", "Stage 2"] } },
-            { "selector": { "nameIncludes": ["Wide Field", "Stage 3"] } },
-            { "selector": { "sourceSkillNameIncludes": ["Distributed Array"] } },
-            { "selector": { "nameIncludes": ["Inversion"] } },
-            { "selector": { "talent": "resonanceLiberation" } },
+            { "selector": { "sourceAttributeId": "1209025" } },
+            { "selector": { "sourceAttributeId": "1209005" } },
+            { "selector": { "sourceAttributeId": "1209006" } },
+            { "selector": { "sourceAttributeId": "1209007" } },
+            { "selector": { "sourceAttributeId": "1209017" } },
+            { "selector": { "sourceAttributeId": "1209030" } },
+            { "selector": { "sourceAttributeId": "1209021" } },
             { "label": "Outro / handoff", "profileId": "outro" }
           ]
         },
@@ -120,12 +120,12 @@
           "variant": "loop-forte-skip",
           "eligibility": "S0 only; no Tune Rupture/Strain applier; R4+ Concerto weapon or equivalent Concerto routing.",
           "steps": [
-            { "selector": { "talent": "introSkill" } },
-            { "selector": { "nameIncludes": ["Wide Field", "Stage 1"] } },
-            { "selector": { "nameIncludes": ["Wide Field", "Stage 2"] } },
-            { "selector": { "nameIncludes": ["Wide Field", "Stage 3"] } },
-            { "selector": { "talent": "resonanceLiberation" } },
-            { "selector": { "sourceSkillNameIncludes": ["Distributed Array"] } },
+            { "selector": { "sourceAttributeId": "1209025" } },
+            { "selector": { "sourceAttributeId": "1209005" } },
+            { "selector": { "sourceAttributeId": "1209006" } },
+            { "selector": { "sourceAttributeId": "1209007" } },
+            { "selector": { "sourceAttributeId": "1209021" } },
+            { "selector": { "sourceAttributeId": "1209017" } },
             { "label": "Swap / handoff", "profileId": "outro" }
           ]
         }
