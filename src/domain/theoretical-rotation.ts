@@ -3,6 +3,7 @@ import {
   buildTemporalTimeline,
   temporalProfilesV01,
   type TemporalProfileId,
+  type TemporalRotationDefinition,
   type TemporalTimeline,
 } from "./temporal-engine";
 
@@ -29,8 +30,9 @@ const hitCount = (action: CombatAction): number =>
 
 /**
  * Shared timing policy for every Resonator.
- * These are deliberately theoretical timings: no character-specific frame data,
- * no hidden calibration, and no special-case ids.
+ * These are deliberately theoretical timings: no character-specific frame data
+ * and no special-case ids. An explicit external duration may calibrate only the
+ * estimated windows through the generic Temporal Engine.
  */
 export function inferTheoreticalProfile(action: CombatAction): TemporalProfileId {
   const hits = hitCount(action);
@@ -78,6 +80,7 @@ export function theoreticalHitTimings(
 export function buildTheoreticalRotationTimeline(
   preset: TheoreticalRotationPreset,
   actions: readonly CombatAction[],
+  targetDuration?: TemporalRotationDefinition["targetDuration"],
 ): TemporalTimeline {
   const actionsById = new Map(actions.map((action) => [action.id, action]));
   const steps = preset.steps.flatMap((step, stepIndex) => {
@@ -109,7 +112,7 @@ export function buildTheoreticalRotationTimeline(
         confidence: "estimated-default" as const,
         profileId,
         sourceNote:
-          "Timing théorique universel WUWA LAB; aucune mesure image-par-image ni calibration propre au personnage.",
+          "Timing théorique universel WUWA LAB; aucune mesure image-par-image propre au personnage.",
       },
       recoverySeconds: null,
       cancelTimingSeconds: null,
@@ -118,10 +121,23 @@ export function buildTheoreticalRotationTimeline(
     }));
   });
 
-  return buildTemporalTimeline({
+  const timeline = buildTemporalTimeline({
     id: preset.id,
     name: preset.name,
     policy: "no-quickswap",
     steps,
+    targetDuration,
   });
+
+  if (timeline.calibrationFactor === null) return timeline;
+  const calibrationFactor = timeline.calibrationFactor;
+  return {
+    ...timeline,
+    entries: timeline.entries.map((entry) => ({
+      ...entry,
+      hitTimingsSeconds: entry.hitTimingsSeconds?.map(
+        (timing) => timing * calibrationFactor,
+      ) ?? null,
+    })),
+  };
 }
