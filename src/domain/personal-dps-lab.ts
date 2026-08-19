@@ -1,4 +1,5 @@
 import { findPersonalRotationScenario } from "@/data/personal-rotation-presets";
+import { registryPersonalRotationScenarios } from "@/data/personal-dps-roster-registry";
 import { mainEchoes, resonators, sonatas, weapons } from "@/data/catalog";
 import { calculateActionDamage, calculateTuneRuptureDamage, type DamageTarget, type PersonalDamageResult, type StandardDamageResult, type TuneEnemyClass } from "./damage-engine";
 import { resolveActiveEffects, type EffectAuditEntry } from "./effect-engine";
@@ -79,7 +80,11 @@ export function calculateActionLab(input: { loadout: ResolvedPersonalLoadout; ac
 
 export function simulateRotationLab(loadout: ResolvedPersonalLoadout, stats: FinalStats, target: LabTarget, resonanceMode?: string): PersonalCombatResult | undefined {
   if (!loadout.resonator) return undefined;
-  const scenario = findPersonalRotationScenario(loadout.resonator.id, resonanceMode);
+  const scenario =
+    findPersonalRotationScenario(loadout.resonator.id, resonanceMode) ??
+    registryPersonalRotationScenarios.find(
+      (candidate) => candidate.resonatorId === loadout.resonator!.id,
+    );
   if (!scenario) return undefined;
   return runTheoreticalPersonalRotation({
     scenario,
