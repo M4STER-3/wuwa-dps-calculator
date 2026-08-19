@@ -4,7 +4,7 @@ import {
   everbrightPolestar,
   sigillum,
   trailblazingStar,
-} from "./aemeath-runtime";
+} from "./aemeath-combat";
 import {
   calcharo,
   calcharoPreset,
