@@ -2,20 +2,19 @@ import type { EffectDefinition } from "@/domain/effect-models";
 import type { CombatEffect, Resonator } from "@/domain/models";
 
 /**
- * Personal Combat historically bootstraps only initially-active definitions that
- * expose at least one runtime rule. Pure state machines/counters can legitimately
- * be initially active without contributing a modifier themselves (for example a
- * stack counter whose triggers later activate another effect).
+ * Personal Combat loads executable structured definitions through their runtime
+ * rules. Pure state machines, counters and short-lived markers can legitimately
+ * have lifecycle/triggers without contributing a damage modifier themselves.
  *
  * Precise-DPS data passes through this adapter so those state-only definitions get
- * a no-op runtime anchor. This keeps the core runner generic and lets future kits
- * add counters without character-specific bootstrap branches.
+ * a no-op runtime anchor. This applies to both initially-active counters and
+ * triggered markers, keeping the core runner generic and letting future kits add
+ * state machines without character-specific bootstrap branches.
  */
 function withRuntimeAnchor(definition: EffectDefinition): EffectDefinition {
   if (
-    definition.activationPolicy !== "initially-active" ||
     definition.rules.some((rule) => rule.accounting === "runtime") ||
-    (!definition.lifecycle?.stacks && !(definition.triggers?.length))
+    (!definition.lifecycle && !(definition.triggers?.length))
   ) {
     return definition;
   }
