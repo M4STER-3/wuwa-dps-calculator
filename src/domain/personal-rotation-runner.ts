@@ -121,6 +121,13 @@ function resourceCapForSequence(
   return cap;
 }
 
+function sequenceRuntimeStates(sequence: UserBuild["sequence"]): readonly string[] {
+  return [
+    `sequence-${sequence}`,
+    ...Array.from({ length: sequence }, (_, index) => `sequence-at-least-${index + 1}`),
+  ];
+}
+
 function initialStateForScenario(
   scenario: PersonalRotationScenario,
   resonator: Resonator,
@@ -144,7 +151,7 @@ function initialStateForScenario(
       maxHp: stats.hp,
       onField: true,
       form: resonator.combat?.defaultForm,
-      namedStates: ["ground"],
+      namedStates: ["ground", ...sequenceRuntimeStates(sequence)],
       resources,
     },
   }, [targetId]);
