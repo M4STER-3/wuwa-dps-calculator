@@ -45,8 +45,20 @@ const permanentNodes: Readonly<
   changli: { basePercent: { attack: 12 }, critRate: 8 },
 };
 
-const blazingBrillianceAtk = { 1: 12, 2: 15, 3: 18, 4: 21, 5: 24 } as const;
-const lustrousRazorEr = { 1: 12.8, 2: 16, 3: 19.2, 4: 22.4, 5: 25.6 } as const;
+const blazingBrillianceAtk: Readonly<Record<number, number>> = {
+  1: 12,
+  2: 15,
+  3: 18,
+  4: 21,
+  5: 24,
+};
+const lustrousRazorEr: Readonly<Record<number, number>> = {
+  1: 12.8,
+  2: 16,
+  3: 19.2,
+  4: 22.4,
+  5: 25.6,
+};
 
 function blankStats(): FinalStats {
   return {
@@ -148,10 +160,14 @@ export function materializeCharacterBoxFinalStats10R1(
   stats.critDamage += nodes?.critDamage ?? 0;
 
   if (build.weapon.weaponId === "blazing-brilliance") {
-    basePercent.attack += blazingBrillianceAtk[build.weapon.rank];
+    const attackBonus = blazingBrillianceAtk[build.weapon.rank];
+    if (attackBonus === undefined) return undefined;
+    basePercent.attack += attackBonus;
   }
   if (build.weapon.weaponId === "lustrous-razor") {
-    stats.energyRegen += lustrousRazorEr[build.weapon.rank];
+    const energyRegen = lustrousRazorEr[build.weapon.rank];
+    if (energyRegen === undefined) return undefined;
+    stats.energyRegen += energyRegen;
   }
 
   stats.hp =
