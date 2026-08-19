@@ -1,10 +1,11 @@
-import { aemeathTemporalTimeline } from "@/data/aemeath-temporal";
+import { findPersonalRotationScenario } from "@/data/personal-rotation-presets";
 import { mainEchoes, resonators, sonatas, weapons } from "@/data/catalog";
 import { calculateActionDamage, calculateTuneRuptureDamage, type DamageTarget, type PersonalDamageResult, type StandardDamageResult, type TuneEnemyClass } from "./damage-engine";
 import { resolveActiveEffects, type EffectAuditEntry } from "./effect-engine";
 import type { ActiveEffectInstance, EffectDefinition } from "./effect-models";
 import type { CombatAction, FinalStats, MainEcho, Resonator, Sonata, UserBuild, Weapon } from "./models";
-import { loadPersonalEffects, simulatePersonalCombat, type PersonalCombatResult, type PersonalDiagnostic } from "./personal-combat-simulation";
+import { loadPersonalEffects, type PersonalCombatResult, type PersonalDiagnostic } from "./personal-combat-simulation";
+import { runTheoreticalPersonalRotation } from "./personal-rotation-runner";
 import type { RuntimeBaseStatBasis } from "./combat-context";
 import { buildEffectiveCombatStats, evaluatePredicate, evaluateValueExpression, type CombatContext } from "./combat-context";
 import { calculateActionOutcomes, type PersonalActionOutcome } from "./action-outcome-engine";
@@ -69,7 +70,7 @@ export function calculateActionLab(input: { loadout: ResolvedPersonalLoadout; ac
   const mvResult=applyMotionValueModifiers(action.multipliers,mv),effectiveAction=mvResult.status==="supported"?{...action,multipliers:mvResult.groups}:action,effectiveStats=effective.status === "supported" ? effective.stats : input.stats;
   const damage: PersonalDamageResult = talent.status === "unsupported" ? { status:"unsupported",actionId:action.id,actionName:action.name,reason:"missing-exact-talent-data",message:talent.message } : action.damageType === "tuneRupture"
     ? calculateTuneRuptureDamage({ action:effectiveAction, finalStats: effectiveStats, attackerLevel: input.loadout.build.characterLevel, enemyClass: input.target.tuneEnemyClass, element: resonator.element, target: input.target, modifiers: effects.tuneDamageModifiers, critOverride: effects.overrides.fixedCrit, context: input.resonanceMode ? { resonanceMode: input.resonanceMode } : undefined })
-    : calculateActionDamage({ action:effectiveAction, finalStats: effectiveStats, attackerLevel: input.loadout.build.characterLevel, scalingAttribute: "attack", element: resonator.element, target: input.target, modifiers: effects.damageModifiers });
+    : calculateActionDamage({ action:effectiveAction, finalStats: effectiveStats, attackerLevel: input.loadout.build.characterLevel, scalingAttribute: action.scalingAttribute ?? "attack", element: resonator.element, target: input.target, modifiers: effects.damageModifiers });
   const outcomeResult = talent.status === "supported" ? calculateActionOutcomes(action.outcomes, action.level, effectiveStats) : {outcomes:[],diagnostics:[]};
   const structuredKinds=new Set(action.resourceOperations?.map(operation=>operation.operation));const legacyUnstructured=(action.costs?.length&&!structuredKinds.has("consume"))||(action.gains?.length&&!structuredKinds.has("gain"));
   const diagnostics = [...input.loadout.diagnostics, ...effects.diagnostics.map((item) => ({ code: item.code, message: item.message })), ...(talent.status === "unsupported" ? [{code:talent.reason,message:talent.message}] : []), ...outcomeResult.diagnostics.map(message=>({code:message.split(":")[0],message})), ...(legacyUnstructured?[{code:"unstructured-action-resource-change",message:`${action.id} has a verified quantity without an exact executable stage.`}]:[])];
@@ -78,8 +79,21 @@ export function calculateActionLab(input: { loadout: ResolvedPersonalLoadout; ac
 
 export function simulateRotationLab(loadout: ResolvedPersonalLoadout, stats: FinalStats, target: LabTarget, resonanceMode?: string): PersonalCombatResult | undefined {
   if (!loadout.resonator) return undefined;
-  const build = { ...loadout.build, finalStats: stats };
-  return simulatePersonalCombat({ resonator: loadout.resonator, build, timeline: aemeathTemporalTimeline, target, resonanceMode, baseStatBasis: loadout.baseStatBasis, loadout: { weapon: loadout.weapon, sonata: loadout.sonata, mainEcho: loadout.mainEcho } });
+  const scenario = findPersonalRotationScenario(loadout.resonator.id, resonanceMode);
+  if (!scenario) return undefined;
+  return runTheoreticalPersonalRotation({
+    scenario,
+    resonator: loadout.resonator,
+    build: loadout.build,
+    stats,
+    target,
+    weapon: loadout.weapon,
+    sonata: loadout.sonata,
+    mainEcho: loadout.mainEcho,
+    actions: loadout.actions,
+    baseStatBasis: loadout.baseStatBasis,
+    resonanceMode,
+  }).simulation;
 }
 
 export interface ValidationDelta { calculated: number; observed: number; absoluteDelta: number; percentageDelta: number | null; }
