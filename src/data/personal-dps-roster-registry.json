@@ -112,8 +112,8 @@
       "defaultScalingAttribute": "hp",
       "actionOverrides": [
         {"sourceSkillNameIncludes":["Sword to Bear Their Names"],"damageType":"basicAttack"},
-        {"nameIncludes":["Heavy Attack - Fleurdelys"],"damageType":"basicAttack"},
-        {"nameIncludes":["Enhanced Heavy Attack - Fleurdelys"],"damageType":"basicAttack"}
+        {"talent":"forteCircuit","nameIncludes":["Heavy Attack"],"nameExcludes":["Enhanced"],"damageType":"basicAttack"},
+        {"talent":"forteCircuit","nameIncludes":["Enhanced Heavy Attack"],"damageType":"basicAttack"}
       ],
       "rotation": {
         "id": "cartethyia-s0-basic-data-v0.1",
@@ -121,21 +121,21 @@
         "sourceLabel": "Prydwen · profile reviewed 30/July/2026",
         "steps": [
           {"selector":{"talent":"introSkill","nameIncludes":["Sword to Mark Tide's Trace"]}},
-          {"selector":{"talent":"basicAttack","nameIncludes":["Cartethyia","Stage 2"]}},
-          {"selector":{"talent":"basicAttack","nameIncludes":["Cartethyia","Stage 3"]}},
-          {"selector":{"talent":"basicAttack","nameIncludes":["Cartethyia","Stage 4"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Stage 2"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Stage 3"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Stage 4"]}},
           {"selector":{"sourceSkillNameIncludes":["Sword to Bear Their Names"]}},
-          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack - Cartethyia"]}},
+          {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack 3 Sword Shadows Recalled"]}},
           {"label":"Resonance Liberation - A Knight's Heartfelt Prayers","profileId":"form-switch-short"},
           {"selector":{"nameIncludes":["Sword to Answer Waves' Call"]}},
-          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Mid-air","Stage 3"]}},
-          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 3"]}},
-          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 4"]}},
-          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 5"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Mid-air Attack 3"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Basic Attack Stage 3"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Basic Attack Stage 4"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Basic Attack Stage 5"]}},
           {"selector":{"nameIncludes":["May Tempest Break the Tides"]}},
-          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 3"]}},
-          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 4"]}},
-          {"selector":{"talent":"forteCircuit","nameIncludes":["Fleurdelys","Basic","Stage 5"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Basic Attack Stage 3"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Basic Attack Stage 4"]}},
+          {"selector":{"talent":"forteCircuit","nameIncludes":["Basic Attack Stage 5"]}},
           {"selector":{"talent":"resonanceLiberation","nameIncludes":["Blade of Howling Squall"]}},
           {"label":"Outro / handoff","profileId":"outro"}
         ]
