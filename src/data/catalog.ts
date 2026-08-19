@@ -11,7 +11,7 @@ import {
   lustrousRazor,
   nightmareThunderingMephis,
   voidThunder,
-} from "./calcharo";
+} from "./calcharo-runtime";
 import type {
   MainEcho,
   RecommendedBuildPreset,
