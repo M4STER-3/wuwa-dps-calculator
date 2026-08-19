@@ -47,7 +47,7 @@
           "reviewedDurationSeconds": 7.1,
           "steps": [
             { "selector": { "talent": "introSkill" } },
-            { "selector": { "talent": "resonanceLiberation", "sourceSkillNameIncludes": ["Prismatic Overblast"] } },
+            { "selector": { "sourceAttributeId": "1509010" } },
             { "selector": { "talent": "resonanceSkill", "sourceSkillNameIncludes": ["Lynae-Style Palettes"] } },
             { "selector": { "nameIncludes": ["Spark Collision", "Lv. 3"] } },
             { "selector": { "nameIncludes": ["Polychrome Leap", "Stage 1"] } },
