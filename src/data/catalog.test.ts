@@ -44,9 +44,9 @@ describe("cohérence du catalogue", () => {
     expect(fixtureEntries.every((entry) => entry.source.kind === "technical-fixture")).toBe(true);
   });
 
-  it("fournit le preset S0 Lv90 complet et son équipement vérifié", () => {
+  it("fournit le preset S0 Lv90 complet, ses cinq Echoes et son équipement vérifié", () => {
     expect(aemeathPreset).toMatchObject({
-      id: "aemeath-s0-endgame-v0.1",
+      id: "aemeath-s0-l90-everbright-trailblazing",
       characterLevel: 90,
       sequence: 0,
       skillLevels: {
@@ -63,7 +63,10 @@ describe("cohérence du catalogue", () => {
     });
     expect(aemeathPreset.source.kind).toBe("community-recommendation");
     expect(aemeathPreset.recommendedTargets?.attack).toEqual({ minimum: 2000, maximum: 2400 });
-    expect(aemeathPreset.finalStats.attack).toBe(2000);
+    expect(aemeathPreset.echoLoadout?.echoes).toHaveLength(5);
+    expect(aemeathPreset.echoLoadout?.mainEchoId).toBeDefined();
+    expect(aemeathPreset.finalStats.attack).toBeGreaterThan(2000);
+    expect(aemeathPreset.finalStats.attack).toBeLessThanOrEqual(2400);
   });
 
   it("conserve les équipements riches vérifiés d'Aemeath et Calcharo dans le catalogue étendu", () => {
@@ -125,6 +128,7 @@ describe("cohérence du catalogue", () => {
   it("intègre Chisa et son équipement par les mêmes catalogues génériques",()=>{
     expect(chisa).toMatchObject({name:"Chisa",element:"havoc",weaponType:"broadblade",rarity:5,combat:{level10Only:false}});
     expect(chisaPreset).toMatchObject({characterLevel:90,sequence:0,weapon:{weaponId:"kumokiri",level:90,rank:1},sonataId:"thread-of-severed-fate",mainEchoId:"reminiscence-threnodian-leviathan"});
+    expect(chisaPreset.echoLoadout?.echoes).toHaveLength(5);
     expect(weapons.find(entry=>entry.id==="kumokiri")?.level90Stats).toEqual({baseAttack:500,displayBaseAttack:500,critRate:36});
   });
 });
