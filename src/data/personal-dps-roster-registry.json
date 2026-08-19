@@ -125,7 +125,7 @@
           {"selector":{"talent":"basicAttack","nameIncludes":["Stage 3"]}},
           {"selector":{"talent":"basicAttack","nameIncludes":["Stage 4"]}},
           {"selector":{"sourceSkillNameIncludes":["Sword to Bear Their Names"]}},
-          {"selector":{"nameIncludes":["Mid-air Attack 3 Sword Shadows Recalled"]}},
+          {"selector":{"sourceAttributeId":"1409011"}},
           {"label":"Resonance Liberation - A Knight's Heartfelt Prayers","profileId":"form-switch-short"},
           {"selector":{"nameIncludes":["Sword to Answer Waves' Call"]}},
           {"selector":{"talent":"forteCircuit","nameIncludes":["Mid-air Attack 3"]}},
