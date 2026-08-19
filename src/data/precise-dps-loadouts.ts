@@ -1,4 +1,5 @@
 import type { Resonator, Weapon } from "@/domain/models";
+import { applyPreciseDeniaMechanics } from "./precise-dps-denia";
 import { preciseDpsFutureResonators, preciseDpsFutureWeapons } from "./precise-dps-future";
 import { applyPreciseResourceMechanics } from "./precise-dps-resource-mechanics";
 import { applyPreciseWeaponMechanics } from "./precise-dps-weapons";
@@ -9,7 +10,7 @@ export type PreciseDpsLoadoutWeapon = {
 };
 
 export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutureResonators.map(
-  applyPreciseResourceMechanics,
+  (resonator) => applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
 );
 
 export const preciseDpsLoadoutWeapons: readonly PreciseDpsLoadoutWeapon[] = preciseDpsLoadoutResonators.map((resonator, index) => {
