@@ -107,6 +107,7 @@ for (const [presetIndex, rawPreset] of registry.presets.entries()) {
 
   const equipped = [];
   const sourceEchoToCanonicalId = new Map();
+  const fourCostCanonicalIds = [];
   for (const [echoIndexPosition, rawEcho] of preset.echoes.entries()) {
     const sourceEcho = record(rawEcho, `${resonatorId}.echoes[${echoIndexPosition}]`);
     if (sourceEcho.cost !== 1 && sourceEcho.cost !== 3 && sourceEcho.cost !== 4) fail(`${resonatorId}.echoes[${echoIndexPosition}].cost is invalid`);
@@ -126,14 +127,22 @@ for (const [presetIndex, rawPreset] of registry.presets.entries()) {
       return { statId, value };
     });
     sourceEchoToCanonicalId.set(normalizedName(sourceEcho.echo), localEcho.id);
+    if (sourceEcho.cost === 4) fourCostCanonicalIds.push(localEcho.id);
     equipped.push({ echoId: localEcho.id, sonataSetId: localSonata.id, rarity: 5, level: 25, primaryMainStatId, substats });
   }
 
   let mainEchoId;
+  let mainEchoSelection = "unspecified";
   if (preset.mainEcho !== undefined) {
     const sourceMainEcho = safeText(preset.mainEcho, `${resonatorId}.mainEcho`);
     mainEchoId = sourceEchoToCanonicalId.get(normalizedName(sourceMainEcho));
     if (!mainEchoId) fail(`${resonatorId}.mainEcho is not one of the equipped Echoes`);
+    mainEchoSelection = "source-explicit";
+  } else if (fourCostCanonicalIds.length === 1) {
+    // Deterministic universal fallback: a 43311 preset has a single 4-cost candidate.
+    // Ambiguous 44111 presets are deliberately left unset unless the source names one.
+    mainEchoId = fourCostCanonicalIds[0];
+    mainEchoSelection = "single-four-cost-default";
   }
   output[resonatorId] = {
     name: safeText(preset.name, `${resonatorId}.name`),
@@ -141,6 +150,7 @@ for (const [presetIndex, rawPreset] of registry.presets.entries()) {
     sourceBlobSha,
     promotionStatus,
     ...(promotionNote ? { promotionNote } : {}),
+    mainEchoSelection,
     echoLoadout: { echoes: equipped, ...(mainEchoId ? { mainEchoId } : {}) },
   };
 }
