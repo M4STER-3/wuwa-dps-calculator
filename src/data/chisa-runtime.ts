@@ -1,14 +1,47 @@
-import type { CombatEffect, Sonata, Weapon } from "@/domain/models";
+import type { CombatAction, CombatEffect, MainEcho, Sonata, Weapon } from "@/domain/models";
 import type { EffectDefinition } from "@/domain/effect-models";
 import {
   chisa as baseChisa,
-  chisaActions,
+  chisaActions as baseChisaActions,
   chisaPreset,
   chisaSource,
   kumokiri as baseKumokiri,
   threadOfSeveredFate as baseThreadOfSeveredFate,
-  threnodianLeviathan,
 } from "./chisa";
+
+const unknown = () => ({ value: null, confidence: "unknown" as const });
+const echoAction = (
+  id: string,
+  name: string,
+  multipliers: CombatAction["multipliers"],
+): CombatAction => ({
+  id,
+  name,
+  talent: "echoSkill",
+  damageType: "echoSkill",
+  level: 10,
+  multipliers,
+  castDurationSeconds: unknown(),
+  recoverySeconds: unknown(),
+  hitTimingsSeconds: unknown(),
+  source: chisaSource,
+});
+
+const threnodianHorizon = echoAction(
+  "threnodian-horizon",
+  "Reminiscence: Threnodian - Leviathan · Collapsing Horizon",
+  [{ percent: 131.04, hits: 2 }],
+);
+const threnodianCore = echoAction(
+  "threnodian-core",
+  "Reminiscence: Threnodian - Leviathan · Core of Collapse",
+  [{ percent: 24.57, hits: 1 }],
+);
+
+export const chisaActions: readonly CombatAction[] = [
+  ...baseChisaActions,
+  threnodianCore,
+];
 
 const source = (
   id: string,
@@ -235,6 +268,117 @@ export const threadOfSeveredFate: Sonata = {
   ],
 };
 
+const threnodianMain: EffectDefinition = {
+  id: "threnodian-main-passive",
+  label: "Threnodian Leviathan main-slot passive",
+  source: source("reminiscence-threnodian-leviathan", "echo"),
+  target: "self",
+  activationPolicy: "initially-active",
+  rules: [
+    {
+      id: "threnodian-havoc",
+      label: "+12% Havoc DMG",
+      accounting: "runtime",
+      modifiers: [
+        { kind: "elemental-damage-bonus", stacking: "additive", value: 12 },
+      ],
+    },
+    {
+      id: "threnodian-liberation",
+      label: "+12% Liberation DMG",
+      accounting: "runtime",
+      selectors: [{ kind: "damage-type", anyOf: ["resonanceLiberation"] }],
+      modifiers: [
+        { kind: "damage-type-bonus", stacking: "additive", value: 12 },
+      ],
+    },
+  ],
+};
+
+const threnodianCoreEffect: EffectDefinition = {
+  id: "threnodian-core-of-collapse",
+  label: "Core of Collapse",
+  source: source("reminiscence-threnodian-leviathan", "echo"),
+  target: "self",
+  activationPolicy: "triggered",
+  lifecycle: {
+    duration: { kind: "fixed", seconds: 15 },
+    refresh: "reset-duration",
+    uniqueness: "refresh-existing",
+  },
+  rules: [
+    {
+      id: "threnodian-bane-double",
+      label: "Core of Collapse +100% vs Havoc Bane",
+      accounting: "runtime",
+      selectors: [{ kind: "action-id", anyOf: ["threnodian-core"] }],
+      predicates: [{ kind: "target-has-status", id: "havoc-bane" }],
+      modifiers: [
+        {
+          kind: "motion-value",
+          mode: "relative-additive",
+          stacking: "additive",
+          value: { kind: "constant", value: 100 },
+        },
+      ],
+    },
+  ],
+  triggers: [
+    {
+      id: "threnodian-cast",
+      event: "action-start",
+      predicates: [
+        { kind: "identity", field: "actionId", anyOf: ["threnodian-horizon"] },
+      ],
+      operations: [
+        { kind: "activate-effect", effectId: "threnodian-core-of-collapse" },
+      ],
+    },
+    {
+      id: "threnodian-follow-up",
+      event: "damage-dealt",
+      predicates: [
+        { kind: "has-effect", id: "threnodian-core-of-collapse" },
+        {
+          kind: "not",
+          predicate: {
+            kind: "identity",
+            field: "actionId",
+            anyOf: ["threnodian-core"],
+          },
+        },
+      ],
+      cooldown: { seconds: 0.5, scope: "owner" },
+      maxTriggers: 8,
+      triggerCountScope: "instance",
+      operations: [
+        {
+          kind: "emit-action",
+          action: {
+            actionId: "threnodian-core",
+            attribution: "follow-up",
+            snapshot: { stats: "hit", stacks: "tick" },
+          },
+        },
+      ],
+    },
+  ],
+};
+
+export const threnodianLeviathan: MainEcho = {
+  id: "reminiscence-threnodian-leviathan",
+  name: "Reminiscence: Threnodian - Leviathan",
+  sonataIds: ["thread-of-severed-fate"],
+  skillDescription:
+    "Collapsing Horizon deals 131.04% Havoc DMG twice. Core of Collapse lasts 15s and can deal 24.57% Havoc DMG up to 8 times, doubled against Havoc Bane. Main slot: +12% Havoc and +12% Liberation DMG.",
+  action: threnodianHorizon,
+  effects: [
+    wrap(threnodianMain, "Unconditional main-slot Havoc/Liberation bonuses."),
+    wrap(threnodianCoreEffect, "15s Core follow-up, 0.5s ICD, max 8 triggers."),
+  ],
+  source: chisaSource,
+};
+
 export const chisaEffects: readonly CombatEffect[] = [
   ...(baseChisa.combat?.effects ?? []),
   ...sequenceRuntime.map((definition) =>
@@ -245,13 +389,11 @@ export const chisaEffects: readonly CombatEffect[] = [
 export const chisa = {
   ...baseChisa,
   combat: baseChisa.combat
-    ? { ...baseChisa.combat, effects: chisaEffects }
+    ? { ...baseChisa.combat, actions: chisaActions, effects: chisaEffects }
     : undefined,
 };
 
 export {
-  chisaActions,
   chisaPreset,
   chisaSource,
-  threnodianLeviathan,
 };
