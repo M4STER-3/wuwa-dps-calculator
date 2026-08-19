@@ -19,7 +19,7 @@ import type {
   Sonata,
   Weapon,
 } from "@/domain/models";
-import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa-runtime";
+import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa-combat";
 import { roster10R1BaselinePresets } from "./roster-10r1-presets";
 import {
   roster10R1PromotedResonators,
