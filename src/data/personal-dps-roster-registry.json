@@ -98,7 +98,7 @@
           {"selector":{"nameIncludes":["Chromatic Splendor"]}},
           {"selector":{"talent":"basicAttack","nameIncludes":["Mid-air Attack"],"nameExcludes":["Customary"]}},
           {"selector":{"nameIncludes":["Imminent Oblivion"]}},
-          {"selector":{"nameIncludes":["Era of New Wave"]}},
+          {"selector":{"talent":"resonanceLiberation","sourceSkillNameIncludes":["Era of New Wave"],"nameIncludes":["Skill"]}},
           {"selector":{"nameIncludes":["Death Knell"]},"repeat":4},
           {"selector":{"nameIncludes":["Fatal Finale"]}},
           {"selector":{"talent":"resonanceSkill","nameIncludes":["Skill"]}},
