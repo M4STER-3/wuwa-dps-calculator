@@ -60,7 +60,10 @@ export function evaluatePredicate(p: CombatPredicate, c: CombatContext): Predica
   else if(p.kind==="shield-active")actual=c.shieldActive;
   else if(p.kind==="on-field")actual=c.onField;
   else if(p.kind==="inside-domain")actual=c.domains?.includes(p.domainId);
-  if(actual===undefined)return{status:"unsupported",reason:"missing-context"};
+  if(actual===undefined){
+    if(p.kind==="identity"||p.kind==="action-category")return{status:"ignored",reason:"dimension-absent"};
+    return{status:"unsupported",reason:"missing-context"};
+  }
   let ok=false;
   if(p.kind==="identity")ok=p.anyOf.includes(String(actual));
   else if(p.kind==="action-category")ok=(actual as readonly string[]).some(x=>p.anyOf.includes(x));
