@@ -4,7 +4,7 @@ import type {
   Sequence,
   UserBuild,
 } from "./models";
-import { damageTypes, elements, skillTypes } from "./models";
+import { damageBonusTypes, elements, skillTypes } from "./models";
 import {
   isUserEchoLoadoutV1,
   sanitizeUserEchoLoadoutV1,
@@ -156,7 +156,7 @@ export function isValidBuild(build: unknown): build is UserBuild {
   )
     return false;
   if (
-    !damageTypes.every((type) =>
+    !damageBonusTypes.every((type) =>
       isNonNegativeNumber(stats.damageTypeBonus?.[type]),
     )
   )
