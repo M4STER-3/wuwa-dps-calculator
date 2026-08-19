@@ -4,7 +4,7 @@ import type {
   EffectTargetScope, FixedCritOverrideModifier, ModifierKind, StackingPolicy,
 } from "./effect-models";
 import type { Element } from "./models";
-import { evaluatePredicate, type CombatContext } from "./combat-context";
+import { evaluatePredicate, evaluateValueExpression, type CombatContext } from "./combat-context";
 
 export interface EffectResolutionContext {
   actorId: string;
@@ -16,6 +16,8 @@ export interface EffectResolutionContext {
   actionId?: string;
   actionCategories?: readonly string[];
   combatContext?: CombatContext;
+  /** Exact equipped weapon rank for data-owned rank expressions. */
+  rank?: number;
 }
 
 export type EffectDiagnosticCode =
@@ -114,7 +116,7 @@ export function resolveActiveEffects(instances: readonly ActiveEffectInstance[],
         if (!(["additive", "highest", "override"] as const).includes(item.stacking)) {
           diagnostics.push(diag("unsupported-stacking-policy", `Unsupported stacking policy: ${String(item.stacking)}.`, instance, rule)); unsupported = true; continue;
         }
-        const value = resolveValue(item, instance.stacks);
+        const value = resolveValue(item, instance.stacks, context);
         if (value.error) { diagnostics.push(diag(value.code!, value.error, instance, rule)); unsupported = true; continue; }
         contributions.push({ kind: item.kind, value: value.value, stacking: item.stacking });
         pending.push({ channel: channel.channel, value: value.value!, policy: item.stacking, auditIndex: index, tune: channel.tune ?? false });
@@ -142,7 +144,27 @@ export function resolveActiveEffects(instances: readonly ActiveEffectInstance[],
   return { damageModifiers, tuneDamageModifiers, overrides: { fixedCrit }, audit, diagnostics };
 }
 
-function resolveValue(modifier: EffectModifier, stacks: number | undefined): { value?: number; error?: string; code?: EffectDiagnosticCode } {
+function resolveValue(modifier: EffectModifier, stacks: number | undefined, context: EffectResolutionContext): { value?: number; error?: string; code?: EffectDiagnosticCode } {
+  if (modifier.valueExpression !== undefined) {
+    if (modifier.value !== undefined || modifier.valuePerStack !== undefined) {
+      return { error: "A modifier must use either valueExpression or legacy numeric value fields, not both.", code: "invalid-value" };
+    }
+    if (!context.combatContext) {
+      return { error: "Combat Context is required by valueExpression.", code: "missing-context" };
+    }
+    const resolved = evaluateValueExpression(modifier.valueExpression, context.combatContext, {
+      stacks,
+      rank: context.rank,
+    });
+    if (resolved.status === "unsupported") {
+      const diagnostic = resolved.diagnostics[0];
+      return {
+        error: diagnostic?.message ?? "Modifier expression could not be resolved.",
+        code: diagnostic?.code === "invalid-expression" ? "invalid-value" : "missing-context",
+      };
+    }
+    return { value: resolved.value };
+  }
   if (modifier.valuePerStack !== undefined) {
     if (!Number.isInteger(stacks) || stacks! < 0) return { error: "A non-negative integer stack count is required.", code: "invalid-stacks" };
     if (modifier.maxStacks !== undefined && (!Number.isInteger(modifier.maxStacks) || modifier.maxStacks < 0)) return { error: "maxStacks must be a non-negative integer.", code: "invalid-stacks" };
