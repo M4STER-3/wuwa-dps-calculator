@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "pins": [
+    {
+      "resonatorId": "jinhsi",
+      "scenarioId": "jinhsi-opener",
+      "stepIndex": 4,
+      "sourceAttributeId": "1304012"
+    },
+    {
+      "resonatorId": "jinhsi",
+      "scenarioId": "jinhsi-loop",
+      "stepIndex": 1,
+      "sourceAttributeId": "1304012"
+    }
+  ]
+}
