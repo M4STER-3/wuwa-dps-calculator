@@ -9,6 +9,10 @@ import type {
 import type { TemporalProfileId } from "@/domain/temporal-engine";
 import type { TheoreticalRotationPreset } from "@/domain/theoretical-rotation";
 import { generatedPreciseDpsFutureProjection } from "@/generated/precise-dps-future-projection";
+import {
+  applyPreciseSpecialActionPatches,
+  preciseScenarioMechanicsFor,
+} from "./precise-dps-special-mechanics";
 import rawRegistry from "./precise-dps-future-registry.json";
 
 type ProjectedAction = CombatAction & {
@@ -152,6 +156,9 @@ function applyPreciseDamageTypeOverrides(
 ): readonly ProjectedAction[] {
   return actions.map((action) => {
     const name = normalize(action.name);
+    if (resonatorId === "lynae" && action.sourceAttributeId === "1509032") {
+      return { ...action, damageType: "tuneRupture" };
+    }
     if (resonatorId === "lynae" && (
       name.includes("polychrome leap") ||
       name.includes("visual impact") ||
@@ -161,6 +168,12 @@ function applyPreciseDamageTypeOverrides(
       name.includes("kaleidoscopic parade mid air heavy")
     )) {
       return { ...action, damageType: "basicAttack" };
+    }
+    if (resonatorId === "mornye" && action.sourceAttributeId === "1209028") {
+      return { ...action, damageType: "resonanceLiberation" };
+    }
+    if (resonatorId === "mornye" && action.sourceAttributeId === "1209031") {
+      return { ...action, damageType: "tuneRupture" };
     }
     if (resonatorId === "mornye" && (name.includes("geopotential shift") || name.includes("inversion"))) {
       return { ...action, damageType: "heavyAttack" };
@@ -205,10 +218,13 @@ export const preciseDpsFutureResonators: readonly Resonator[] = registry.entries
   ];
   if (!projected) throw new Error(`Missing precise projection for ${entry.id}.`);
   const model = entry.combatModel;
-  const actions = applyPreciseDamageTypeOverrides(
+  const actions = applyPreciseSpecialActionPatches(
     entry.id,
-    projected.actions as unknown as readonly ProjectedAction[],
-  );
+    applyPreciseDamageTypeOverrides(
+      entry.id,
+      projected.actions as unknown as readonly ProjectedAction[],
+    ),
+  ) as readonly ProjectedAction[];
   const duration = oneReviewedDuration(entry);
   const combat: ResonatorCombatData = {
     level10Only: false,
@@ -314,6 +330,7 @@ export const preciseDpsFutureScenarios: readonly PersonalRotationScenario[] = re
   return entry.scenarios.flatMap((scenario) => {
     const recipe = rawScenarioSteps(entry, scenario);
     if (!recipe) return [];
+    const mechanics = preciseScenarioMechanicsFor(scenario.id);
     const steps: TheoreticalRotationPreset["steps"] = recipe.map((step, stepIndex) => {
       if ("selector" in step) {
         const action = resolveAction(entry.id, scenario.id, stepIndex, actions, step.selector);
@@ -335,12 +352,15 @@ export const preciseDpsFutureScenarios: readonly PersonalRotationScenario[] = re
       name: `${entry.name} · ${scenario.label} · Partiel`,
       ...(scenario.resonanceMode ? { resonanceMode: scenario.resonanceMode } : {}),
       rotation: { id: scenario.id, name: `${entry.name} · ${scenario.label}`, steps },
+      ...(mechanics?.initialResources ? { initialResources: mechanics.initialResources } : {}),
+      ...(mechanics?.specialEvents ? { specialEvents: mechanics.specialEvents } : {}),
+      ...(mechanics?.extraEffects ? { extraEffects: mechanics.extraEffects } : {}),
       assumeLegacyRequirementsSatisfied: true,
       notes: [
         registry.sourcePolicy,
         ...(scenario.eligibility ? [`Eligibility: ${scenario.eligibility}`] : []),
         ...(scenario.reviewedDurationSeconds ? [`Reviewed S0 reference duration: ${scenario.reviewedDurationSeconds}s.`] : []),
-        "PARTIAL: executing exact GameDatabase motion values does not yet imply complete mechanic/equipment coverage.",
+        "PARTIAL: exact GameDatabase motion values and reviewed runtime mechanics are executed, but missing equipment/team-context/timing mechanics still keep this scenario partial.",
       ],
     } satisfies PersonalRotationScenario];
   });
