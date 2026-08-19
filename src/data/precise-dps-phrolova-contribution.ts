@@ -31,6 +31,7 @@ import {
 
 export const PHROLOVA_EXACT_CYCLE_SECONDS = 25;
 const REFERENCE_ECHO_EVENT_ID = "phrolova-reference-main-echo-cast";
+const REFERENCE_ECHO_LABEL = "Reference Main Echo cast · build-owned damage excluded";
 const TEAM_PENDING_EFFECT_ID = "precise-phrolova-team-cycle-pending";
 
 export interface PhrolovaContributionCycleInput {
@@ -144,6 +145,31 @@ function scenarioWithCarriedAftersound(
   };
 }
 
+function scenarioWithReferenceEchoTime(
+  scenario: PersonalRotationScenario,
+): PersonalRotationScenario {
+  let forteCount = 0;
+  const steps = scenario.rotation.steps.flatMap((step) => {
+    if (
+      step.actionId !== PHROLOVA.movement &&
+      step.actionId !== PHROLOVA.murmurs
+    ) {
+      return [step];
+    }
+    forteCount += step.repeat ?? 1;
+    if (forteCount !== 2) return [step];
+    return [
+      step,
+      { label: REFERENCE_ECHO_LABEL, profileId: "echo-skill" as const },
+    ];
+  });
+  if (forteCount < 2) return scenario;
+  return {
+    ...scenario,
+    rotation: { ...scenario.rotation, steps },
+  };
+}
+
 function timeOnlyTimeline(source: TemporalTimeline): TemporalTimeline {
   return {
     ...source,
@@ -249,14 +275,11 @@ function referenceEchoEvent(
   ownerId: string,
   targetId: string,
 ): CombatEvent | undefined {
-  const fortes = timeline.entries.filter(
-    (entry) => entry.actionId === PHROLOVA.movement || entry.actionId === PHROLOVA.murmurs,
-  );
-  const second = fortes[1];
-  if (!second) return undefined;
+  const echo = timeline.entries.find((entry) => entry.label === REFERENCE_ECHO_LABEL);
+  if (!echo) return undefined;
   return {
     id: "phrolova-reference-main-echo",
-    timestamp: second.endTimeSeconds + 0.0001,
+    timestamp: Math.max(echo.startTimeSeconds, echo.endTimeSeconds - 0.000001),
     kind: "custom",
     ownerId,
     actorId: ownerId,
@@ -487,7 +510,9 @@ export function runPhrolovaContributionCycle(
     teamResolved,
     PHROLOVA_AFTERSOUND_OVERFLOW_CRIT_CAP - carriedOverflow,
   );
-  const scenario = scenarioWithCarriedAftersound(input.scenario, input.initialAftersound);
+  const scenario = scenarioWithReferenceEchoTime(
+    scenarioWithCarriedAftersound(input.scenario, input.initialAftersound),
+  );
   const theoretical = buildTheoreticalRotationTimeline(
     scenario.rotation,
     onFieldResonator.combat!.actions,
