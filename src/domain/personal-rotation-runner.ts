@@ -137,7 +137,13 @@ function scenarioActions(
   actions: readonly CombatAction[],
 ): readonly (ActionDefinitionV02 | CombatAction)[] {
   if (!scenario.assumeLegacyRequirementsSatisfied) return actions;
-  return actions.map((action) => ({ action, requirements: [] }));
+  return actions.map((action) => ({
+    // The catalogue keeps the verified legacy costs/gains. A theoretical scenario
+    // owns their unstaged ordering, so they must not become a false PARTIAL flag.
+    action: { ...action, costs: undefined, gains: undefined },
+    requirements: [],
+    assumeLegacyResourceStagesSatisfied: true,
+  }));
 }
 
 const addAmounts = (a: DamageAmounts, b: DamageAmounts): DamageAmounts => ({
