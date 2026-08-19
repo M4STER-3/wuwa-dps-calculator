@@ -5,13 +5,17 @@ on:
     paths:
       - "src/data/roster-promotion-registry.json"
       - "src/data/community-echo-preset-registry.json"
+      - "src/data/character-box-future-dps-registry.json"
       - "src/data/**"
       - "src/domain/**"
       - "src/game-data/**"
+      - "src/features/character-box/**"
+      - "src/app/character-box/**"
       - "scripts/lib/roster-promotion-registry.mjs"
       - "scripts/generate-character-box-roster-10r1.mjs"
       - "scripts/generate-character-box-roster-baselines-10r1.mjs"
       - "scripts/generate-character-box-combat-10r1.mjs"
+      - "scripts/generate-character-box-future-dps-prep.mjs"
       - "scripts/generate-character-box-roster-media-10r1.mjs"
       - "scripts/generate-character-box-community-echo-presets.mjs"
       - "scripts/generate-wuwa-ui-asset-projection-v1.mjs"
@@ -51,6 +55,7 @@ jobs:
           node --check scripts/generate-character-box-roster-10r1.mjs
           node --check scripts/generate-character-box-roster-baselines-10r1.mjs
           node --check scripts/generate-character-box-combat-10r1.mjs
+          node --check scripts/generate-character-box-future-dps-prep.mjs
           node --check scripts/generate-character-box-roster-media-10r1.mjs
           node --check scripts/generate-character-box-community-echo-presets.mjs
 
@@ -65,6 +70,9 @@ jobs:
 
       - name: Generate universal 10R1 combat projection
         run: node scripts/generate-character-box-combat-10r1.mjs
+
+      - name: Generate future DPS preparation projection
+        run: node scripts/generate-character-box-future-dps-prep.mjs
 
       - name: Generate verified 10R1 portrait projection
         run: node scripts/generate-character-box-roster-media-10r1.mjs
