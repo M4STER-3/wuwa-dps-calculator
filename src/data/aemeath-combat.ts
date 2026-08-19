@@ -1,12 +1,15 @@
+import { generatedCharacterBoxRosterBaselines10R1 } from "@/generated/character-box-roster-baselines-10r1";
+import { generatedCommunityEchoPresets10R1 } from "@/generated/community-echo-presets-10r1";
+import { applyEchoLoadoutStatsV1 } from "@/game-data/echo-loadout-stats";
 import type { CombatEffect } from "@/domain/models";
 import type { EffectDefinition } from "@/domain/effect-models";
 import {
   aemeath as runtimeAemeath,
   aemeathGameSource,
-  aemeathPreset,
-  everbrightPolestar,
-  sigillum,
-  trailblazingStar,
+  aemeathPreset as runtimeAemeathPreset,
+  everbrightPolestar as runtimeEverbrightPolestar,
+  sigillum as runtimeSigillum,
+  trailblazingStar as runtimeTrailblazingStar,
 } from "./aemeath-runtime";
 
 const source = {
@@ -116,10 +119,75 @@ export const aemeath = {
     : undefined,
 };
 
-export {
-  aemeathGameSource,
-  aemeathPreset,
-  everbrightPolestar,
-  sigillum,
-  trailblazingStar,
+const permanentRuntimeEffect = (effect: CombatEffect): CombatEffect =>
+  effect.structuredEffect
+    ? {
+        ...effect,
+        structuredEffect: {
+          ...effect.structuredEffect,
+          activationPolicy: "initially-active",
+          rules: effect.structuredEffect.rules.map((rule) => ({
+            ...rule,
+            accounting: "runtime" as const,
+          })),
+        },
+      }
+    : effect;
+
+export const everbrightPolestar = {
+  ...runtimeEverbrightPolestar,
+  effects: (runtimeEverbrightPolestar.effects ?? []).map((effect) =>
+    effect.id === "everbright-r1-base" ? permanentRuntimeEffect(effect) : effect,
+  ),
 };
+
+export const trailblazingStar = {
+  ...runtimeTrailblazingStar,
+  effects: (runtimeTrailblazingStar.effects ?? []).map((effect) =>
+    effect.id === "trailblazing-2pc" ? permanentRuntimeEffect(effect) : effect,
+  ),
+};
+
+export const sigillum = {
+  ...runtimeSigillum,
+  effects: (runtimeSigillum.effects ?? []).map((effect) =>
+    effect.id === "sigillum-main-aemeath" ? permanentRuntimeEffect(effect) : effect,
+  ),
+};
+
+const generatedEcho = generatedCommunityEchoPresets10R1.aemeath.echoLoadout;
+const baseline = generatedCharacterBoxRosterBaselines10R1.aemeath;
+const aemeathBaseStatBasis = {
+  hp: 11025,
+  attack: 425 + 587.5,
+  defense: 1148.87,
+};
+const withEchoes = applyEchoLoadoutStatsV1(
+  baseline,
+  aemeathBaseStatBasis,
+  generatedEcho,
+).finalStats;
+const aemeathFinalStats = {
+  ...withEchoes,
+  attack: withEchoes.attack + aemeathBaseStatBasis.attack * 0.12,
+  critRate: withEchoes.critRate + 8,
+};
+
+export const aemeathPreset = {
+  ...runtimeAemeathPreset,
+  id: "aemeath-s0-l90-everbright-trailblazing",
+  label: "Aemeath S0 Lv90 · Everbright Polestar · Trailblazing Star",
+  progression: { inherentSkillsUnlocked: true, minorFortesUnlocked: true },
+  finalStats: aemeathFinalStats,
+  echoLoadout: generatedEcho,
+  sonataId: "trailblazing-star",
+  mainEchoId: "sigillum",
+  notes: [
+    "Permanent panel stats are derived from the exact Lv90 Aemeath + Everbright baseline, the validated five-Echo loadout, and Aemeath's +8% Crit Rate / +12% ATK minor Fortes exactly once.",
+    "Everbright +12% All-DMG, Trailblazing Star 2-piece +10% Fusion and Sigillum +25% Liberation are non-panel damage modifiers executed as initially-active runtime effects, not baked into finalStats.",
+    "The conditional Everbright and Trailblazing 5-piece windows remain event-driven and are not double-counted.",
+    "Personal timing uses the shared theoretical WUWA LAB profile policy.",
+  ],
+};
+
+export { aemeathGameSource };
