@@ -3,7 +3,7 @@ import { generatedCharacterBoxRosterBaselines10R1 } from "@/generated/character-
 import { generatedCommunityEchoPresets10R1 } from "@/generated/community-echo-presets-10r1";
 import { roster10R1 } from "./roster-10r1";
 
-const RESONATORS_WITH_RICH_PRESETS = new Set(["aemeath", "chisa"]);
+const RESONATORS_WITH_RICH_PRESETS = new Set(["aemeath", "calcharo", "chisa"]);
 
 type GeneratedCommunityPreset =
   (typeof generatedCommunityEchoPresets10R1)[keyof typeof generatedCommunityEchoPresets10R1];

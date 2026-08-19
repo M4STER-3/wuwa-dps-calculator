@@ -3,6 +3,8 @@ import { mainEchoes, presets, resonators, sonatas, weapons } from "./catalog";
 
 const aemeath = resonators.find((entry) => entry.id === "aemeath")!;
 const aemeathPreset = presets.find((entry) => entry.resonatorId === "aemeath")!;
+const calcharo = resonators.find((entry) => entry.id === "calcharo")!;
+const calcharoPreset = presets.find((entry) => entry.resonatorId === "calcharo")!;
 const chisa = resonators.find((entry) => entry.id === "chisa")!;
 const chisaPreset = presets.find((entry) => entry.resonatorId === "chisa")!;
 
@@ -42,9 +44,9 @@ describe("cohérence du catalogue", () => {
     expect(fixtureEntries.every((entry) => entry.source.kind === "technical-fixture")).toBe(true);
   });
 
-  it("fournit le preset S0 Lv90 complet et son équipement vérifié", () => {
+  it("fournit le preset S0 Lv90 complet, ses cinq Echoes et son équipement vérifié", () => {
     expect(aemeathPreset).toMatchObject({
-      id: "aemeath-s0-endgame-v0.1",
+      id: "aemeath-s0-l90-everbright-trailblazing",
       characterLevel: 90,
       sequence: 0,
       skillLevels: {
@@ -61,25 +63,54 @@ describe("cohérence du catalogue", () => {
     });
     expect(aemeathPreset.source.kind).toBe("community-recommendation");
     expect(aemeathPreset.recommendedTargets?.attack).toEqual({ minimum: 2000, maximum: 2400 });
-    expect(aemeathPreset.finalStats.attack).toBe(2000);
+    expect(aemeathPreset.echoLoadout?.echoes).toHaveLength(5);
+    expect(aemeathPreset.echoLoadout?.mainEchoId).toBeDefined();
+    expect(aemeathPreset.finalStats.attack).toBeGreaterThan(2000);
+    expect(aemeathPreset.finalStats.attack).toBeLessThanOrEqual(2400);
   });
 
-  it("conserve l'équipement vérifié d'Aemeath dans le catalogue étendu", () => {
+  it("conserve les équipements riches vérifiés d'Aemeath et Calcharo dans le catalogue étendu", () => {
     expect(weapons.find((entry) => entry.id === "everbright-polestar")).toMatchObject({
       name: "Everbright Polestar",
       type: "sword",
+      rarity: 5,
+    });
+    expect(weapons.find((entry) => entry.id === "lustrous-razor")).toMatchObject({
+      name: "Lustrous Razor",
+      type: "broadblade",
       rarity: 5,
     });
     expect(
       sonatas
         .filter((entry) => entry.source.kind !== "technical-fixture")
         .map((entry) => entry.id),
-    ).toEqual(["trailblazing-star", "thread-of-severed-fate", "rejuvenating-glow"]);
+    ).toEqual([
+      "trailblazing-star",
+      "void-thunder",
+      "thread-of-severed-fate",
+      "rejuvenating-glow",
+    ]);
     expect(
       mainEchoes
         .filter((entry) => entry.source.kind !== "technical-fixture")
         .map((entry) => entry.name),
-    ).toEqual(["Sigillum", "Reminiscence: Threnodian - Leviathan", "Fallacy of No Return"]);
+    ).toEqual([
+      "Sigillum",
+      "Nightmare: Thundering Mephis",
+      "Reminiscence: Threnodian - Leviathan",
+      "Fallacy of No Return",
+    ]);
+    expect(calcharo).toMatchObject({
+      name: "Calcharo",
+      element: "electro",
+      weaponType: "broadblade",
+      rarity: 5,
+    });
+    expect(calcharoPreset).toMatchObject({
+      weapon: { weaponId: "lustrous-razor", level: 90, rank: 1 },
+      sonataId: "void-thunder",
+      mainEchoId: "nightmare-thundering-mephis",
+    });
   });
 
   it("documente le kit Lv10 et les inconnues temporelles sans timeline DPS", () => {
@@ -97,6 +128,7 @@ describe("cohérence du catalogue", () => {
   it("intègre Chisa et son équipement par les mêmes catalogues génériques",()=>{
     expect(chisa).toMatchObject({name:"Chisa",element:"havoc",weaponType:"broadblade",rarity:5,combat:{level10Only:false}});
     expect(chisaPreset).toMatchObject({characterLevel:90,sequence:0,weapon:{weaponId:"kumokiri",level:90,rank:1},sonataId:"thread-of-severed-fate",mainEchoId:"reminiscence-threnodian-leviathan"});
+    expect(chisaPreset.echoLoadout?.echoes).toHaveLength(5);
     expect(weapons.find(entry=>entry.id==="kumokiri")?.level90Stats).toEqual({baseAttack:500,displayBaseAttack:500,critRate:36});
   });
 });

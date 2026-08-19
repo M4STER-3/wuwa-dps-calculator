@@ -105,6 +105,8 @@ export interface CombatAction {
     condition: string;
   };
   scaling?: "damage" | "tuneAmp";
+  /** Damage scaling is data-owned per action; ordinary character attacks default to ATK. */
+  scalingAttribute?: "attack" | "hp" | "defense";
   /** Default/authoring level. Exact alternate levels are sparse and never interpolated. */
   level: TalentLevel;
   multipliers: readonly MotionValueGroup[];

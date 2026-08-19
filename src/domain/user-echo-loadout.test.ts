@@ -132,10 +132,11 @@ describe("User Echo Loadout V1 persistence", () => {
   });
 
   it("reste rétrocompatible avec une Character Box sans echoLoadout", () => {
-    const legacyBuild = createBuildFromPreset(preset, {
+    const currentBuild = createBuildFromPreset(preset, {
       id: "legacy-build",
       now: "2026-08-17T18:00:00.000Z",
     });
+    const { echoLoadout: _currentEchoLoadout, ...legacyBuild } = currentBuild;
     const parsed = parseCharacterBox(
       JSON.stringify({ schemaVersion: 1, builds: [legacyBuild] }),
     );

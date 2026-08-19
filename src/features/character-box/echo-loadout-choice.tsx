@@ -334,6 +334,26 @@ function EchoLoadoutWorkspace({ value, onChange }: EchoLoadoutChoiceProps) {
     }));
   }
 
+  function stepSubstatRoll(index: number, direction: -1 | 1) {
+    const substat = slots[activeSlot]?.substats[index];
+    const definition = reviewedEchoStatTableV1.substatRolls.find(
+      (candidate) => candidate.statId === substat?.statId,
+    );
+    if (!substat || !definition || definition.values.length === 0) return;
+    const currentIndex = definition.values.findIndex(
+      (value) => String(value) === substat.value,
+    );
+    const startIndex = currentIndex < 0 ? 0 : currentIndex;
+    const nextIndex = Math.max(
+      0,
+      Math.min(definition.values.length - 1, startIndex + direction),
+    );
+    updateSubstat(index, {
+      ...substat,
+      value: String(definition.values[nextIndex]),
+    });
+  }
+
   function removeSubstat(index: number) {
     updateSlot(activeSlot, (slot) => ({
       ...slot,
@@ -610,7 +630,7 @@ function EchoLoadoutWorkspace({ value, onChange }: EchoLoadoutChoiceProps) {
                       <div className={styles.substatHeader}>
                         <div>
                           <strong>Substats exactes</strong>
-                          <span>{activeDraft.substats.length}/5</span>
+                          <span>{activeDraft.substats.length}/5 · réglables palier par palier</span>
                         </div>
                         <button
                           type="button"
@@ -637,18 +657,24 @@ function EchoLoadoutWorkspace({ value, onChange }: EchoLoadoutChoiceProps) {
                                 candidateIndex === subIndex ? "" : candidate.statId,
                               ),
                             );
+                            const rollIndex = definition
+                              ? definition.values.findIndex((value) => String(value) === substat.value)
+                              : -1;
                             return (
                               <div key={subIndex} className={styles.substatRow}>
                                 <select
                                   id={`echo-substat-${activeSlot}-${subIndex}-stat`}
                                   aria-label={`Substat ${subIndex + 1}`}
                                   value={substat.statId}
-                                  onChange={(event) =>
+                                  onChange={(event) => {
+                                    const nextDefinition = reviewedEchoStatTableV1.substatRolls.find(
+                                      (candidate) => candidate.statId === event.target.value,
+                                    );
                                     updateSubstat(subIndex, {
                                       statId: event.target.value,
-                                      value: "",
-                                    })
-                                  }
+                                      value: nextDefinition ? String(nextDefinition.values[0]) : "",
+                                    });
+                                  }}
                                 >
                                   <option value="">Stat…</option>
                                   {reviewedEchoStatTableV1.substatRolls.map((candidate) => (
@@ -661,26 +687,50 @@ function EchoLoadoutWorkspace({ value, onChange }: EchoLoadoutChoiceProps) {
                                     </option>
                                   ))}
                                 </select>
-                                <select
-                                  aria-label={`Valeur substat ${subIndex + 1}`}
-                                  value={substat.value}
-                                  disabled={!definition}
-                                  onChange={(event) =>
-                                    updateSubstat(subIndex, {
-                                      ...substat,
-                                      value: event.target.value,
-                                    })
-                                  }
-                                >
-                                  <option value="">Roll…</option>
-                                  {definition?.values.map((value) => (
-                                    <option key={value} value={String(value)}>
-                                      {formatValue(definition.application, value)}
-                                    </option>
-                                  ))}
-                                </select>
+                                <div className={styles.rollControl}>
+                                  <button
+                                    type="button"
+                                    onClick={() => stepSubstatRoll(subIndex, -1)}
+                                    disabled={!definition || rollIndex <= 0}
+                                    aria-label={`Diminuer le roll de la substat ${subIndex + 1}`}
+                                  >
+                                    −
+                                  </button>
+                                  <select
+                                    aria-label={`Valeur substat ${subIndex + 1}`}
+                                    value={substat.value}
+                                    disabled={!definition}
+                                    onChange={(event) =>
+                                      updateSubstat(subIndex, {
+                                        ...substat,
+                                        value: event.target.value,
+                                      })
+                                    }
+                                  >
+                                    <option value="">Roll…</option>
+                                    {definition?.values.map((value) => (
+                                      <option key={value} value={String(value)}>
+                                        {formatValue(definition.application, value)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    onClick={() => stepSubstatRoll(subIndex, 1)}
+                                    disabled={!definition || rollIndex >= definition.values.length - 1}
+                                    aria-label={`Augmenter le roll de la substat ${subIndex + 1}`}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                                <span className={styles.rollTier}>
+                                  {definition && rollIndex >= 0
+                                    ? `Palier ${rollIndex + 1}/${definition.values.length}`
+                                    : "Choisir un roll"}
+                                </span>
                                 <button
                                   type="button"
+                                  className={styles.removeSubstatButton}
                                   onClick={() => removeSubstat(subIndex)}
                                   aria-label={`Supprimer la substat ${subIndex + 1}`}
                                 >

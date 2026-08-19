@@ -67,11 +67,10 @@ describe("10R1 functional Character Box promotion", () => {
     }
   });
 
-  it("uses exact incomplete baselines for the eight newly promoted Resonators", () => {
-    const newIds = new Set([
+  it("uses exact incomplete baselines for the seven promoted Resonators that do not yet own rich combat data", () => {
+    const baselineIds = new Set([
       "augusta",
       "brant",
-      "calcharo",
       "cantarella",
       "carlotta",
       "cartethyia",
@@ -79,7 +78,7 @@ describe("10R1 functional Character Box promotion", () => {
       "ciaccona",
     ]);
 
-    for (const reviewed of roster10R1.filter((entry) => newIds.has(entry.id))) {
+    for (const reviewed of roster10R1.filter((entry) => baselineIds.has(entry.id))) {
       const preset = presets.find((entry) => entry.resonatorId === reviewed.id);
       expect(preset).toMatchObject({
         characterLevel: 90,
@@ -102,6 +101,21 @@ describe("10R1 functional Character Box promotion", () => {
       expect(preset?.notes.join(" ")).toMatch(/non résolu/i);
       expect(preset?.source.kind).toBe("verified-game-data");
     }
+  });
+
+  it("promotes Calcharo to the same rich equipment contract as the other combat-ready pilots", () => {
+    const preset = presets.find((entry) => entry.resonatorId === "calcharo");
+    expect(preset).toMatchObject({
+      characterLevel: 90,
+      sequence: 0,
+      weapon: { weaponId: "lustrous-razor", level: 90, rank: 1 },
+      sonataId: "void-thunder",
+      mainEchoId: "nightmare-thundering-mephis",
+      source: { kind: "multi-source-verified" },
+    });
+    expect(preset?.echoLoadout).toEqual(
+      generatedCommunityEchoPresets10R1.calcharo.echoLoadout,
+    );
   });
 
   it("attaches Echo loadouts to every explicitly promoted community or curated candidate", () => {

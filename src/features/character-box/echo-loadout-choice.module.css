@@ -270,8 +270,9 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(290px, 0.65fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
   min-height: 430px;
+  align-items: start;
 }
 
 .cataloguePane {
@@ -283,8 +284,12 @@
 
 .configPane {
   min-width: 0;
+  max-height: min(610px, calc(100dvh - 210px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   background: #f8fafd;
-  padding: 12px;
+  padding: 12px 12px 18px;
 }
 
 .toolbar {
@@ -371,7 +376,7 @@
 }
 
 .catalogueScroll {
-  max-height: 340px;
+  max-height: 440px;
   margin-top: 9px;
   overflow: auto;
   overscroll-behavior: contain;
@@ -459,12 +464,18 @@
 }
 
 .activeIdentity {
+  position: sticky;
+  top: -12px;
+  z-index: 2;
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr) auto;
   align-items: center;
   gap: 9px;
-  padding-bottom: 11px;
+  margin: -12px -12px 0;
   border-bottom: 1px solid var(--v4-line-soft);
+  background: rgba(248, 250, 253, 0.98);
+  padding: 12px;
+  backdrop-filter: blur(12px);
 }
 
 .activeIdentity button {
@@ -476,7 +487,7 @@
 .configField {
   display: grid;
   gap: 5px;
-  margin-top: 10px;
+  margin-top: 9px;
   color: var(--v4-text-muted);
   font-size: 0.55rem;
   font-weight: 780;
@@ -487,11 +498,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-top: 9px;
+  margin-top: 8px;
   border: 1px solid var(--v4-line-soft);
   border-radius: 10px;
   background: #fff;
-  padding: 9px 10px;
+  padding: 8px 10px;
   color: var(--v4-text-muted);
   font-size: 0.55rem;
 }
@@ -502,15 +513,23 @@
 }
 
 .substatHeader {
+  position: sticky;
+  top: 83px;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 12px;
+  margin: 10px -4px 0;
+  border-block: 1px solid var(--v4-line-soft);
+  background: rgba(248, 250, 253, 0.98);
+  padding: 8px 4px;
+  backdrop-filter: blur(12px);
 }
 
 .substatHeader > div {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 6px;
 }
@@ -538,8 +557,8 @@
 
 .substatList {
   display: grid;
-  gap: 6px;
-  margin-top: 7px;
+  gap: 7px;
+  margin-top: 8px;
 }
 
 .emptySubstats,
@@ -596,13 +615,25 @@
 
 .substatRow {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(90px, 0.75fr) 32px;
+  grid-template-columns: minmax(130px, 1.15fr) minmax(180px, 1fr) auto 32px;
+  align-items: center;
   gap: 5px;
+  border: 1px solid var(--v4-line-soft);
+  border-radius: 11px;
+  background: #fff;
+  padding: 6px;
 }
 
 .substatRow select {
   min-height: 34px;
   font-size: 0.56rem;
+}
+
+.rollControl {
+  display: grid;
+  grid-template-columns: 34px minmax(92px, 1fr) 34px;
+  gap: 4px;
+  min-width: 0;
 }
 
 .substatRow button {
@@ -612,7 +643,36 @@
   background: #fff;
   color: var(--v4-text-muted);
   font: inherit;
+  font-weight: 800;
   cursor: pointer;
+}
+
+.rollControl button {
+  color: var(--v4-accent-active);
+  font-size: 0.8rem;
+}
+
+.substatRow button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.substatRow button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--v4-accent) 42%, var(--v4-line));
+  background: var(--v4-accent-faint);
+}
+
+.rollTier {
+  min-width: 62px;
+  color: var(--v4-text-muted);
+  font-size: 0.5rem;
+  font-weight: 760;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.removeSubstatButton {
+  color: var(--v4-danger) !important;
 }
 
 .sonataBar {
@@ -683,11 +743,26 @@
   }
 
   .workspace {
-    grid-template-columns: minmax(0, 1.15fr) minmax(270px, 0.85fr);
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 0.9fr);
   }
 
   .catalogueGrid {
     grid-template-columns: 1fr;
+  }
+
+  .substatRow {
+    grid-template-columns: 1fr 1fr 32px;
+  }
+
+  .rollTier {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    text-align: left;
+  }
+
+  .removeSubstatButton {
+    grid-column: 3;
+    grid-row: 1 / 3;
   }
 }
 
@@ -703,6 +778,16 @@
   .cataloguePane {
     border-right: 0;
     border-bottom: 1px solid var(--v4-line-soft);
+  }
+
+  .configPane {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .activeIdentity,
+  .substatHeader {
+    position: static;
   }
 
   .catalogueGrid {
@@ -746,6 +831,8 @@
 
   .activeIdentity {
     grid-template-columns: 64px minmax(0, 1fr);
+    margin: 0;
+    padding: 0 0 10px;
   }
 
   .activeIdentity button {
@@ -756,6 +843,21 @@
     width: 64px !important;
     height: 64px !important;
     min-height: 64px !important;
+  }
+
+  .substatRow {
+    grid-template-columns: 1fr 34px;
+  }
+
+  .substatRow > select,
+  .rollControl,
+  .rollTier {
+    grid-column: 1;
+  }
+
+  .removeSubstatButton {
+    grid-column: 2;
+    grid-row: 1 / 4;
   }
 
   .actions {

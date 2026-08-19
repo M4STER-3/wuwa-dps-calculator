@@ -4,7 +4,14 @@ import {
   everbrightPolestar,
   sigillum,
   trailblazingStar,
-} from "./aemeath";
+} from "./aemeath-combat";
+import {
+  calcharo,
+  calcharoPreset,
+  lustrousRazor,
+  nightmareThunderingMephis,
+  voidThunder,
+} from "./calcharo-runtime";
 import type {
   MainEcho,
   RecommendedBuildPreset,
@@ -12,13 +19,13 @@ import type {
   Sonata,
   Weapon,
 } from "@/domain/models";
-import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa";
+import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa-combat";
 import { roster10R1BaselinePresets } from "./roster-10r1-presets";
 import {
   roster10R1PromotedResonators,
   roster10R1PromotedWeapons,
 } from "./roster-10r1-promoted";
-import { fallacyOfNoReturn, rejuvenatingGlow, variation, verina, verinaPreset } from "./verina";
+import { fallacyOfNoReturn, rejuvenatingGlow, variation, verina, verinaPreset } from "./verina-runtime";
 import { getResonatorUiPortraitPath } from "@/game-data/resonator-ui-asset-ids";
 
 const fixtureSource = {
@@ -36,24 +43,31 @@ const skillNames = {
   introSkill: "Intro Skill",
 } as const;
 
+const promotedPortraitByResonatorId = new Map(
+  roster10R1PromotedResonators.flatMap((resonator) =>
+    resonator.portrait ? [[resonator.id, resonator.portrait] as const] : [],
+  ),
+);
+
 const withOptionalLocalUiPortrait = (resonator: Resonator): Resonator => {
   const portraitPath = getResonatorUiPortraitPath(resonator.id);
-  return portraitPath
+  const generatedPortrait = promotedPortraitByResonatorId.get(resonator.id);
+  const portrait = portraitPath
     ? {
-        ...resonator,
-        portrait: {
-          src: portraitPath,
-          alt: `Portrait de ${resonator.name}`,
-        },
+        src: portraitPath,
+        alt: `Portrait de ${resonator.name}`,
       }
-    : resonator;
+    : generatedPortrait;
+  return portrait ? { ...resonator, portrait } : resonator;
 };
 
+const rich10R1Ids = new Set(["aemeath", "calcharo", "chisa"]);
 const generated10R1Resonators = roster10R1PromotedResonators.filter(
-  (resonator) => resonator.id !== "aemeath" && resonator.id !== "chisa",
+  (resonator) => !rich10R1Ids.has(resonator.id),
 );
 const promotedResonators = [
   aemeath,
+  calcharo,
   ...generated10R1Resonators,
   chisa,
   verina,
@@ -73,12 +87,14 @@ export const resonators: readonly Resonator[] = [
   },
 ];
 
+const richWeaponIds = new Set(["everbright-polestar", "lustrous-razor", "kumokiri"]);
 const generated10R1Weapons = roster10R1PromotedWeapons.filter(
-  (weapon) => weapon.id !== "everbright-polestar" && weapon.id !== "kumokiri",
+  (weapon) => !richWeaponIds.has(weapon.id),
 );
 
 export const weapons: readonly Weapon[] = [
   everbrightPolestar,
+  lustrousRazor,
   ...generated10R1Weapons,
   kumokiri,
   variation,
@@ -93,6 +109,7 @@ export const weapons: readonly Weapon[] = [
 
 export const sonatas: readonly Sonata[] = [
   trailblazingStar,
+  voidThunder,
   threadOfSeveredFate,
   rejuvenatingGlow,
   { id: "fixture-sonata", name: "Sonata à renseigner", source: fixtureSource },
@@ -100,6 +117,7 @@ export const sonatas: readonly Sonata[] = [
 
 export const mainEchoes: readonly MainEcho[] = [
   sigillum,
+  nightmareThunderingMephis,
   threnodianLeviathan,
   fallacyOfNoReturn,
   {
@@ -166,6 +184,7 @@ const fixturePreset: RecommendedBuildPreset = {
 
 export const presets: readonly RecommendedBuildPreset[] = [
   aemeathPreset,
+  calcharoPreset,
   ...roster10R1BaselinePresets,
   chisaPreset,
   verinaPreset,

@@ -1,79 +1,418 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
+
 import { emptyCharacterBox } from "@/domain/character-box";
-import { damageTypes, elements, type FinalStats } from "@/domain/models";
-import { DEFAULT_LAB_TARGET, calculateActionLab, compareObservedDamage, diagnosticsByFamily, isStandardDamage, resolvePersonalLoadout, simulateRotationLab, type LabTarget } from "@/domain/personal-dps-lab";
-import type { StandardDamageResult } from "@/domain/damage-engine";
 import type { PersonalCombatResult } from "@/domain/personal-combat-simulation";
-import { getBrowserCharacterBoxSnapshot, subscribeToBrowserCharacterBox } from "@/storage/character-box-storage";
+import {
+  DEFAULT_LAB_TARGET,
+  calculateActionLab,
+  diagnosticsByFamily,
+  resolvePersonalLoadout,
+  simulateRotationLab,
+  type LabTarget,
+} from "@/domain/personal-dps-lab";
+import {
+  getBrowserCharacterBoxSnapshot,
+  subscribeToBrowserCharacterBox,
+} from "@/storage/character-box-storage";
 
 const serverBox = emptyCharacterBox();
-const number = (value: number) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
-const cloneStats = (stats: FinalStats): FinalStats => structuredClone(stats);
+const formatNumber = (value: number) =>
+  new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(value);
+const formatPercent = (value: number) => `${value.toFixed(1)} %`;
 
 export function PersonalDpsLab() {
-  const box = useSyncExternalStore(subscribeToBrowserCharacterBox, getBrowserCharacterBoxSnapshot, () => serverBox);
-  const [buildId, setBuildId] = useState<string>("");
-  const build = box.builds.find((item) => item.id === buildId) ?? box.builds[0];
-  const [sandbox, setSandbox] = useState<FinalStats | null>(null);
-  const stats = sandbox ?? build?.finalStats;
-  const loadout = useMemo(() => build ? resolvePersonalLoadout(build) : undefined, [build]);
-  const [target, setTarget] = useState<LabTarget>(DEFAULT_LAB_TARGET);
-  const [mode, setMode] = useState<"action" | "rotation">("action");
-  const [actionId, setActionId] = useState("");
-  const [manual, setManual] = useState<string[]>([]);
+  const box = useSyncExternalStore(
+    subscribeToBrowserCharacterBox,
+    getBrowserCharacterBoxSnapshot,
+    () => serverBox,
+  );
+  const [buildId, setBuildId] = useState("");
   const [resonanceMode, setResonanceMode] = useState("tune-rupture");
-  const [observed, setObserved] = useState("");
-  const selectedActionId = loadout?.actions.some((item) => item.id === actionId) ? actionId : loadout?.actions[0]?.id ?? "";
-  const actionResult = useMemo(() => loadout && stats ? calculateActionLab({ loadout, actionId: selectedActionId, stats, target, manualEffectIds: manual, resonanceMode }) : undefined, [loadout, stats, selectedActionId, target, manual, resonanceMode]);
-  const rotation = useMemo(() => mode === "rotation" && loadout && stats ? simulateRotationLab(loadout, stats, target, resonanceMode) : undefined, [mode, loadout, stats, target, resonanceMode]);
-  const calculated = actionResult?.damage.status === "supported" ? actionResult.damage.total.expected : undefined;
-  const delta = calculated !== undefined && observed !== "" ? compareObservedDamage(calculated, Number(observed)) : undefined;
+  const [target, setTarget] = useState<LabTarget>(DEFAULT_LAB_TARGET);
+  const [actionId, setActionId] = useState("");
 
-  const editStat = (key: keyof Pick<FinalStats, "attack" | "hp" | "defense" | "critRate" | "critDamage" | "energyRegen" | "tuneBreakBoost">, value: number) => setSandbox({ ...cloneStats(stats!), [key]: value });
-  const copySnapshot = async () => {
-    if (!loadout || !stats) return;
-    const snapshot = { resonator: loadout.resonator?.name, build: { level: build?.characterLevel, stats }, weapon: loadout.weapon?.name, weaponRank: build?.weapon.rank, sequence: build?.sequence, sonata: loadout.sonata?.name, mainEcho: loadout.mainEcho?.name, action: actionResult?.action.id, target, mode: resonanceMode, manualEffectOverrides: manual, calculatedResult: actionResult?.damage, observed: observed || undefined, delta, diagnostics: actionResult?.diagnostics, status: actionResult?.partial ? "PARTIAL" : "COMPLETE" };
-    await navigator.clipboard.writeText(JSON.stringify(snapshot));
-  };
+  const build = box.builds.find((item) => item.id === buildId) ?? box.builds[0];
+  const loadout = useMemo(
+    () => (build ? resolvePersonalLoadout(build) : undefined),
+    [build],
+  );
+  const availableModes = loadout?.resonator?.combat?.modes ?? [];
+  const selectedMode = availableModes.includes(resonanceMode)
+    ? resonanceMode
+    : availableModes[0];
+  const rotation = useMemo(
+    () =>
+      loadout && build
+        ? simulateRotationLab(loadout, build.finalStats, target, selectedMode)
+        : undefined,
+    [loadout, build, target, selectedMode],
+  );
+  const selectedActionId = loadout?.actions.some((action) => action.id === actionId)
+    ? actionId
+    : loadout?.actions[0]?.id ?? "";
+  const actionResult = useMemo(
+    () =>
+      loadout && build && selectedActionId
+        ? calculateActionLab({
+            loadout,
+            actionId: selectedActionId,
+            stats: build.finalStats,
+            target,
+            resonanceMode: selectedMode,
+          })
+        : undefined,
+    [loadout, build, selectedActionId, target, selectedMode],
+  );
 
-  if (!box.builds.length) return <main className="lab-shell"><nav><Link href="/">← Character Box</Link></nav><section className="lab-empty"><h1>Personal DPS Lab</h1><p>No saved build. Add a Resonator in Character Box first.</p></section></main>;
-  return <main className="lab-shell">
-    <header className="lab-header"><div><p className="eyebrow">PERSONAL COMBAT · NO TEAM BUFFS</p><h1>Personal DPS Lab</h1><p>Inspect one action or the honest partial result of a data-owned rotation.</p></div><Link className="lab-link" href="/">← Character Box</Link></header>
-    <div className="lab-tabs"><button className={mode === "action" ? "active" : ""} onClick={() => setMode("action")}>Action Lab</button><button className={mode === "rotation" ? "active" : ""} onClick={() => setMode("rotation")}>Rotation Lab</button></div>
-    <div className="lab-grid">
-      <aside className="lab-column">
-        <Panel title="Build sandbox"><label>Saved build<select value={build?.id} onChange={(e) => { setBuildId(e.target.value); setSandbox(null); setManual([]); }} >{box.builds.map((item) => <option key={item.id} value={item.id}>{item.resonatorId} · Lv{item.characterLevel}</option>)}</select></label>
-          {loadout?.resonator && <div className="build-summary">{loadout.resonator.portrait && <Image src={loadout.resonator.portrait.src} alt={loadout.resonator.portrait.alt} width={72} height={72}/>}<div><strong>{loadout.resonator.name}</strong><small>Lv{build?.characterLevel} · S{build?.sequence}</small><small>{loadout.weapon?.name} Lv{build?.weapon.level} R{build?.weapon.rank}</small><small>{loadout.sonata?.name} · {loadout.mainEcho?.name}</small></div></div>}
-          <div className="stat-grid">{(["attack","hp","defense","critRate","critDamage","energyRegen","tuneBreakBoost"] as const).map((key) => <label key={key}>{key}<input type="number" value={stats?.[key] ?? 0} onChange={(e) => editStat(key, Number(e.target.value))}/></label>)}</div>
-          <details><summary>Element & damage bonuses</summary><div className="stat-grid">{elements.map((key) => <label key={key}>{key}<input type="number" value={stats?.elementalDamageBonus[key]} onChange={(e) => setSandbox({ ...cloneStats(stats!), elementalDamageBonus: { ...stats!.elementalDamageBonus, [key]: Number(e.target.value) } })}/></label>)}{damageTypes.map((key) => <label key={key}>{key}<input type="number" value={stats?.damageTypeBonus[key]} onChange={(e) => setSandbox({ ...cloneStats(stats!), damageTypeBonus: { ...stats!.damageTypeBonus, [key]: Number(e.target.value) } })}/></label>)}</div></details>
-          <button onClick={() => setSandbox(null)}>Reset from build</button>
-        </Panel>
-        <Panel title="Target"><p className="hint">Technical reset: Lv90, 10% elemental/Physical RES, Tune 4C. Not an official target.</p><div className="stat-grid"><label>Enemy level<input type="number" value={target.level} onChange={(e) => setTarget({ ...target, level: Number(e.target.value) })}/></label><label>Physical RES<input type="number" step="0.01" value={target.physicalResistance} onChange={(e) => setTarget({ ...target, physicalResistance: Number(e.target.value) })}/></label><label>Fusion RES<input type="number" step="0.01" value={target.elementalResistance.fusion ?? 0} onChange={(e) => setTarget({ ...target, elementalResistance: { ...target.elementalResistance, fusion: Number(e.target.value) } })}/></label><label>Havoc RES<input type="number" step="0.01" value={target.elementalResistance.havoc ?? 0} onChange={(e) => setTarget({ ...target, elementalResistance: { ...target.elementalResistance, havoc: Number(e.target.value) } })}/></label><label>Tune class<select value={target.tuneEnemyClass} onChange={(e) => setTarget({ ...target, tuneEnemyClass: e.target.value as LabTarget["tuneEnemyClass"] })}><option>1C</option><option>3C</option><option>4C</option></select></label></div><button onClick={() => setTarget(DEFAULT_LAB_TARGET)}>Reset target</button></Panel>
-      </aside>
-      <section className="lab-column lab-main">
-        {mode === "action" ? <>
-          <Panel title="Action"><label>Resonance mode<select value={resonanceMode} onChange={(e) => setResonanceMode(e.target.value)}>{loadout?.resonator?.combat?.modes.map((item) => <option key={item}>{item}</option>)}</select></label><label>Available action<select value={selectedActionId} onChange={(e) => setActionId(e.target.value)}>{loadout?.actions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>{actionResult && <div className="action-meta"><span>{actionResult.action.damageType ?? "No damage type"}</span><span>{actionResult.action.talent} Lv{actionResult.action.level}</span><span>{actionResult.action.multipliers.reduce((sum, group) => sum + group.percent * group.hits, 0).toFixed(2)}% MV</span><span>{actionResult.action.multipliers.reduce((sum, group) => sum + group.hits, 0)} hits</span></div>}</Panel>
-          <Panel title="Damage">{actionResult?.damage.status === "supported" ? <><Status partial={actionResult.partial}/><div className="damage-cards"><Metric label="Non Crit" value={actionResult.damage.total.nonCrit}/><Metric label="Crit" value={actionResult.damage.total.crit}/><Metric label="Expected" value={actionResult.damage.total.expected}/></div>{isStandardDamage(actionResult.damage) && <><table><thead><tr><th>Group</th><th>MV/hit</th><th>Hits</th><th>Non Crit</th><th>Crit</th><th>Expected</th></tr></thead><tbody>{actionResult.damage.hitGroups.map((group) => <tr key={group.groupIndex}><td>{group.groupIndex + 1}</td><td>{group.motionValuePercentPerHit}%</td><td>{group.hits}</td><td>{number(group.subtotal.nonCrit)}</td><td>{number(group.subtotal.crit)}</td><td>{number(group.subtotal.expected)}</td></tr>)}</tbody></table><Formula result={actionResult.damage}/></>}</> : <div className="unsupported"><strong>Formula not supported</strong><p>{actionResult?.damage.message ?? "Select an action."}</p></div>}</Panel>
-          {!!actionResult?.outcomes.length && <Panel title="Personal sustain outcomes"><p className="hint">Nearby-team propagation is deferred; these are formula amounts only.</p><div className="damage-cards">{actionResult.outcomes.map((outcome,index)=><Metric key={`${outcome.kind}-${index}`} label={outcome.kind === "shield" ? `Shield · ${outcome.durationSeconds}s` : "Healing"} value={outcome.amount}/>)}</div></Panel>}
-          <Panel title="Manual debug override"><p className="hint">Action Lab only. This is not the canonical rotation state.</p>{loadout?.effects.map((effect) => { const included = effect.rules.every((rule) => rule.accounting !== "runtime"); return <label className="effect-row" key={effect.id}><input type="checkbox" disabled={included} checked={!included && manual.includes(effect.id)} onChange={(e) => setManual(e.target.checked ? [...manual, effect.id] : manual.filter((id) => id !== effect.id))}/><span>{effect.label}</span>{included && <small>Included in final stats</small>}</label>; })}</Panel>
-          <Panel title="Observed in-game damage"><label>Observed hit / total<input type="number" value={observed} onChange={(e) => setObserved(e.target.value)} placeholder="Enter observed value"/></label>{delta && <div className="comparison"><span>Calculated: {number(delta.calculated)}</span><span>Observed: {number(delta.observed)}</span><span>Delta: {number(delta.absoluteDelta)}</span><span>Error: {delta.percentageDelta === null ? "N/A" : `${delta.percentageDelta.toFixed(3)}%`}</span></div>}<button onClick={copySnapshot}>Copy validation snapshot</button></Panel>
-        </> : <RotationView result={rotation}/>}
+  if (!box.builds.length) {
+    return (
+      <main className="lab-shell">
+        <section className="lab-empty">
+          <p className="eyebrow">WUWA LAB · PERSONAL DPS</p>
+          <h1>Aucun build disponible</h1>
+          <p>Ajoutez et configurez d’abord un Resonator dans la Character Box.</p>
+          <Link href="/character-box">Ouvrir la Character Box →</Link>
+        </section>
+      </main>
+    );
+  }
+
+  const topActions = rotation
+    ? Object.entries(rotation.perAction)
+        .filter(([, amounts]) => amounts.expected > 0)
+        .sort((left, right) => right[1].expected - left[1].expected)
+        .slice(0, 8)
+    : [];
+
+  return (
+    <main className="lab-shell dps-results-shell">
+      <header className="lab-header dps-results-header">
+        <div>
+          <p className="eyebrow">WUWA LAB · PERSONAL DPS</p>
+          <h1>DPS personnel</h1>
+          <p>
+            Résultat de la rotation théorique universelle. Le build et ses statistiques
+            se modifient uniquement dans la Character Box.
+          </p>
+        </div>
+        <Link className="lab-link" href="/character-box">
+          Modifier le build →
+        </Link>
+      </header>
+
+      <section className="lab-panel dps-build-strip">
+        <label>
+          Build analysé
+          <select value={build?.id} onChange={(event) => setBuildId(event.target.value)}>
+            {box.builds.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.resonatorId} · Lv{item.characterLevel} · S{item.sequence}
+              </option>
+            ))}
+          </select>
+        </label>
+        {loadout?.resonator ? (
+          <div className="build-summary dps-build-summary">
+            {loadout.resonator.portrait ? (
+              <Image
+                src={loadout.resonator.portrait.src}
+                alt={loadout.resonator.portrait.alt}
+                width={68}
+                height={68}
+              />
+            ) : null}
+            <div>
+              <strong>{loadout.resonator.name}</strong>
+              <small>
+                Lv{build?.characterLevel} · S{build?.sequence} · {loadout.weapon?.name ?? "Arme non résolue"}
+              </small>
+              <small>
+                {loadout.sonata?.name ?? "Sonata non résolu"} · {loadout.mainEcho?.name ?? "Main Echo non résolu"}
+              </small>
+            </div>
+          </div>
+        ) : null}
+        {availableModes.length > 1 ? (
+          <label>
+            Mode de résonance
+            <select
+              value={selectedMode}
+              onChange={(event) => setResonanceMode(event.target.value)}
+            >
+              {availableModes.map((mode) => (
+                <option key={mode} value={mode}>
+                  {mode === "tune-rupture" ? "Tune Rupture" : mode === "fusion-burst" ? "Fusion Burst" : mode}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </section>
-      <aside className="lab-column"><Diagnostics diagnostics={[...(loadout?.diagnostics ?? []), ...(mode === "action" ? actionResult?.diagnostics ?? [] : rotation?.diagnostics ?? [])]}/>{rotation && mode === "rotation" && <><Timeline title="Event timeline" rows={rotation.eventLog.map((event) => ({ time: event.timestamp, kind: event.kind, detail: event.actionId ?? event.sourceId ?? "—", raw: event }))}/><Timeline title="Effects / state timeline" rows={rotation.stateTransitions.map((event) => ({ time: event.timestamp, kind: event.kind, detail: event.detail, raw: event }))}/></>}</aside>
-    </div>
-  </main>;
+
+      <div className="dps-overview-grid">
+        <section className="lab-panel dps-primary-result">
+          <div className="dps-result-heading">
+            <div>
+              <p className="eyebrow">RÉSULTAT PRINCIPAL</p>
+              <h2>{loadout?.resonator?.name ?? "Resonator"}</h2>
+            </div>
+            {rotation ? <Status partial={rotation.partial} /> : null}
+          </div>
+          {rotation ? (
+            <>
+              <div className="damage-cards dps-hero-metrics">
+                <Metric label="DPS attendu" value={rotation.personalDps.expected} primary />
+                <Metric label="Dégâts / rotation" value={rotation.personalDamage.expected} />
+                <Metric label="Durée théorique" value={rotation.rotationDurationSeconds} suffix=" s" />
+                <Metric label="Actions calculées" value={rotation.coverage.relevantSupported} />
+              </div>
+              {rotation.partial ? (
+                <p className="warning">
+                  Résultat partiel : une mécanique non résolue est exclue du total au lieu d’être comptée comme zéro.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <div className="unsupported">
+              Aucune rotation théorique n’est encore enregistrée pour ce personnage.
+            </div>
+          )}
+        </section>
+
+        <section className="lab-panel">
+          <h2>Répartition des dégâts</h2>
+          {rotation ? (
+            <div className="dps-source-list">
+              {Object.entries(rotation.breakdown)
+                .filter(([, amounts]) => amounts.expected > 0)
+                .sort((left, right) => right[1].expected - left[1].expected)
+                .map(([name, amounts]) => (
+                  <DamageShare
+                    key={name}
+                    label={damageCategoryLabel(name)}
+                    damage={amounts.expected}
+                    total={rotation.personalDamage.expected}
+                  />
+                ))}
+            </div>
+          ) : null}
+        </section>
+      </div>
+
+      <section className="lab-panel">
+        <h2>Principales aptitudes</h2>
+        {rotation && topActions.length ? (
+          <table>
+            <thead>
+              <tr>
+                <th>Aptitude</th>
+                <th>Dégâts</th>
+                <th>Part du total</th>
+                <th>DPS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topActions.map(([name, amounts]) => (
+                <tr key={name}>
+                  <td>{actionLabel(loadout, name)}</td>
+                  <td>{formatNumber(amounts.expected)}</td>
+                  <td>
+                    {rotation.personalDamage.expected > 0
+                      ? formatPercent((amounts.expected / rotation.personalDamage.expected) * 100)
+                      : "—"}
+                  </td>
+                  <td>{formatNumber(amounts.expected / rotation.rotationDurationSeconds)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="hint">Aucune aptitude dommageable calculée.</p>
+        )}
+      </section>
+
+      <details className="lab-panel dps-advanced">
+        <summary>Analyse avancée</summary>
+        <div className="dps-advanced-grid">
+          <div>
+            <h3>Tester une aptitude</h3>
+            <label>
+              Aptitude
+              <select value={selectedActionId} onChange={(event) => setActionId(event.target.value)}>
+                {loadout?.actions.map((action) => (
+                  <option key={action.id} value={action.id}>
+                    {action.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {actionResult?.damage.status === "supported" ? (
+              <div className="damage-cards">
+                <Metric label="Non CRIT" value={actionResult.damage.total.nonCrit} />
+                <Metric label="CRIT" value={actionResult.damage.total.crit} />
+                <Metric label="Attendu" value={actionResult.damage.total.expected} />
+              </div>
+            ) : (
+              <p className="hint">Cette formule n’est pas encore disponible.</p>
+            )}
+          </div>
+
+          <div>
+            <h3>Cible technique</h3>
+            <p className="hint">
+              Ces paramètres servent à comparer les calculs. Ils ne modifient jamais le build sauvegardé.
+            </p>
+            <div className="stat-grid">
+              <label>
+                Niveau ennemi
+                <input
+                  type="number"
+                  value={target.level}
+                  onChange={(event) => setTarget({ ...target, level: Number(event.target.value) })}
+                />
+              </label>
+              <label>
+                Résistance physique
+                <input
+                  type="number"
+                  step="0.01"
+                  value={target.physicalResistance}
+                  onChange={(event) =>
+                    setTarget({ ...target, physicalResistance: Number(event.target.value) })
+                  }
+                />
+              </label>
+            </div>
+            <button type="button" onClick={() => setTarget(DEFAULT_LAB_TARGET)}>
+              Réinitialiser la cible
+            </button>
+          </div>
+        </div>
+
+        {rotation ? (
+          <AdvancedDiagnostics result={rotation} loadoutDiagnostics={loadout?.diagnostics ?? []} />
+        ) : null}
+      </details>
+    </main>
+  );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) { return <section className="lab-panel"><h2>{title}</h2>{children}</section>; }
-function Metric({ label, value }: { label: string; value: number }) { return <div><small>{label}</small><strong>{number(value)}</strong></div>; }
-function Status({ partial }: { partial: boolean }) { return <span className={`status ${partial ? "partial" : "complete"}`}>{partial ? "PARTIAL" : "COMPLETE"}</span>; }
-function Formula({ result }: { result: StandardDamageResult }) { const rows = [["Scaling stat", result.scalingAttribute], ["Effective scaling", number(result.scalingAttributeValue)], ["Motion Value", `${result.totalMotionValue * 100}%`], ["Element bonus", `${result.elementalDamageBonusPercent}%`], ["Damage type bonus", `${result.damageTypeBonusPercent}%`], ["All DMG bonus", `${result.allDamageBonusPercent}%`], ["Amplification", `${result.damageAmplificationPercent}%`], ["DEF reduction / ignore", `${result.defenseReduction} / ${result.defenseIgnore}`], ["DEF multiplier", result.defenseMultiplier.toFixed(6)], ["Base / effective RES", `${result.baseElementalResistance} / ${result.effectiveResistance}`], ["RES reduction / ignore", `${result.resistanceReduction} / ${result.resistanceIgnore}`], ["RES multiplier", result.resistanceMultiplier.toFixed(6)], ["Crit Rate", `${(result.effectiveCritRate * 100).toFixed(2)}%`], ["Crit DMG", `${result.critDamagePercent}%`], ["Expected Crit multiplier", result.expectedCritMultiplier.toFixed(6)]]; return <details className="formula"><summary>Why this damage?</summary><dl>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></details>; }
+function Metric({
+  label,
+  value,
+  suffix = "",
+  primary = false,
+}: {
+  label: string;
+  value: number;
+  suffix?: string;
+  primary?: boolean;
+}) {
+  return (
+    <div data-primary={primary || undefined}>
+      <small>{label}</small>
+      <strong>
+        {formatNumber(value)}{suffix}
+      </strong>
+    </div>
+  );
+}
 
-function RotationView({ result }: { result?: PersonalCombatResult }) { if (!result) return <Panel title="Rotation Lab"><div className="unsupported">Simulation unavailable for this loadout.</div></Panel>; const duration = result.rotationDurationSeconds; return <><Panel title="Aemeath reference rotation"><div className="action-meta"><span>aemeath-s0-standard-no-quickswap</span><span>{duration.toFixed(2)}s</span><span>estimated-calibrated</span><span>community calibration</span></div></Panel><Panel title="Personal DPS result"><Status partial={result.partial}/><div className="damage-cards"><Metric label="Total expected" value={result.personalDamage.expected}/><Metric label="Personal DPS" value={result.personalDps.expected}/><Metric label="Non Crit" value={result.personalDamage.nonCrit}/><Metric label="Crit" value={result.personalDamage.crit}/></div>{result.partial && <p className="warning">Partial: unsupported or missing-context mechanics are excluded, never represented as zero damage.</p>}</Panel><Panel title="Breakdown"><table><thead><tr><th>Category</th><th>Non Crit</th><th>Crit</th><th>Expected</th></tr></thead><tbody>{Object.entries(result.breakdown).map(([name, amounts]) => <tr key={name}><td>{name}</td><td>{number(amounts.nonCrit)}</td><td>{number(amounts.crit)}</td><td>{number(amounts.expected)}</td></tr>)}</tbody></table><h3>By action</h3><table><thead><tr><th>Action</th><th>Damage</th><th>% total</th><th>DPS</th></tr></thead><tbody>{Object.entries(result.perAction).map(([name, amounts]) => <tr key={name}><td>{name}</td><td>{number(amounts.expected)}</td><td>{result.personalDamage.expected ? number(amounts.expected / result.personalDamage.expected * 100) : "—"}%</td><td>{number(amounts.expected / duration)}</td></tr>)}</tbody></table></Panel><Panel title="Coverage"><div className="coverage"><span>Relevant supported <b>{result.coverage.relevantSupported}</b></span><span>Relevant unsupported <b>{result.coverage.relevantUnsupported}</b></span><span>Modeled unused <b>{result.coverage.modeledUnused}</b></span><span>Missing context <b>{result.coverage.notEmittedDueToMissingContext}</b></span></div><p className="hint">Coverage describes emitted/model-visible mechanics, not the exhaustive kit.</p></Panel></>; }
+function Status({ partial }: { partial: boolean }) {
+  return (
+    <span className={`status ${partial ? "partial" : "complete"}`}>
+      {partial ? "PARTIEL" : "COMPLET"}
+    </span>
+  );
+}
 
-function Diagnostics({ diagnostics }: { diagnostics: readonly { code: string; message: string }[] }) { const unique = [...new Map(diagnostics.map((item) => [`${item.code}:${item.message}`, item])).values()]; const groups = diagnosticsByFamily(unique); return <Panel title="Unsupported / diagnostics">{!unique.length ? <p className="hint">No diagnostics for the current result.</p> : Object.entries(groups).map(([family, items]) => <details key={family} open><summary>{family} ({items.length})</summary>{items.map((item, index) => <div className="diagnostic" key={`${item.code}-${index}`}><code>{item.code}</code><p>{item.message}</p></div>)}</details>)}</Panel>; }
-function Timeline({ title, rows }: { title: string; rows: readonly { time: number; kind: string; detail: string; raw: unknown }[] }) { return <Panel title={title}><div className="timeline">{rows.map((row, index) => <details key={index}><summary><time>{row.time.toFixed(3)}s</time><b>{row.kind}</b><span>{row.detail}</span></summary><pre>{JSON.stringify(row.raw, null, 2)}</pre></details>)}</div></Panel>; }
+function DamageShare({
+  label,
+  damage,
+  total,
+}: {
+  label: string;
+  damage: number;
+  total: number;
+}) {
+  const share = total > 0 ? (damage / total) * 100 : 0;
+  return (
+    <div className="dps-source-row">
+      <div>
+        <strong>{label}</strong>
+        <span>{formatNumber(damage)}</span>
+      </div>
+      <div className="dps-share-track" aria-label={`${label}: ${formatPercent(share)}`}>
+        <span style={{ width: `${Math.min(100, Math.max(0, share))}%` }} />
+      </div>
+      <small>{formatPercent(share)}</small>
+    </div>
+  );
+}
+
+function AdvancedDiagnostics({
+  result,
+  loadoutDiagnostics,
+}: {
+  result: PersonalCombatResult;
+  loadoutDiagnostics: readonly { code: string; message: string }[];
+}) {
+  const unique = [
+    ...new Map(
+      [...loadoutDiagnostics, ...result.diagnostics].map((item) => [
+        `${item.code}:${item.message}`,
+        item,
+      ]),
+    ).values(),
+  ];
+  const groups = diagnosticsByFamily(unique);
+  return (
+    <div className="dps-diagnostics">
+      <h3>Couverture & diagnostics</h3>
+      <div className="coverage">
+        <span>Calculé <b>{result.coverage.relevantSupported}</b></span>
+        <span>Non résolu <b>{result.coverage.relevantUnsupported}</b></span>
+        <span>Contexte manquant <b>{result.coverage.notEmittedDueToMissingContext}</b></span>
+      </div>
+      {!unique.length ? (
+        <p className="hint">Aucun diagnostic pour cette rotation.</p>
+      ) : (
+        Object.entries(groups).map(([family, items]) => (
+          <details key={family}>
+            <summary>{family} ({items.length})</summary>
+            {items.map((item, index) => (
+              <div className="diagnostic" key={`${item.code}-${index}`}>
+                <code>{item.code}</code>
+                <p>{item.message}</p>
+              </div>
+            ))}
+          </details>
+        ))
+      )}
+    </div>
+  );
+}
+
+function damageCategoryLabel(name: string): string {
+  const labels: Record<string, string> = {
+    direct: "Dégâts directs",
+    echo: "Echo",
+    "follow-up": "Follow-up",
+    coordinated: "Attaques coordonnées",
+    summon: "Invocation",
+    status: "Statuts",
+    tune: "Tune",
+  };
+  return labels[name] ?? name;
+}
+
+function actionLabel(
+  loadout: ReturnType<typeof resolvePersonalLoadout> | undefined,
+  actionId: string,
+): string {
+  return loadout?.actions.find((action) => action.id === actionId)?.name ?? actionId;
+}
