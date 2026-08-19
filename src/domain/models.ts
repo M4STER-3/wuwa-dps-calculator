@@ -29,7 +29,8 @@ export const skillTypes = [
 ] as const;
 export type SkillType = (typeof skillTypes)[number];
 
-export const damageTypes = [
+/** Damage categories that own a permanent FinalStats damage-bonus channel. */
+export const damageBonusTypes = [
   "basicAttack",
   "heavyAttack",
   "resonanceSkill",
@@ -37,6 +38,13 @@ export const damageTypes = [
   "introSkill",
   "echoSkill",
 ] as const;
+
+/**
+ * Standard formula damage categories. Outro damage is intentionally neutral: it
+ * receives element/all-DMG/amplification/crit/DEF/RES modifiers, but has no
+ * dedicated permanent damage-type-bonus stat unless the game explicitly adds one.
+ */
+export const damageTypes = [...damageBonusTypes, "outroSkill"] as const;
 
 export type Sequence = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type Rarity = 4 | 5;
@@ -255,54 +263,5 @@ export interface FinalStats {
   /** Permanent Tune Break Boost, expressed in percentage points. */
   tuneBreakBoost: number;
   elementalDamageBonus: Record<Element, number>;
-  damageTypeBonus: Record<(typeof damageTypes)[number], number>;
-}
-
-export interface RecommendedBuildPreset {
-  id: string;
-  resonatorId: string;
-  label: string;
-  role?: string;
-  characterLevel: number;
-  sequence: Sequence;
-  skillLevels: Record<SkillType, number>;
-  progression?: { inherentSkillsUnlocked: boolean; minorFortesUnlocked: boolean };
-  weapon: { weaponId: string; level: number; rank: number };
-  finalStats: FinalStats;
-  recommendedTargets?: Readonly<
-    Partial<Record<keyof Omit<FinalStats, "elementalDamageBonus" | "damageTypeBonus">, {
-      minimum: number;
-      maximum?: number;
-    }>> & {
-      elementalDamageBonus?: Partial<Record<Element, { minimum: number; maximum?: number }>>;
-    }
-  >;
-  /** Exact five-Echo recommendation input. It is upstream build data, never a second runtime stat source. */
-  echoLoadout?: import("./user-echo-loadout").UserEchoLoadoutV1;
-  sonataId?: string;
-  mainEchoId?: string;
-  notes: readonly string[];
-  source: SourceMetadata;
-}
-
-export interface UserBuild {
-  id: string;
-  resonatorId: string;
-  sourcePresetId: string;
-  characterLevel: number;
-  sequence: Sequence;
-  skillLevels: Record<SkillType, number>;
-  weapon: { weaponId: string; level: number; rank: number };
-  finalStats: FinalStats;
-  /** Detailed persisted five-Echo equipment input; not a second permanent-stat source. */
-  echoLoadout?: import("./user-echo-loadout").UserEchoLoadoutV1;
-  sonataId?: string;
-  mainEchoId?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CharacterBox {
-  schemaVersion: 1;
-  builds: UserBuild[];
+  damageTypeBonus: Record<(typeof damageBonusTypes)[number], number>;
 }
