@@ -3,6 +3,8 @@ import { mainEchoes, presets, resonators, sonatas, weapons } from "./catalog";
 
 const aemeath = resonators.find((entry) => entry.id === "aemeath")!;
 const aemeathPreset = presets.find((entry) => entry.resonatorId === "aemeath")!;
+const calcharo = resonators.find((entry) => entry.id === "calcharo")!;
+const calcharoPreset = presets.find((entry) => entry.resonatorId === "calcharo")!;
 const chisa = resonators.find((entry) => entry.id === "chisa")!;
 const chisaPreset = presets.find((entry) => entry.resonatorId === "chisa")!;
 
@@ -64,22 +66,48 @@ describe("cohérence du catalogue", () => {
     expect(aemeathPreset.finalStats.attack).toBe(2000);
   });
 
-  it("conserve l'équipement vérifié d'Aemeath dans le catalogue étendu", () => {
+  it("conserve les équipements riches vérifiés d'Aemeath et Calcharo dans le catalogue étendu", () => {
     expect(weapons.find((entry) => entry.id === "everbright-polestar")).toMatchObject({
       name: "Everbright Polestar",
       type: "sword",
+      rarity: 5,
+    });
+    expect(weapons.find((entry) => entry.id === "lustrous-razor")).toMatchObject({
+      name: "Lustrous Razor",
+      type: "broadblade",
       rarity: 5,
     });
     expect(
       sonatas
         .filter((entry) => entry.source.kind !== "technical-fixture")
         .map((entry) => entry.id),
-    ).toEqual(["trailblazing-star", "thread-of-severed-fate", "rejuvenating-glow"]);
+    ).toEqual([
+      "trailblazing-star",
+      "void-thunder",
+      "thread-of-severed-fate",
+      "rejuvenating-glow",
+    ]);
     expect(
       mainEchoes
         .filter((entry) => entry.source.kind !== "technical-fixture")
         .map((entry) => entry.name),
-    ).toEqual(["Sigillum", "Reminiscence: Threnodian - Leviathan", "Fallacy of No Return"]);
+    ).toEqual([
+      "Sigillum",
+      "Nightmare: Thundering Mephis",
+      "Reminiscence: Threnodian - Leviathan",
+      "Fallacy of No Return",
+    ]);
+    expect(calcharo).toMatchObject({
+      name: "Calcharo",
+      element: "electro",
+      weaponType: "broadblade",
+      rarity: 5,
+    });
+    expect(calcharoPreset).toMatchObject({
+      weapon: { weaponId: "lustrous-razor", level: 90, rank: 1 },
+      sonataId: "void-thunder",
+      mainEchoId: "nightmare-thundering-mephis",
+    });
   });
 
   it("documente le kit Lv10 et les inconnues temporelles sans timeline DPS", () => {
