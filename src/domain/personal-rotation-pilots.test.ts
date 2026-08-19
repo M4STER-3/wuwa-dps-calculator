@@ -39,9 +39,15 @@ describe("universal Personal DPS — four pilot contract", () => {
     ["verina", undefined],
   ] as const)("runs %s %s through the same rotation pipeline", (resonatorId, resonanceMode) => {
     const result = runPilot(resonatorId, resonanceMode);
+    const failureContext = JSON.stringify({
+      diagnostics: result.diagnostics,
+      stateDiagnostics: result.stateDiagnostics,
+      transitions: result.stateTransitions.slice(0, 20),
+      events: result.eventLog.slice(0, 20),
+    });
 
     expect(result.rotationDurationSeconds).toBeGreaterThan(0);
-    expect(result.personalDamage.expected).toBeGreaterThan(0);
+    expect(result.personalDamage.expected, failureContext).toBeGreaterThan(0);
     expect(result.personalDps.expected).toBeCloseTo(
       result.personalDamage.expected / result.rotationDurationSeconds,
       10,
