@@ -7,11 +7,96 @@
       "name": "Phrolova",
       "signatureWeaponName": "Lethean Elegy",
       "mechanicsStatus": "partial",
+      "combatModel": {
+        "forms": ["Baseline", "Reincarnate", "Resolving Chord", "Maestro"],
+        "defaultForm": "Baseline",
+        "modes": [],
+        "resources": [
+          { "id": "volatile-note", "name": "Volatile Note", "cap": 6 },
+          { "id": "aftersound", "name": "Aftersound", "cap": 24 }
+        ]
+      },
       "scenarios": [
-        { "id": "phrolova-opener-boss", "label": "Opener · Boss / Movement of Fate and Finality", "variant": "opener-boss" },
-        { "id": "phrolova-loop-boss", "label": "Loop · Boss / Movement of Fate and Finality", "variant": "loop-boss" },
-        { "id": "phrolova-opener-aoe", "label": "Opener · AoE / Murmurs in a Haunting Dream", "variant": "opener-aoe" },
-        { "id": "phrolova-loop-aoe", "label": "Loop · AoE / Murmurs in a Haunting Dream", "variant": "loop-aoe" }
+        {
+          "id": "phrolova-opener-boss",
+          "label": "Opener · Boss / Movement of Fate and Finality",
+          "variant": "opener-boss",
+          "eligibility": "Prydwen opener reference. Starts from the exact Octet battle bootstrap of 10 Aftersound; Movement of Fate and Finality is the single-target Forte choice. Main Echo cast is modeled as an immediate trigger after the second enhanced Forte, with build-owned Echo damage excluded.",
+          "steps": [
+            { "selector": { "sourceAttributeId": "1608002" } },
+            { "selector": { "sourceAttributeId": "1608003" } },
+            { "selector": { "sourceAttributeId": "1608029" } },
+            { "selector": { "sourceAttributeId": "1608013" } },
+            { "selector": { "sourceAttributeId": "1608029" } },
+            { "selector": { "sourceAttributeId": "1608001" } },
+            { "selector": { "sourceAttributeId": "1608002" } },
+            { "selector": { "sourceAttributeId": "1608003" } },
+            { "selector": { "sourceAttributeId": "1608029" } },
+            { "selector": { "sourceAttributeId": "1608005" } },
+            { "label": "Resonance Liberation · Waltz of Forsaken Depths", "profileId": "liberation-short" },
+            { "label": "Outro / Maestro handoff", "profileId": "outro" }
+          ]
+        },
+        {
+          "id": "phrolova-loop-boss",
+          "label": "Loop · Boss / Movement of Fate and Finality",
+          "variant": "loop-boss",
+          "eligibility": "Prydwen loop reference. Suite of Immortality is available from the prior Maestro cycle; Movement of Fate and Finality is the single-target Forte choice. Carried Aftersound above the exact battle bootstrap remains Team Cycle-owned and is not guessed.",
+          "steps": [
+            { "selector": { "sourceAttributeId": "1608026" } },
+            { "selector": { "sourceAttributeId": "1608003" } },
+            { "selector": { "sourceAttributeId": "1608029" } },
+            { "selector": { "sourceAttributeId": "1608013" } },
+            { "selector": { "sourceAttributeId": "1608029" } },
+            { "selector": { "sourceAttributeId": "1608001" } },
+            { "selector": { "sourceAttributeId": "1608002" } },
+            { "selector": { "sourceAttributeId": "1608003" } },
+            { "selector": { "sourceAttributeId": "1608029" } },
+            { "selector": { "sourceAttributeId": "1608005" } },
+            { "label": "Resonance Liberation · Waltz of Forsaken Depths", "profileId": "liberation-short" },
+            { "label": "Outro / Maestro handoff", "profileId": "outro" }
+          ]
+        },
+        {
+          "id": "phrolova-opener-aoe",
+          "label": "Opener · AoE / Murmurs in a Haunting Dream",
+          "variant": "opener-aoe",
+          "eligibility": "Prydwen opener reference. Starts from the exact Octet battle bootstrap of 10 Aftersound; Murmurs in a Haunting Dream is the multi-target Forte choice. Main Echo cast is modeled as an immediate trigger after the second enhanced Forte, with build-owned Echo damage excluded.",
+          "steps": [
+            { "selector": { "sourceAttributeId": "1608002" } },
+            { "selector": { "sourceAttributeId": "1608003" } },
+            { "selector": { "sourceAttributeId": "1608030" } },
+            { "selector": { "sourceAttributeId": "1608013" } },
+            { "selector": { "sourceAttributeId": "1608030" } },
+            { "selector": { "sourceAttributeId": "1608001" } },
+            { "selector": { "sourceAttributeId": "1608002" } },
+            { "selector": { "sourceAttributeId": "1608003" } },
+            { "selector": { "sourceAttributeId": "1608030" } },
+            { "selector": { "sourceAttributeId": "1608005" } },
+            { "label": "Resonance Liberation · Waltz of Forsaken Depths", "profileId": "liberation-short" },
+            { "label": "Outro / Maestro handoff", "profileId": "outro" }
+          ]
+        },
+        {
+          "id": "phrolova-loop-aoe",
+          "label": "Loop · AoE / Murmurs in a Haunting Dream",
+          "variant": "loop-aoe",
+          "eligibility": "Prydwen loop reference. Suite of Immortality is available from the prior Maestro cycle; Murmurs in a Haunting Dream is the multi-target Forte choice. Carried Aftersound above the exact battle bootstrap remains Team Cycle-owned and is not guessed.",
+          "steps": [
+            { "selector": { "sourceAttributeId": "1608026" } },
+            { "selector": { "sourceAttributeId": "1608003" } },
+            { "selector": { "sourceAttributeId": "1608030" } },
+            { "selector": { "sourceAttributeId": "1608013" } },
+            { "selector": { "sourceAttributeId": "1608030" } },
+            { "selector": { "sourceAttributeId": "1608001" } },
+            { "selector": { "sourceAttributeId": "1608002" } },
+            { "selector": { "sourceAttributeId": "1608003" } },
+            { "selector": { "sourceAttributeId": "1608030" } },
+            { "selector": { "sourceAttributeId": "1608005" } },
+            { "label": "Resonance Liberation · Waltz of Forsaken Depths", "profileId": "liberation-short" },
+            { "label": "Outro / Maestro handoff", "profileId": "outro" }
+          ]
+        }
       ]
     },
     {
