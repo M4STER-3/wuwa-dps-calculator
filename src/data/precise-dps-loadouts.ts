@@ -12,6 +12,7 @@ import {
   applyPreciseJinhsiMechanics,
   applyPreciseJinhsiWeaponMechanics,
 } from "./precise-dps-jinhsi";
+import { applyPreciseNeutralOutroDamageTypes } from "./precise-dps-neutral-outros";
 import { applyPrecisePhrolovaAftersoundMechanics } from "./precise-dps-phrolova-aftersound";
 import { applyPrecisePhrolovaCorrections } from "./precise-dps-phrolova-corrections";
 import {
@@ -69,16 +70,18 @@ function applyGalbrenaLoadoutMechanics(resonator: Resonator): Resonator {
 
 export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutureResonators.map(
   (resonator) =>
-    applyPreciseInitialStateAnchors(
-      applyPreciseShorekeeperMechanics(
-        applyPrecisePhrolovaCorrections(
-          applyPrecisePhrolovaAftersoundMechanics(
-            applyPrecisePhrolovaTeamCycleMechanics(
-              applyPrecisePhrolovaMechanics(
-                applyGalbrenaLoadoutMechanics(
-                  applyPreciseQiuyuanMechanics(
-                    applyPreciseJinhsiMechanics(
-                      applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+    applyPreciseNeutralOutroDamageTypes(
+      applyPreciseInitialStateAnchors(
+        applyPreciseShorekeeperMechanics(
+          applyPrecisePhrolovaCorrections(
+            applyPrecisePhrolovaAftersoundMechanics(
+              applyPrecisePhrolovaTeamCycleMechanics(
+                applyPrecisePhrolovaMechanics(
+                  applyGalbrenaLoadoutMechanics(
+                    applyPreciseQiuyuanMechanics(
+                      applyPreciseJinhsiMechanics(
+                        applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+                      ),
                     ),
                   ),
                 ),
