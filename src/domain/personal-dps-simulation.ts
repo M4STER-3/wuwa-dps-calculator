@@ -3,7 +3,7 @@ import {
   generatedCharacterBoxWeaponBases10R1,
 } from "@/generated/character-box-roster-baselines-10r1";
 import { personalDpsRuntimeActionResourceOperations10R1 } from "@/data/personal-dps-runtime-action-overlays-10r1";
-import { resolvePersonalDpsRuntimeBundle10R1 } from "@/data/personal-dps-runtime-effects-10r1";
+import { resolveReviewedPersonalDpsRuntimeBundle10R1 } from "@/data/personal-dps-runtime-reviewed-10r1";
 import { resolvePersonalDpsBuildPassives10R1 } from "@/data/personal-dps-build-passives-10r1";
 import type { PersonalDpsProfileV1, PersonalDpsRotationStepV1 } from "./personal-dps-engine";
 import { simulatePersonalCombat, type PersonalDiagnostic } from "./personal-combat-simulation";
@@ -249,7 +249,7 @@ export function simulatePersonalDpsBuildV1(
     throw new Error("Uncategorized damage is currently required to be trailing in a rotation.");
   }
 
-  const bundle = resolvePersonalDpsRuntimeBundle10R1(request.build);
+  const bundle = resolveReviewedPersonalDpsRuntimeBundle10R1(request.build);
   const permanentPassives = resolvePersonalDpsBuildPassives10R1(request.build);
   const actions = overlayActions(request.profile, bundle.actions);
   const resonator = runtimeResonator(request.resonator, actions, bundle.resources);
