@@ -5,6 +5,13 @@ import {
   sigillum,
   trailblazingStar,
 } from "./aemeath";
+import {
+  calcharo,
+  calcharoPreset,
+  lustrousRazor,
+  nightmareThunderingMephis,
+  voidThunder,
+} from "./calcharo";
 import type {
   MainEcho,
   RecommendedBuildPreset,
@@ -49,11 +56,13 @@ const withOptionalLocalUiPortrait = (resonator: Resonator): Resonator => {
     : resonator;
 };
 
+const rich10R1Ids = new Set(["aemeath", "calcharo", "chisa"]);
 const generated10R1Resonators = roster10R1PromotedResonators.filter(
-  (resonator) => resonator.id !== "aemeath" && resonator.id !== "chisa",
+  (resonator) => !rich10R1Ids.has(resonator.id),
 );
 const promotedResonators = [
   aemeath,
+  calcharo,
   ...generated10R1Resonators,
   chisa,
   verina,
@@ -73,12 +82,14 @@ export const resonators: readonly Resonator[] = [
   },
 ];
 
+const richWeaponIds = new Set(["everbright-polestar", "lustrous-razor", "kumokiri"]);
 const generated10R1Weapons = roster10R1PromotedWeapons.filter(
-  (weapon) => weapon.id !== "everbright-polestar" && weapon.id !== "kumokiri",
+  (weapon) => !richWeaponIds.has(weapon.id),
 );
 
 export const weapons: readonly Weapon[] = [
   everbrightPolestar,
+  lustrousRazor,
   ...generated10R1Weapons,
   kumokiri,
   variation,
@@ -93,6 +104,7 @@ export const weapons: readonly Weapon[] = [
 
 export const sonatas: readonly Sonata[] = [
   trailblazingStar,
+  voidThunder,
   threadOfSeveredFate,
   rejuvenatingGlow,
   { id: "fixture-sonata", name: "Sonata à renseigner", source: fixtureSource },
@@ -100,6 +112,7 @@ export const sonatas: readonly Sonata[] = [
 
 export const mainEchoes: readonly MainEcho[] = [
   sigillum,
+  nightmareThunderingMephis,
   threnodianLeviathan,
   fallacyOfNoReturn,
   {
@@ -166,6 +179,7 @@ const fixturePreset: RecommendedBuildPreset = {
 
 export const presets: readonly RecommendedBuildPreset[] = [
   aemeathPreset,
+  calcharoPreset,
   ...roster10R1BaselinePresets,
   chisaPreset,
   verinaPreset,
