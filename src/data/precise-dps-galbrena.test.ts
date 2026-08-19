@@ -66,6 +66,7 @@ describe("Galbrena precise DPS runtime", () => {
     for (const id of [GALBRENA.basic4, GALBRENA.liberation, GALBRENA.seraphic4, GALBRENA.seraphic5, GALBRENA.flamewing3]) {
       expect(action(id).damageType).toBe("echoSkill");
     }
+    expect(action(GALBRENA.outro).damageType).toBe("outroSkill");
     expect(action(GALBRENA.outro).multipliers).toEqual([
       { percent: 79.5, hits: 3 },
       { percent: 556.5, hits: 1 },
@@ -92,15 +93,16 @@ describe("Galbrena precise DPS runtime", () => {
     expect(simulation.finalState.actors.galbrena?.resources.afterflame?.current).toBe(0);
   });
 
-  it("applies Burning Drive as +20% ATK at S0 and +90% total at S2", () => {
-    const s0 = run(0).simulation;
-    const s2 = run(2).simulation;
-    const s0Audit = s0.audits.find((entry) => entry.actionId === GALBRENA.ascent)!;
-    const s2Audit = s2.audits.find((entry) => entry.actionId === GALBRENA.ascent)!;
-    expect(s0Audit.effectiveStats.attack).toBeGreaterThan(stats.attack);
-    expect(s2Audit.effectiveStats.attack).toBeGreaterThan(s0Audit.effectiveStats.attack);
-    const baseAttack = s0Audit.effectiveStats.attack / 1.2;
-    expect(s2Audit.effectiveStats.attack).toBeCloseTo(baseAttack * 1.9, 6);
+  it("applies Burning Drive as +20% Base ATK at S0 and +90% Base ATK total at S2", () => {
+    const s0 = run(0);
+    const s2 = run(2);
+    const baseAttack =
+      (s0.resonator.baseStats?.[0]?.attack ?? 0) +
+      (s0.weapon.level90Stats?.baseAttack ?? 0);
+    const s0Audit = s0.simulation.audits.find((entry) => entry.actionId === GALBRENA.ascent)!;
+    const s2Audit = s2.simulation.audits.find((entry) => entry.actionId === GALBRENA.ascent)!;
+    expect(s0Audit.effectiveStats.attack).toBeCloseTo(stats.attack + baseAttack * 0.2, 6);
+    expect(s2Audit.effectiveStats.attack).toBeCloseTo(stats.attack + baseAttack * 0.9, 6);
   });
 
   it("applies S3/S5/S6 motion-value rules and S6 Eternal form path", () => {
@@ -110,7 +112,7 @@ describe("Galbrena precise DPS runtime", () => {
     expect(s3.audits.find((entry) => entry.actionId === GALBRENA.liberation)?.motionValueContributions.some((entry) => entry.value === 130)).toBe(true);
     expect(s5.audits.find((entry) => entry.actionId === GALBRENA.ascent)?.motionValueContributions.some((entry) => entry.value === 150)).toBe(true);
     expect(s6.audits.find((entry) => entry.actionId === GALBRENA.seraphic4)?.motionValueContributions.some((entry) => entry.value === 60)).toBe(true);
-    expect(s6.stateTransitions.some((entry) => entry.kind === "form-change" && entry.detail === "Eternal Hypostasis")).toBe(true);
+    expect(s6.stateTransitions.some((entry) => entry.kind === "change-form" && entry.detail === "Eternal Hypostasis")).toBe(true);
   });
 
   it("normalizes Lux & Umbra R1 dual-window DEF Ignore to 0.08", () => {
