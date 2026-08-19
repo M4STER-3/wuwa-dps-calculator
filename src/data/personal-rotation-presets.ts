@@ -1,5 +1,5 @@
 import type { CombatEventKind, EffectDefinition } from "@/domain/effect-models";
-import type { Sequence } from "@/domain/models";
+import type { CombatAction, Sequence } from "@/domain/models";
 import type { TheoreticalRotationPreset } from "@/domain/theoretical-rotation";
 
 export interface RotationEventAnchor {
@@ -39,8 +39,28 @@ export interface PersonalRotationScenario {
   assumeLegacyRequirementsSatisfied?: boolean;
   specialEvents?: readonly RotationSpecialEventPreset[];
   extraEffects?: readonly EffectDefinition[];
+  /** Formula-only virtual actions are data, not character branches in the runner. */
+  extraActions?: readonly CombatAction[];
   notes: readonly string[];
 }
+
+const scenarioSource = {
+  kind: "community-calculation" as const,
+  source: "WUWA LAB theoretical rotation scenario",
+  notes: "Scenario-owned assumption; formula data remains independent.",
+};
+const unknown = () => ({ value: null, confidence: "unknown" as const });
+const virtualAction = (id: string, name: string): CombatAction => ({
+  id,
+  name,
+  talent: "forteCircuit",
+  level: 10,
+  multipliers: [],
+  castDurationSeconds: unknown(),
+  recoverySeconds: unknown(),
+  hitTimingsSeconds: unknown(),
+  source: scenarioSource,
+});
 
 const aemeathSteps: TheoreticalRotationPreset["steps"] = [
   { actionId: "intro-mech" },
@@ -69,10 +89,6 @@ const aemeathModeApplications = (kind: "tune-rupture" | "fusion-burst") =>
     anchor: { stepIndex, at: "end" as const, offsetSeconds: 0.001 },
     payload: { noDamage: true, applicationOnly: true },
   }));
-
-const tuneRepeatMultipliers = [0, 20, 40, 60, 80, 100, 100, 100, 100, 100].map(
-  (tuneMultiplierPercent) => ({ tuneMultiplierPercent }),
-);
 
 const aemeathInstantResponseScenario: EffectDefinition = {
   id: "scenario-aemeath-instant-response-heavy",
@@ -114,6 +130,127 @@ const aemeathInstantResponseScenario: EffectDefinition = {
   ],
 };
 
+const tuneTrailEffect = (
+  id: string,
+  triggerActionId: string,
+  baseRelativePercent: number,
+  s6ExtraRelativePercent: number,
+): EffectDefinition => ({
+  id,
+  label: `${id} Rupturous Trail multiplier`,
+  source: { id: "scenario-aemeath-tune", type: "system", label: "Aemeath Tune scenario" },
+  target: "self",
+  activationPolicy: "triggered",
+  lifecycle: {
+    duration: { kind: "fixed", seconds: 2.5 },
+    refresh: "reset-duration",
+    uniqueness: "refresh-existing",
+  },
+  rules: [
+    {
+      id: `${id}-base`,
+      label: `Rupturous Trail +${baseRelativePercent}% MV`,
+      accounting: "runtime",
+      selectors: [{ kind: "action-id", anyOf: ["seraphic-bonus"] }],
+      modifiers: [
+        {
+          kind: "motion-value",
+          mode: "relative-additive",
+          stacking: "additive",
+          value: { kind: "constant", value: baseRelativePercent },
+        },
+      ],
+    },
+    {
+      id: `${id}-s6-extra`,
+      label: `S6 doubled Trail +${s6ExtraRelativePercent}% MV`,
+      accounting: "runtime",
+      requiredSequence: 6,
+      selectors: [{ kind: "action-id", anyOf: ["seraphic-bonus"] }],
+      modifiers: [
+        {
+          kind: "motion-value",
+          mode: "relative-additive",
+          stacking: "additive",
+          value: { kind: "constant", value: s6ExtraRelativePercent },
+        },
+      ],
+    },
+  ],
+  triggers: [
+    {
+      id: `${id}-activate`,
+      event: "action-end",
+      predicates: [{ kind: "identity", field: "actionId", anyOf: [triggerActionId] }],
+      operations: [{ kind: "activate-effect", effectId: id }],
+    },
+  ],
+});
+
+const aemeathTuneS2Progressive: EffectDefinition = {
+  id: "scenario-aemeath-tune-s2-progressive",
+  label: "Aemeath S2 progressive Seraphic Tune multiplier",
+  source: { id: "scenario-aemeath-tune", type: "system", label: "Aemeath Tune scenario" },
+  target: "self",
+  activationPolicy: "triggered",
+  lifecycle: {
+    duration: { kind: "fixed", seconds: 1 },
+    uniqueness: "refresh-existing",
+    stacks: { kind: "shared", max: 5, initial: 0 },
+  },
+  rules: [
+    {
+      id: "aemeath-s2-progressive-multiplier",
+      label: "+20% multiplicative MV per previous Seraphic Tune instance",
+      accounting: "runtime",
+      requiredSequence: 2,
+      selectors: [{ kind: "action-id", anyOf: ["seraphic-bonus"] }],
+      modifiers: [
+        {
+          kind: "motion-value",
+          mode: "multiplier",
+          stacking: "override",
+          value: {
+            kind: "add",
+            values: [
+              { kind: "constant", value: 100 },
+              {
+                kind: "multiply",
+                values: [{ kind: "stacks" }, { kind: "constant", value: 20 }],
+              },
+            ],
+          },
+        },
+      ],
+    },
+  ],
+  triggers: [
+    {
+      id: "aemeath-s2-reset-on-seraphic",
+      event: "action-end",
+      predicates: [
+        { kind: "identity", field: "actionId", anyOf: ["seraphic-encore", "seraphic-overture"] },
+      ],
+      operations: [
+        { kind: "expire-effect", effectId: "scenario-aemeath-tune-s2-progressive" },
+        { kind: "activate-effect", effectId: "scenario-aemeath-tune-s2-progressive" },
+      ],
+    },
+    {
+      id: "aemeath-s2-gain-after-instance",
+      event: "damage-dealt",
+      predicates: [{ kind: "identity", field: "actionId", anyOf: ["seraphic-bonus"] }],
+      operations: [
+        {
+          kind: "gain-stacks",
+          effectId: "scenario-aemeath-tune-s2-progressive",
+          amount: { kind: "constant", value: 1 },
+        },
+      ],
+    },
+  ],
+};
+
 const aemeathTune: PersonalRotationScenario = {
   id: "aemeath-tune-theoretical-v1",
   resonatorId: "aemeath",
@@ -121,7 +258,13 @@ const aemeathTune: PersonalRotationScenario = {
   resonanceMode: "tune-rupture",
   rotation: { id: "aemeath-tune-theoretical-v1", name: "Aemeath Tune Rupture", steps: aemeathSteps },
   assumeLegacyRequirementsSatisfied: true,
-  extraEffects: [aemeathInstantResponseScenario],
+  extraActions: [virtualAction("aemeath-tune-break", "Tune Break")],
+  extraEffects: [
+    aemeathInstantResponseScenario,
+    tuneTrailEffect("scenario-aemeath-tune-encore-trail", "seraphic-encore", 120, 120),
+    tuneTrailEffect("scenario-aemeath-tune-overture-trail", "seraphic-overture", 80, 120),
+    aemeathTuneS2Progressive,
+  ],
   specialEvents: [
     ...aemeathModeApplications("tune-rupture"),
     {
@@ -142,11 +285,6 @@ const aemeathTune: PersonalRotationScenario = {
       actionId: "seraphic-bonus",
       repeat: 10,
       anchor: { stepIndex: 8, at: "end", offsetSeconds: 0.002 },
-      payload: { additionalTuneAmpPercent: 120 },
-      sequenceOverrides: [
-        { minimumSequence: 2, payloadByRepeat: tuneRepeatMultipliers },
-        { minimumSequence: 6, payload: { additionalTuneAmpPercent: 240 }, payloadByRepeat: tuneRepeatMultipliers },
-      ],
     },
     {
       id: "aemeath-seraphic-overture-bonus",
@@ -154,17 +292,12 @@ const aemeathTune: PersonalRotationScenario = {
       actionId: "seraphic-bonus",
       repeat: 10,
       anchor: { stepIndex: 12, at: "end", offsetSeconds: 0.002 },
-      payload: { additionalTuneAmpPercent: 80 },
-      sequenceOverrides: [
-        { minimumSequence: 2, payloadByRepeat: tuneRepeatMultipliers },
-        { minimumSequence: 6, payload: { additionalTuneAmpPercent: 200 }, payloadByRepeat: tuneRepeatMultipliers },
-      ],
     },
   ],
   notes: [
     "All durations and hit positions use the shared WUWA LAB theoretical timing profiles.",
     "Rupturous Trail uses a deterministic single-target personal scenario: 30 removed before Encore and 20 before Overture at S0-S5; S6 uses the doubled/cap-60 rules plus the verified Seraphic application.",
-    "Stardust Resonance uses 10 Seraphic Tune Rupture instances per enhanced Seraphic cast. S2's progressive +20% multiplier is expressed by repeat payloads.",
+    "Stardust Resonance uses 10 Seraphic Tune Rupture instances per enhanced Seraphic cast. S2 stacks are driven by damage events and use a separate MV multiplier layer.",
   ],
 };
 
@@ -292,7 +425,7 @@ const chisa: PersonalRotationScenario = {
       actionId: "chisa-s1-fixed-snare-damage",
       anchor: { stepIndex: 3, at: "end", offsetSeconds: 0.002 },
       minimumSequence: 1,
-      payload: { fixedDamageAmount: 61803 },
+      payload: { fixedDamageAmount: 61803, fixedDamageType: "basicAttack" },
     },
   ],
   notes: [
