@@ -72,7 +72,8 @@ export const roster10R1PromotedWeapons: readonly Weapon[] =
     if (!owner) {
       throw new Error(`Missing reviewed owner for signature weapon ${entry.id}`);
     }
-    const combat = generatedCharacterBoxCombat10R1[owner.id];
+    const ownerId = owner.id as keyof typeof generatedCharacterBoxCombat10R1;
+    const combat = generatedCharacterBoxCombat10R1[ownerId];
     return {
       id: entry.id,
       name: entry.name,
