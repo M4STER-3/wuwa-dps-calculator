@@ -28,6 +28,8 @@ const createBuild = (preset = aemeathPreset, index = 0) =>
 describe("Character Box", () => {
   it("crée une copie indépendante depuis un preset", () => {
     const preset = aemeathPreset;
+    const originalAttack = preset.finalStats.attack;
+    const originalFusion = preset.finalStats.elementalDamageBonus.fusion;
     const build = createBuild();
     build.skillLevels.basicAttack = 8;
     build.weapon.level = 90;
@@ -35,8 +37,8 @@ describe("Character Box", () => {
     build.finalStats.elementalDamageBonus.fusion = 55;
     expect(preset.skillLevels.basicAttack).toBe(10);
     expect(preset.weapon.level).toBe(90);
-    expect(preset.finalStats.attack).toBe(2000);
-    expect(preset.finalStats.elementalDamageBonus.fusion).toBe(40);
+    expect(preset.finalStats.attack).toBe(originalAttack);
+    expect(preset.finalStats.elementalDamageBonus.fusion).toBe(originalFusion);
   });
 
   it("copie et sanitise génériquement un Echo loadout de preset", () => {
@@ -75,6 +77,7 @@ describe("Character Box", () => {
   });
 
   it("réinitialise avec une nouvelle copie tout en conservant la création", () => {
+    const presetAttack = aemeathPreset.finalStats.attack;
     const edited = {
       ...createBuild(),
       characterLevel: 90,
@@ -82,11 +85,11 @@ describe("Character Box", () => {
     };
     const reset = resetBuild(edited, aemeathPreset, "2026-08-16T00:00:00.000Z");
     expect(reset.characterLevel).toBe(90);
-    expect(reset.finalStats.attack).toBe(2000);
+    expect(reset.finalStats.attack).toBe(presetAttack);
     expect(reset.createdAt).toBe(edited.createdAt);
     expect(reset.updatedAt).toBe("2026-08-16T00:00:00.000Z");
     reset.finalStats.attack = 1;
-    expect(aemeathPreset.finalStats.attack).toBe(2000);
+    expect(aemeathPreset.finalStats.attack).toBe(presetAttack);
   });
 
   it("valide uniquement les Sequences S0 à S6", () => {
