@@ -1,6 +1,12 @@
 import type { Resonator, Weapon } from "@/domain/models";
 import { applyPreciseDeniaMechanics } from "./precise-dps-denia";
 import { preciseDpsFutureResonators, preciseDpsFutureWeapons } from "./precise-dps-future";
+import {
+  applyPreciseGalbrenaActionPatches,
+  applyPreciseGalbrenaMechanics,
+  applyPreciseGalbrenaWeaponMechanics,
+} from "./precise-dps-galbrena";
+import { applyGalbrenaReferenceDuration } from "./precise-dps-galbrena-scenario";
 import { applyPreciseInitialStateAnchors } from "./precise-dps-initial-state-anchors";
 import {
   applyPreciseJinhsiMechanics,
@@ -41,6 +47,26 @@ const phrolovaRatioPatches: readonly RatioPercentRulePatch[] = [
   },
 ];
 
+const galbrenaRatioPatches: readonly RatioPercentRulePatch[] = [
+  {
+    effectId: "precise-lux-umbra-both-windows",
+    ruleId: "lux-umbra-defense-ignore",
+    kind: "defense-ignore",
+  },
+];
+
+function applyGalbrenaLoadoutMechanics(resonator: Resonator): Resonator {
+  if (resonator.id !== "galbrena" || !resonator.combat) return resonator;
+  const withActions: Resonator = {
+    ...resonator,
+    combat: {
+      ...resonator.combat,
+      actions: applyPreciseGalbrenaActionPatches(resonator.combat.actions),
+    },
+  };
+  return applyGalbrenaReferenceDuration(applyPreciseGalbrenaMechanics(withActions));
+}
+
 export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutureResonators.map(
   (resonator) =>
     applyPreciseInitialStateAnchors(
@@ -49,9 +75,11 @@ export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutur
           applyPrecisePhrolovaAftersoundMechanics(
             applyPrecisePhrolovaTeamCycleMechanics(
               applyPrecisePhrolovaMechanics(
-                applyPreciseQiuyuanMechanics(
-                  applyPreciseJinhsiMechanics(
-                    applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+                applyGalbrenaLoadoutMechanics(
+                  applyPreciseQiuyuanMechanics(
+                    applyPreciseJinhsiMechanics(
+                      applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+                    ),
                   ),
                 ),
               ),
@@ -70,9 +98,12 @@ export const preciseDpsLoadoutWeapons: readonly PreciseDpsLoadoutWeapon[] = prec
   const jinhsiWeapon = applyPreciseJinhsiWeaponMechanics(resonator.id, genericWeapon);
   const qiuyuanWeapon = applyPreciseQiuyuanWeaponMechanics(resonator.id, jinhsiWeapon);
   const phrolovaWeapon = applyPrecisePhrolovaWeaponMechanics(resonator.id, qiuyuanWeapon);
+  const galbrenaWeapon = applyPreciseGalbrenaWeaponMechanics(resonator.id, phrolovaWeapon);
   const ratioNormalizedWeapon = resonator.id === "phrolova"
-    ? normalizeExplicitWeaponRatioPercentRules(phrolovaWeapon, phrolovaRatioPatches)
-    : phrolovaWeapon;
+    ? normalizeExplicitWeaponRatioPercentRules(galbrenaWeapon, phrolovaRatioPatches)
+    : resonator.id === "galbrena"
+      ? normalizeExplicitWeaponRatioPercentRules(galbrenaWeapon, galbrenaRatioPatches)
+      : galbrenaWeapon;
   return {
     resonatorId: resonator.id,
     weapon: applyPreciseShorekeeperWeaponMechanics(resonator.id, ratioNormalizedWeapon),
