@@ -1,4 +1,4 @@
-import type { CombatEffect, Sonata, Weapon } from "@/domain/models";
+import type { CombatAction, CombatEffect, Sonata, Weapon } from "@/domain/models";
 import type { EffectDefinition } from "@/domain/effect-models";
 import {
   aemeath as baseAemeath,
@@ -30,6 +30,22 @@ const wrap = (definition: EffectDefinition, description: string): CombatEffect =
   structuredEffect: definition,
   source: aemeathGameSource,
 });
+
+const unknown = () => ({ value: null, confidence: "unknown" as const });
+export const aemeathFusionBurstAction: CombatAction = {
+  id: "aemeath-fusion-burst",
+  name: "Fusion Burst",
+  talent: "forteCircuit",
+  level: 10,
+  multipliers: [],
+  castDurationSeconds: unknown(),
+  recoverySeconds: unknown(),
+  hitTimingsSeconds: unknown(),
+  notes: [
+    "Negative Status damage is level-constant based; stack count and Aemeath multiplier increases are carried by the emitted combat event.",
+  ],
+  source: aemeathGameSource,
+};
 
 const sequenceRuntime: EffectDefinition = {
   id: "aemeath-sequence-personal-runtime",
@@ -101,14 +117,14 @@ const sequenceRuntime: EffectDefinition = {
       ],
     },
     {
-      id: "aemeath-s6-tune-fixed-crit",
-      label: "S6 Tune Rupture fixed Crit",
+      id: "aemeath-s6-mode-fixed-crit",
+      label: "S6 Tune Rupture / Fusion Burst fixed Crit",
       accounting: "runtime",
       requiredSequence: 6,
       selectors: [
         {
           kind: "action-id",
-          anyOf: ["starburst", "seraphic-bonus"],
+          anyOf: ["starburst", "seraphic-bonus", "aemeath-fusion-burst"],
         },
       ],
       modifiers: [
@@ -302,7 +318,11 @@ export const aemeathEffects: readonly CombatEffect[] = [
 export const aemeath = {
   ...baseAemeath,
   combat: baseAemeath.combat
-    ? { ...baseAemeath.combat, effects: aemeathEffects }
+    ? {
+        ...baseAemeath.combat,
+        actions: [...baseAemeath.combat.actions, aemeathFusionBurstAction],
+        effects: aemeathEffects,
+      }
     : undefined,
 };
 
