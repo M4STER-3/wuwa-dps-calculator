@@ -4,6 +4,7 @@ import {
   calculateActionLab,
   DEFAULT_LAB_TARGET,
   resolvePersonalLoadout,
+  simulateRotationLab,
 } from "@/domain/personal-dps-lab";
 import { presets, resonators, weapons } from "./catalog";
 
@@ -62,6 +63,28 @@ describe("universal 10R1 combat projection", () => {
         target: DEFAULT_LAB_TARGET,
       });
       expect(result?.damage.status, resonatorId).toBe("supported");
+    }
+  });
+
+  it("calculates a positive personal DPS rotation for every generated Resonator", () => {
+    for (const resonatorId of projectedIds) {
+      const preset = presets.find((entry) => entry.resonatorId === resonatorId)!;
+      const build = createBuildFromPreset(preset, {
+        id: `rotation-${resonatorId}`,
+        now: "2026-08-19T00:00:00.000Z",
+      });
+      const loadout = resolvePersonalLoadout(build);
+      const rotation = simulateRotationLab(
+        loadout,
+        build.finalStats,
+        DEFAULT_LAB_TARGET,
+      );
+
+      expect(rotation, resonatorId).toBeDefined();
+      expect(rotation!.rotationDurationSeconds, resonatorId).toBeGreaterThan(0);
+      expect(rotation!.personalDamage.expected, resonatorId).toBeGreaterThan(0);
+      expect(rotation!.personalDps.expected, resonatorId).toBeGreaterThan(0);
+      expect(rotation!.coverage.directDamageActions, resonatorId).toBeGreaterThan(0);
     }
   });
 
