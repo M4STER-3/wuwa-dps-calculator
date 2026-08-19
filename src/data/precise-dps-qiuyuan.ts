@@ -329,7 +329,7 @@ const sequencePassives: EffectDefinition = {
       label: "S5 · ignore 15% target DEF",
       accounting: "runtime",
       requiredSequence: 5,
-      modifiers: [{ kind: "defense-ignore", stacking: "additive", value: 15 }],
+      modifiers: [{ kind: "defense-ignore", stacking: "additive", value: 0.15 }],
     },
   ],
 };
