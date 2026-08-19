@@ -13,6 +13,7 @@ import {
   applyPreciseSpecialActionPatches,
   preciseScenarioMechanicsFor,
 } from "./precise-dps-special-mechanics";
+import rawActionPins from "./precise-dps-action-pins.json";
 import rawRegistry from "./precise-dps-future-registry.json";
 
 type ProjectedAction = CombatAction & {
@@ -68,9 +69,45 @@ type Registry = {
   entries: readonly RegistryEntry[];
 };
 
+type ActionPin = {
+  resonatorId: string;
+  scenarioId: string;
+  stepIndex: number;
+  sourceAttributeId: string;
+};
+
+type ActionPinRegistry = {
+  version: 1;
+  pins: readonly ActionPin[];
+};
+
 const registry = rawRegistry as Registry;
 if (registry.version !== 1) {
   throw new Error("Precise DPS future registry: unsupported version.");
+}
+
+const actionPinRegistry = rawActionPins as ActionPinRegistry;
+if (actionPinRegistry.version !== 1 || !Array.isArray(actionPinRegistry.pins)) {
+  throw new Error("Precise DPS action pins: unsupported version or invalid pins.");
+}
+const actionPins = new Map<string, ActionPin>();
+for (const pin of actionPinRegistry.pins) {
+  if (
+    !pin ||
+    typeof pin.resonatorId !== "string" ||
+    typeof pin.scenarioId !== "string" ||
+    !Number.isInteger(pin.stepIndex) ||
+    pin.stepIndex < 0 ||
+    typeof pin.sourceAttributeId !== "string" ||
+    !pin.sourceAttributeId
+  ) {
+    throw new Error("Precise DPS action pins: invalid pin entry.");
+  }
+  const key = `${pin.resonatorId}:${pin.scenarioId}:${pin.stepIndex}`;
+  if (actionPins.has(key)) {
+    throw new Error(`Precise DPS action pins: duplicate pin ${key}.`);
+  }
+  actionPins.set(key, pin);
 }
 
 const normalize = (value: string): string =>
@@ -134,6 +171,30 @@ function resolveAction(
   actions: readonly ProjectedAction[],
   selector: ActionSelector,
 ): ProjectedAction {
+  const pin = actionPins.get(`${resonatorId}:${scenarioId}:${stepIndex}`);
+  if (pin) {
+    if (selector.sourceAttributeId && selector.sourceAttributeId !== pin.sourceAttributeId) {
+      throw new Error(
+        `Precise DPS ${resonatorId}/${scenarioId} step ${stepIndex} conflicts with pinned attribute ${pin.sourceAttributeId}.`,
+      );
+    }
+    const pinned = actions.filter(
+      (action) => action.sourceAttributeId === pin.sourceAttributeId,
+    );
+    if (pinned.length !== 1) {
+      throw new Error(
+        `Precise DPS ${resonatorId}/${scenarioId} step ${stepIndex} pin ${pin.sourceAttributeId} resolves to ${pinned.length} actions.`,
+      );
+    }
+    const action = pinned[0];
+    if (selector.talent && action.talent !== selector.talent) {
+      throw new Error(
+        `Precise DPS ${resonatorId}/${scenarioId} step ${stepIndex} pin ${pin.sourceAttributeId} has talent ${action.talent}, expected ${selector.talent}.`,
+      );
+    }
+    return action;
+  }
+
   const matches = actions.filter((action) => matchesSelector(action, selector));
   if (matches.length !== 1) {
     const nearby = actions
