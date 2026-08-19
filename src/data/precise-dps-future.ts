@@ -164,6 +164,15 @@ function normalizeRecipeStep(raw: unknown, label: string): RecipeStep {
   return { label: input.label, ...(repeat ? { repeat } : {}), ...(profileId ? { profileId } : {}) };
 }
 
+function actionInventory(actions: readonly ProjectedAction[]): string {
+  return actions
+    .slice(0, 160)
+    .map((action) =>
+      `${action.sourceAttributeId ?? action.id}:${action.talent}:${action.sourceSkillName ?? "?"} > ${action.name}`,
+    )
+    .join(" | ");
+}
+
 function resolveAction(
   resonatorId: string,
   scenarioId: string,
@@ -183,7 +192,7 @@ function resolveAction(
     );
     if (pinned.length !== 1) {
       throw new Error(
-        `Precise DPS ${resonatorId}/${scenarioId} step ${stepIndex} pin ${pin.sourceAttributeId} resolves to ${pinned.length} actions.`,
+        `Precise DPS ${resonatorId}/${scenarioId} step ${stepIndex} pin ${pin.sourceAttributeId} resolves to ${pinned.length} actions. Inventory: ${actionInventory(actions)}`,
       );
     }
     const action = pinned[0];
@@ -197,15 +206,8 @@ function resolveAction(
 
   const matches = actions.filter((action) => matchesSelector(action, selector));
   if (matches.length !== 1) {
-    const nearby = actions
-      .filter((action) =>
-        selector.talent === undefined || action.talent === selector.talent,
-      )
-      .slice(0, 80)
-      .map((action) => `${action.sourceAttributeId ?? action.id}:${action.sourceSkillName ?? "?"} > ${action.name}`)
-      .join(" | ");
     throw new Error(
-      `Precise DPS ${resonatorId}/${scenarioId} step ${stepIndex} resolves to ${matches.length} actions. Candidates: ${nearby}`,
+      `Precise DPS ${resonatorId}/${scenarioId} step ${stepIndex} resolves to ${matches.length} actions. Inventory: ${actionInventory(actions)}`,
     );
   }
   return matches[0];
