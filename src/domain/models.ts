@@ -265,3 +265,52 @@ export interface FinalStats {
   elementalDamageBonus: Record<Element, number>;
   damageTypeBonus: Record<(typeof damageBonusTypes)[number], number>;
 }
+
+export interface RecommendedBuildPreset {
+  id: string;
+  resonatorId: string;
+  label: string;
+  role?: string;
+  characterLevel: number;
+  sequence: Sequence;
+  skillLevels: Record<SkillType, number>;
+  progression?: { inherentSkillsUnlocked: boolean; minorFortesUnlocked: boolean };
+  weapon: { weaponId: string; level: number; rank: number };
+  finalStats: FinalStats;
+  recommendedTargets?: Readonly<
+    Partial<Record<keyof Omit<FinalStats, "elementalDamageBonus" | "damageTypeBonus">, {
+      minimum: number;
+      maximum?: number;
+    }>> & {
+      elementalDamageBonus?: Partial<Record<Element, { minimum: number; maximum?: number }>>;
+    }
+  >;
+  /** Exact five-Echo recommendation input. It is upstream build data, never a second runtime stat source. */
+  echoLoadout?: import("./user-echo-loadout").UserEchoLoadoutV1;
+  sonataId?: string;
+  mainEchoId?: string;
+  notes: readonly string[];
+  source: SourceMetadata;
+}
+
+export interface UserBuild {
+  id: string;
+  resonatorId: string;
+  sourcePresetId: string;
+  characterLevel: number;
+  sequence: Sequence;
+  skillLevels: Record<SkillType, number>;
+  weapon: { weaponId: string; level: number; rank: number };
+  finalStats: FinalStats;
+  /** Detailed persisted five-Echo equipment input; not a second permanent-stat source. */
+  echoLoadout?: import("./user-echo-loadout").UserEchoLoadoutV1;
+  sonataId?: string;
+  mainEchoId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CharacterBox {
+  schemaVersion: 1;
+  builds: UserBuild[];
+}
