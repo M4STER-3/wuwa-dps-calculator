@@ -20,16 +20,16 @@ describe("Personal DPS Lab with real Aemeath data", () => {
     expect(result?.damage).toEqual(calculateActionDamage({ action: loadout.actions[0], finalStats: build.finalStats, attackerLevel: 90, scalingAttribute: "attack", element: "fusion", target: DEFAULT_LAB_TARGET }));
   });
 
-  it("does not runtime-count permanent equipment and applies conditional overrides only manually", () => {
+  it("keeps non-panel permanent bonuses explicit and applies conditional overrides only when active", () => {
     const loadout = resolvePersonalLoadout(build);
     const baseline = calculateActionLab({ loadout, actionId: "overdrive", stats: build.finalStats, target: DEFAULT_LAB_TARGET })!;
-    const everbright = calculateActionLab({ loadout, actionId: "overdrive", stats: build.finalStats, target: DEFAULT_LAB_TARGET, manualEffectIds: ["everbright-r1-base", "sigillum-main-aemeath", "trailblazing-2pc", "everbright-r1-liberation"] })!;
-    expect(isStandardDamage(baseline.damage) && isStandardDamage(everbright.damage)).toBe(true);
-    if (isStandardDamage(baseline.damage) && isStandardDamage(everbright.damage)) {
-      expect(everbright.damage.allDamageBonusPercent).toBe(0);
-      expect(everbright.damage.defenseIgnore).toBeCloseTo(0.32);
-      expect(everbright.damage.resistanceIgnore).toBeCloseTo(0.1);
-      expect(everbright.damage.total.expected).toBeGreaterThan(baseline.damage.total.expected);
+    const equipped = calculateActionLab({ loadout, actionId: "overdrive", stats: build.finalStats, target: DEFAULT_LAB_TARGET, manualEffectIds: ["everbright-r1-base", "sigillum-main-aemeath", "trailblazing-2pc", "everbright-r1-liberation"] })!;
+    expect(isStandardDamage(baseline.damage) && isStandardDamage(equipped.damage)).toBe(true);
+    if (isStandardDamage(baseline.damage) && isStandardDamage(equipped.damage)) {
+      expect(equipped.damage.allDamageBonusPercent).toBe(12);
+      expect(equipped.damage.defenseIgnore).toBeCloseTo(0.32);
+      expect(equipped.damage.resistanceIgnore).toBeCloseTo(0.1);
+      expect(equipped.damage.total.expected).toBeGreaterThan(baseline.damage.total.expected);
     }
   });
 
