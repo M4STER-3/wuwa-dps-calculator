@@ -103,6 +103,11 @@ export function buildTheoreticalRotationTimeline(
     }
     const profileId =
       step.profileId ?? (action ? inferTheoreticalProfile(action) : "very-short");
+    if (!Object.prototype.hasOwnProperty.call(temporalProfilesV01, profileId)) {
+      throw new Error(
+        `Theoretical rotation ${preset.id} step ${stepIndex} references unsupported temporal profile ${String(profileId)}.`,
+      );
+    }
     return Array.from({ length: repeat }, (_, repeatIndex) => ({
       id: `${preset.id}:${stepIndex}:${repeatIndex}:${action?.id ?? "transition"}`,
       label: step.label ?? action!.name,
