@@ -16,6 +16,10 @@ import {
   applyPreciseQiuyuanMechanics,
   applyPreciseQiuyuanWeaponMechanics,
 } from "./precise-dps-qiuyuan";
+import {
+  normalizeExplicitWeaponRatioPercentRules,
+  type RatioPercentRulePatch,
+} from "./precise-dps-ratio-units";
 import { applyPreciseResourceMechanics } from "./precise-dps-resource-mechanics";
 import {
   applyPreciseShorekeeperMechanics,
@@ -27,6 +31,14 @@ export type PreciseDpsLoadoutWeapon = {
   resonatorId: string;
   weapon: Weapon;
 };
+
+const phrolovaRatioPatches: readonly RatioPercentRulePatch[] = [
+  {
+    effectId: "precise-lethean-window",
+    ruleId: "lethean-defense-ignore",
+    kind: "defense-ignore",
+  },
+];
 
 export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutureResonators.map(
   (resonator) =>
@@ -55,9 +67,12 @@ export const preciseDpsLoadoutWeapons: readonly PreciseDpsLoadoutWeapon[] = prec
   const jinhsiWeapon = applyPreciseJinhsiWeaponMechanics(resonator.id, genericWeapon);
   const qiuyuanWeapon = applyPreciseQiuyuanWeaponMechanics(resonator.id, jinhsiWeapon);
   const phrolovaWeapon = applyPrecisePhrolovaWeaponMechanics(resonator.id, qiuyuanWeapon);
+  const ratioNormalizedWeapon = resonator.id === "phrolova"
+    ? normalizeExplicitWeaponRatioPercentRules(phrolovaWeapon, phrolovaRatioPatches)
+    : phrolovaWeapon;
   return {
     resonatorId: resonator.id,
-    weapon: applyPreciseShorekeeperWeaponMechanics(resonator.id, phrolovaWeapon),
+    weapon: applyPreciseShorekeeperWeaponMechanics(resonator.id, ratioNormalizedWeapon),
   };
 });
 
