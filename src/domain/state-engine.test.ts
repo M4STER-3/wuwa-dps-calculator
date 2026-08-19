@@ -11,5 +11,6 @@ describe("State Engine V0.1",()=>{
  it("produit des clés ICD déterministes",()=>{expect(cooldownKey("target",event,"q")).toBe("target:t:q");expect(cooldownKey("action-target",event,"q")).toBe("action-target:x:t:q");});
  it("clamp les ressources",()=>{expect(applyResource({current:4,max:5},"gain",10).current).toBe(5);expect(applyResource({current:2,max:5},"consume-up-to",9).current).toBe(0);});
  it("n'invente aucun hit timing",()=>{const r=timelineEvents([{stepId:"s",actionId:"x",startTimeSeconds:0,endTimeSeconds:1,hitTimingsSeconds:null}],"a","t");expect(r.events.some(e=>e.kind==="action-hit")).toBe(false);expect(r.missingHitTimings).toEqual(["s"]);});
+ it("ne traite pas une transition théorique comme un hit manquant",()=>{const r=timelineEvents([{stepId:"transition",startTimeSeconds:0,endTimeSeconds:.25,hitTimingsSeconds:null}],"a","t");expect(r.events.some(e=>e.kind==="action-hit")).toBe(false);expect(r.missingHitTimings).toEqual([]);});
  it("isole les owners",()=>{const s=emptyCombatState({a:{},b:{}},["t"]);const r=processEvent(s,{...event,ownerId:"b",actorId:"b"},[effect],{panelStats:panel});expect(r.state.activeEffects[0].ownerId).toBe("b");});
 });
