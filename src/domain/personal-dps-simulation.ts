@@ -46,7 +46,7 @@ export interface PersonalDpsSimulationRequestV1 {
   resonator: Resonator;
   build: UserBuild;
   rotationId: string;
-  target: DamageTarget;
+  target: DamageTarget & { id?: string };
   scalingAttribute?: ScalingAttribute;
 }
 
