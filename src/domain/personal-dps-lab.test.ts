@@ -36,7 +36,12 @@ describe("Personal DPS Lab with real Aemeath data", () => {
   it("treats the theoretical reference rotation as complete and observable", () => {
     const loadout = resolvePersonalLoadout(build);
     const result = simulateRotationLab(loadout, build.finalStats, DEFAULT_LAB_TARGET, "tune-rupture")!;
-    expect(result.partial).toBe(false);
+    const failureContext = JSON.stringify({
+      diagnostics: result.diagnostics,
+      unsupportedMechanics: result.unsupportedMechanics,
+      stateDiagnostics: result.stateDiagnostics,
+    });
+    expect(result.partial, failureContext).toBe(false);
     expect(result.rotationDurationSeconds).toBeCloseTo(11.69);
     expect(result.diagnostics.some((item) => item.code === "hit-timing-required")).toBe(false);
   });
