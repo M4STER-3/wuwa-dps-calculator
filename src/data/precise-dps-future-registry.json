@@ -181,9 +181,52 @@
       "name": "Jinhsi",
       "signatureWeaponName": "Ages of Harvest",
       "mechanicsStatus": "partial",
+      "combatModel": {
+        "forms": ["Normal State", "Incarnation", "Ordination Glow"],
+        "defaultForm": "Normal State",
+        "modes": [],
+        "resources": [
+          { "id": "incandescence", "name": "Incandescence", "cap": 50 }
+        ]
+      },
       "scenarios": [
-        { "id": "jinhsi-opener", "label": "Opener · Unison setup", "variant": "opener" },
-        { "id": "jinhsi-loop", "label": "Loop · Incarnation / Incandescence", "variant": "loop", "reviewedDurationSeconds": 10.2 }
+        {
+          "id": "jinhsi-opener",
+          "label": "Opener · Unison setup",
+          "variant": "opener",
+          "steps": [
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Basic Attack", "Stage 1"], "nameExcludes": ["Incarnation"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Basic Attack", "Stage 2"], "nameExcludes": ["Incarnation"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Basic Attack", "Stage 3"], "nameExcludes": ["Incarnation"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Basic Attack", "Stage 4"], "nameExcludes": ["Incarnation"] } },
+            { "selector": { "talent": "resonanceSkill", "sourceSkillNameIncludes": ["Overflowing Radiance"] } },
+            { "selector": { "talent": "resonanceLiberation", "sourceSkillNameIncludes": ["Purge of Light"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Incarnation", "Basic Attack", "Stage 1"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Incarnation", "Basic Attack", "Stage 2"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Incarnation", "Basic Attack", "Stage 3"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Incarnation", "Basic Attack", "Stage 4"] } },
+            { "selector": { "talent": "resonanceSkill", "sourceSkillNameIncludes": ["Illuminous Epiphany"] } },
+            { "label": "Outro / Unison handoff", "profileId": "outro" }
+          ]
+        },
+        {
+          "id": "jinhsi-loop",
+          "label": "Loop · Incarnation / Incandescence",
+          "variant": "loop",
+          "reviewedDurationSeconds": 10.2,
+          "steps": [
+            { "selector": { "talent": "introSkill", "sourceSkillNameIncludes": ["Loong's Halo"] } },
+            { "selector": { "talent": "resonanceSkill", "sourceSkillNameIncludes": ["Overflowing Radiance"] } },
+            { "selector": { "talent": "resonanceLiberation", "sourceSkillNameIncludes": ["Purge of Light"] } },
+            { "selector": { "talent": "resonanceSkill", "sourceSkillNameIncludes": ["Crescent Divinity"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Incarnation", "Basic Attack", "Stage 1"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Incarnation", "Basic Attack", "Stage 2"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Incarnation", "Basic Attack", "Stage 3"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Incarnation", "Basic Attack", "Stage 4"] } },
+            { "selector": { "talent": "resonanceSkill", "sourceSkillNameIncludes": ["Illuminous Epiphany"] } },
+            { "label": "Outro / Unison handoff", "profileId": "outro" }
+          ]
+        }
       ]
     },
     {
