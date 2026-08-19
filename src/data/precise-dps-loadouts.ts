@@ -1,6 +1,7 @@
 import type { Resonator, Weapon } from "@/domain/models";
 import { applyPreciseDeniaMechanics } from "./precise-dps-denia";
 import { preciseDpsFutureResonators, preciseDpsFutureWeapons } from "./precise-dps-future";
+import { applyPreciseInitialStateAnchors } from "./precise-dps-initial-state-anchors";
 import {
   applyPreciseJinhsiMechanics,
   applyPreciseJinhsiWeaponMechanics,
@@ -28,12 +29,14 @@ export type PreciseDpsLoadoutWeapon = {
 
 export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutureResonators.map(
   (resonator) =>
-    applyPreciseShorekeeperMechanics(
-      applyPrecisePhrolovaTeamCycleMechanics(
-        applyPrecisePhrolovaMechanics(
-          applyPreciseQiuyuanMechanics(
-            applyPreciseJinhsiMechanics(
-              applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+    applyPreciseInitialStateAnchors(
+      applyPreciseShorekeeperMechanics(
+        applyPrecisePhrolovaTeamCycleMechanics(
+          applyPrecisePhrolovaMechanics(
+            applyPreciseQiuyuanMechanics(
+              applyPreciseJinhsiMechanics(
+                applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+              ),
             ),
           ),
         ),
