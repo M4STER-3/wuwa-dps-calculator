@@ -187,7 +187,7 @@ const s4TeamSelf: EffectDefinition = {
 };
 
 const everbrightRuntime: EffectDefinition = {
-  id: "everbright-r1-liberation-runtime",
+  id: "everbright-r1-liberation",
   label: "Everbright Polestar R1 — Polestar",
   source: source("everbright-polestar", "weapon"),
   target: "self",
@@ -223,14 +223,14 @@ const everbrightRuntime: EffectDefinition = {
       id: "everbright-tune",
       event: "tune-rupture",
       operations: [
-        { kind: "activate-effect", effectId: "everbright-r1-liberation-runtime" },
+        { kind: "activate-effect", effectId: "everbright-r1-liberation" },
       ],
     },
     {
       id: "everbright-fusion",
       event: "fusion-burst",
       operations: [
-        { kind: "activate-effect", effectId: "everbright-r1-liberation-runtime" },
+        { kind: "activate-effect", effectId: "everbright-r1-liberation" },
       ],
     },
   ],
@@ -250,7 +250,7 @@ export const everbrightPolestar: Weapon = {
 };
 
 const trailblazingRuntime: EffectDefinition = {
-  id: "trailblazing-5pc-runtime",
+  id: "trailblazing-5pc",
   label: "Trailblazing Star 5-piece",
   source: source("trailblazing-star", "sonata"),
   target: "self",
@@ -283,14 +283,14 @@ const trailblazingRuntime: EffectDefinition = {
       id: "trailblazing-tune",
       event: "tune-rupture",
       operations: [
-        { kind: "activate-effect", effectId: "trailblazing-5pc-runtime" },
+        { kind: "activate-effect", effectId: "trailblazing-5pc" },
       ],
     },
     {
       id: "trailblazing-fusion",
       event: "fusion-burst",
       operations: [
-        { kind: "activate-effect", effectId: "trailblazing-5pc-runtime" },
+        { kind: "activate-effect", effectId: "trailblazing-5pc" },
       ],
     },
   ],
