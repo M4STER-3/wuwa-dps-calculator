@@ -2,7 +2,6 @@ import { generatedCommunityEchoPresets10R1 } from "@/generated/community-echo-pr
 
 type EchoLoadoutIdentity = {
   readonly echoes: readonly { readonly sonataSetId: string }[];
-  readonly mainEchoId?: string;
 };
 
 function requireFivePieceSonata(
@@ -20,36 +19,20 @@ function requireFivePieceSonata(
   return match;
 }
 
-function requireMainEcho(label: string, loadout: EchoLoadoutIdentity): string {
-  if (!loadout.mainEchoId) {
-    throw new Error(`${label} must resolve to a local Main Echo id.`);
-  }
-  return loadout.mainEchoId;
-}
-
 const aemeath = generatedCommunityEchoPresets10R1.aemeath.echoLoadout;
 const calcharo = generatedCommunityEchoPresets10R1.calcharo.echoLoadout;
 const changli = generatedCommunityEchoPresets10R1.changli.echoLoadout;
 
 /**
- * Local GameDatabase identities are derived from the same fail-closed community
- * projection that validates Echo/Sonata names. Runtime code never guesses ids.
+ * Local Sonata identities are derived from the same fail-closed community
+ * projection that validates every equipped Echo. Runtime code never guesses ids.
+ * Main-Echo passives remain permanent build materialization and are not inferred
+ * here when the saved loadout does not explicitly designate a Main Echo.
  */
 export const personalDpsRuntimeIdentities10R1 = {
   sonata: {
     trailblazingStar: requireFivePieceSonata("Trailblazing Star", aemeath),
     voidThunder: requireFivePieceSonata("Void Thunder", calcharo),
     moltenRift: requireFivePieceSonata("Molten Rift", changli),
-  },
-  mainEcho: {
-    sigillum: requireMainEcho("Sigillum", aemeath),
-    nightmareThunderingMephis: requireMainEcho(
-      "Nightmare: Thundering Mephis",
-      calcharo,
-    ),
-    nightmareInfernoRider: requireMainEcho(
-      "Nightmare: Inferno Rider",
-      changli,
-    ),
   },
 } as const;
