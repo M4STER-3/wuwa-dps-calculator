@@ -139,8 +139,11 @@ function inferDamageType(attributeName, sourceType) {
   return undefined;
 }
 function isDamageAttribute(name) {
-  return /\bDMG\b/i.test(name) &&
-    !/(?:DMG\s+Bonus|DMG\s+Amplification|DMG\s+Amp|DMG\s+Increase|DMG\s+Multiplier|Crit\.? ?DMG)/i.test(name);
+  if (/(?:DMG\s+Bonus|DMG\s+Amplification|DMG\s+Amp|DMG\s+Increase|DMG\s+Multiplier|Crit\.? ?DMG)/i.test(name)) {
+    return false;
+  }
+  if (/\bDMG\b/i.test(name)) return true;
+  return /^(?:Basic Attack|Heavy Attack|Mid-air Attack|Dodge Counter)(?:\s|$)/i.test(name);
 }
 function projectActions(character, resonatorId) {
   if (!Array.isArray(character.skills)) fail(`${resonatorId}.skills must be an array`);
