@@ -10,6 +10,10 @@ import {
   applyPreciseQiuyuanWeaponMechanics,
 } from "./precise-dps-qiuyuan";
 import { applyPreciseResourceMechanics } from "./precise-dps-resource-mechanics";
+import {
+  applyPreciseShorekeeperMechanics,
+  applyPreciseShorekeeperWeaponMechanics,
+} from "./precise-dps-shorekeeper";
 import { applyPreciseWeaponMechanics } from "./precise-dps-weapons";
 
 export type PreciseDpsLoadoutWeapon = {
@@ -19,9 +23,11 @@ export type PreciseDpsLoadoutWeapon = {
 
 export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutureResonators.map(
   (resonator) =>
-    applyPreciseQiuyuanMechanics(
-      applyPreciseJinhsiMechanics(
-        applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+    applyPreciseShorekeeperMechanics(
+      applyPreciseQiuyuanMechanics(
+        applyPreciseJinhsiMechanics(
+          applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+        ),
       ),
     ),
 );
@@ -32,9 +38,10 @@ export const preciseDpsLoadoutWeapons: readonly PreciseDpsLoadoutWeapon[] = prec
   if (baseWeapon.type !== resonator.weaponType) throw new Error(`Precise weapon type mismatch for ${resonator.id}.`);
   const genericWeapon = applyPreciseWeaponMechanics(resonator.id, baseWeapon);
   const jinhsiWeapon = applyPreciseJinhsiWeaponMechanics(resonator.id, genericWeapon);
+  const qiuyuanWeapon = applyPreciseQiuyuanWeaponMechanics(resonator.id, jinhsiWeapon);
   return {
     resonatorId: resonator.id,
-    weapon: applyPreciseQiuyuanWeaponMechanics(resonator.id, jinhsiWeapon),
+    weapon: applyPreciseShorekeeperWeaponMechanics(resonator.id, qiuyuanWeapon),
   };
 });
 
