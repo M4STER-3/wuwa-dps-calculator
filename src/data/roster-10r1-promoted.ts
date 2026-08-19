@@ -5,6 +5,7 @@ import {
 } from "@/generated/character-box-roster-10r1";
 import { generatedCharacterBoxRosterMedia10R1 } from "@/generated/character-box-roster-media-10r1";
 import { generatedCharacterBoxCombat10R1 } from "@/generated/character-box-combat-10r1";
+import { materializeProjectedCombatActions } from "./personal-dps-roster-registry";
 import { roster10R1 } from "./roster-10r1";
 
 const projectedSource = {
@@ -18,12 +19,16 @@ const projectedCombatSource = {
   kind: "verified-game-data" as const,
   source: "WUWA GameDatabase V1 · universal combat projection",
   notes:
-    "Multiplicateurs Lv1–10 projetés depuis les attributs de compétence exacts. Les timings restent théoriques et les mécaniques conditionnelles non structurées restent explicitement hors projection.",
+    "Multiplicateurs Lv1–10 projetés depuis les attributs de compétence exacts. Les rares corrections de scaling/type de dégâts sont déclarées dans le registre data-only et validées fail-closed.",
 };
 
 export const roster10R1PromotedResonators: readonly Resonator[] =
   generatedCharacterBoxRoster10R1.map((entry) => {
     const combat = generatedCharacterBoxCombat10R1[entry.id];
+    const actions = materializeProjectedCombatActions(
+      entry.id,
+      combat.actions,
+    );
     return {
       id: entry.id,
       name: entry.name,
@@ -43,7 +48,7 @@ export const roster10R1PromotedResonators: readonly Resonator[] =
         defaultForm: entry.name,
         modes: [],
         resources: [],
-        actions: combat.actions,
+        actions,
         effects: [],
         rotations: [],
         unknowns: [
