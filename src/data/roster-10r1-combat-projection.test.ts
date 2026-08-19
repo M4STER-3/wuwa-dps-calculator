@@ -7,6 +7,7 @@ import {
   simulateRotationLab,
 } from "@/domain/personal-dps-lab";
 import { presets, resonators, weapons } from "./catalog";
+import { roster10R1 } from "./roster-10r1";
 
 const projectedIds = [
   "augusta",
@@ -66,9 +67,12 @@ describe("universal 10R1 combat projection", () => {
     }
   });
 
-  it("calculates a positive personal DPS rotation for every generated Resonator", () => {
-    for (const resonatorId of projectedIds) {
+  it("calculates a positive personal DPS rotation for every reviewed 10R1 Resonator", () => {
+    expect(roster10R1).toHaveLength(10);
+    for (const reviewed of roster10R1) {
+      const resonatorId = reviewed.id;
       const preset = presets.find((entry) => entry.resonatorId === resonatorId)!;
+      expect(preset, resonatorId).toBeDefined();
       const build = createBuildFromPreset(preset, {
         id: `rotation-${resonatorId}`,
         now: "2026-08-19T00:00:00.000Z",
