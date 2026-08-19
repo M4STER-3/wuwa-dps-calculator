@@ -221,6 +221,46 @@ function withFixedScenarioDamage(
   };
 }
 
+function withScenarioContextSemantics(
+  simulation: PersonalCombatResult,
+): PersonalCombatResult {
+  const pendingTeamContext = simulation.diagnostics.filter(
+    (diagnostic) => diagnostic.code === "team-context-required",
+  );
+  if (!pendingTeamContext.length) return simulation;
+
+  const diagnostics = simulation.diagnostics.map((diagnostic) =>
+    diagnostic.code === "team-context-required"
+      ? {
+          ...diagnostic,
+          relevance: "not-emitted-due-to-missing-context" as const,
+        }
+      : diagnostic,
+  );
+  const unsupportedMechanics = diagnostics.filter(
+    (diagnostic) =>
+      diagnostic.relevance === "relevant-unsupported" ||
+      diagnostic.relevance === "not-emitted-due-to-missing-context",
+  );
+
+  return {
+    ...simulation,
+    diagnostics,
+    unsupportedMechanics,
+    coverage: {
+      ...simulation.coverage,
+      modeledUnused: Math.max(
+        0,
+        simulation.coverage.modeledUnused - pendingTeamContext.length,
+      ),
+      notEmittedDueToMissingContext:
+        simulation.coverage.notEmittedDueToMissingContext +
+        pendingTeamContext.length,
+    },
+    partial: true,
+  };
+}
+
 export function runTheoreticalPersonalRotation(
   request: TheoreticalPersonalRotationRequest,
 ): TheoreticalPersonalRotationResult {
@@ -259,8 +299,11 @@ export function runTheoreticalPersonalRotation(
     ),
     externalEvents,
   });
+  const simulation = withScenarioContextSemantics(
+    withFixedScenarioDamage(rawSimulation, externalEvents, request.resonator.id),
+  );
   return {
     scenario: request.scenario,
-    simulation: withFixedScenarioDamage(rawSimulation, externalEvents, request.resonator.id),
+    simulation,
   };
 }
