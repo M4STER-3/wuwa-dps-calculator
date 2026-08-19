@@ -19,9 +19,45 @@
       "name": "Denia",
       "signatureWeaponName": "Forged Dwarf Star",
       "mechanicsStatus": "partial",
+      "combatModel": {
+        "forms": ["Stagecraft Form", "Breakdown Form"],
+        "defaultForm": "Stagecraft Form",
+        "modes": ["fusion-burst", "tune-strain"],
+        "resources": [
+          { "id": "void-particle", "name": "Void Particle", "cap": 100 },
+          { "id": "conformal-charge", "name": "Conformal Charge", "cap": 100 },
+          { "id": "dark-core", "name": "Dark Core", "cap": 3 }
+        ]
+      },
       "scenarios": [
-        { "id": "denia-fusion-burst", "label": "Fusion Burst", "resonanceMode": "fusion-burst", "reviewedDurationSeconds": 6.0 },
-        { "id": "denia-tune-strain", "label": "Tune Strain", "resonanceMode": "tune-strain", "reviewedDurationSeconds": 6.0 }
+        {
+          "id": "denia-fusion-burst",
+          "label": "Fusion Burst",
+          "resonanceMode": "fusion-burst",
+          "reviewedDurationSeconds": 6.0,
+          "steps": [
+            { "selector": { "talent": "introSkill", "nameIncludes": ["It's Been A While"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Stagecraft Form", "Stage 4"] } },
+            { "selector": { "talent": "resonanceSkill", "nameIncludes": ["Phantom Bubble", "Stagecraft Form"] } },
+            { "selector": { "talent": "resonanceLiberation", "nameIncludes": ["Final Act", "Stagecraft Form"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Basic Attack", "Breakdown Form", "Stage 1"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Basic Attack", "Breakdown Form", "Stage 2"] } },
+            { "label": "Jump cancel", "profileId": "jump" },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Mid-air Attack", "Breakdown Form", "Stage 1"] } },
+            { "selector": { "talent": "basicAttack", "nameIncludes": ["Mid-air Attack", "Breakdown Form", "Stage 2"] } },
+            { "selector": { "talent": "resonanceSkill", "nameIncludes": ["Banish", "Breakdown Form", "Stage 1"] } },
+            { "selector": { "talent": "resonanceSkill", "nameIncludes": ["Banish", "Breakdown Form", "Stage 2"] } },
+            { "selector": { "talent": "resonanceLiberation", "nameIncludes": ["Final Act", "Breakdown Form"] } },
+            { "label": "Outro / handoff", "profileId": "outro" }
+          ]
+        },
+        {
+          "id": "denia-tune-strain",
+          "label": "Tune Strain",
+          "resonanceMode": "tune-strain",
+          "reviewedDurationSeconds": 6.0,
+          "stepsFromScenario": "denia-fusion-burst"
+        }
       ]
     },
     {
