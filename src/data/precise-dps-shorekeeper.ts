@@ -106,6 +106,12 @@ const collapsedCores: EffectDefinition = {
             snapshot: { stats: "trigger", stacks: "trigger" },
           },
         },
+        {
+          kind: "resource",
+          operation: "gain",
+          resourceId: "collapsed-core",
+          amount: constant(1),
+        },
       ],
     },
     ...Array.from({ length: 5 }, (_, index) => ({
@@ -248,7 +254,7 @@ const endLoopPersonal: EffectDefinition = {
 const sequenceDocumentation: EffectDefinition = {
   id: "precise-shorekeeper-sequence-documentation",
   label: "Shorekeeper Resonance Chain · non-personal-DPS semantics",
-  source: { id: "shorekeeper-chain", type: "resonance-chain", label: "Shorekeeper Resonance Chain" },
+  source: { id: "shorekeeper-chain", type: "resonator", label: "Shorekeeper Resonance Chain" },
   target: "self",
   rules: [
     {
