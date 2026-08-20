@@ -80,26 +80,33 @@ describe("cohérence du catalogue", () => {
       type: "broadblade",
       rarity: 5,
     });
-    expect(
-      sonatas
-        .filter((entry) => entry.source.kind !== "technical-fixture")
-        .map((entry) => entry.id),
-    ).toEqual([
-      "trailblazing-star",
-      "void-thunder",
-      "thread-of-severed-fate",
-      "rejuvenating-glow",
-    ]);
-    expect(
-      mainEchoes
-        .filter((entry) => entry.source.kind !== "technical-fixture")
-        .map((entry) => entry.name),
-    ).toEqual([
-      "Sigillum",
-      "Nightmare: Thundering Mephis",
-      "Reminiscence: Threnodian - Leviathan",
-      "Fallacy of No Return",
-    ]);
+
+    const productionSonataIds = sonatas
+      .filter((entry) => entry.source.kind !== "technical-fixture")
+      .map((entry) => entry.id);
+    expect(productionSonataIds).toEqual(
+      expect.arrayContaining([
+        "trailblazing-star",
+        "void-thunder",
+        "thread-of-severed-fate",
+        "rejuvenating-glow",
+      ]),
+    );
+    expect(productionSonataIds.some((id) => id.startsWith("sonata-set:"))).toBe(true);
+
+    const productionMainEchoNames = mainEchoes
+      .filter((entry) => entry.source.kind !== "technical-fixture")
+      .map((entry) => entry.name);
+    expect(productionMainEchoNames).toEqual(
+      expect.arrayContaining([
+        "Sigillum",
+        "Nightmare: Thundering Mephis",
+        "Reminiscence: Threnodian - Leviathan",
+        "Fallacy of No Return",
+      ]),
+    );
+    expect(productionMainEchoNames.length).toBeGreaterThan(4);
+
     expect(calcharo).toMatchObject({
       name: "Calcharo",
       element: "electro",
