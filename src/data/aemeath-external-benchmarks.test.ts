@@ -204,6 +204,7 @@ describe("WutheringTools multi-config mechanic parity — Aemeath", () => {
         resonanceMode: "tune-rupture",
         manualEffectIds: ["aemeath-sequence-personal-runtime"],
       })!;
+      if (result.damage.status !== "supported") throw new Error(`Expected supported Tune damage for ${actionId}`);
       expect(result.damage.total.nonCrit).toBeCloseTo(result.damage.total.crit, 12);
       expect(result.damage.total.nonCrit).toBeCloseTo(result.damage.total.expected, 12);
     }
@@ -216,6 +217,7 @@ describe("WutheringTools multi-config mechanic parity — Aemeath", () => {
     const bursts = simulation.audits.filter((audit) => audit.actionId === "aemeath-fusion-burst");
     expect(bursts.length).toBeGreaterThan(0);
     for (const burst of bursts) {
+      if (burst.damage.status !== "supported") throw new Error("Expected supported Fusion Burst damage");
       if (burst.damage.formula !== "negative-status-v0.2") {
         throw new Error("Expected Fusion Burst negative-status damage");
       }
