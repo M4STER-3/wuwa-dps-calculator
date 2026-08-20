@@ -165,3 +165,4 @@ try {
   throw error;
 }
 console.log(`Generated ${path.relative(root, outputPath)} with ${actions.length} exact Verina damage rows from Wuwa ID ${WUWA_ID}.`);
+console.log(`[VERINA_GAMEDB_AUDIT] ${JSON.stringify(actions.map(({ sourceAttributeId, sourceSkillName, name, talent, multipliers }) => ({ sourceAttributeId, sourceSkillName, name, talent, multipliers })))}`);
