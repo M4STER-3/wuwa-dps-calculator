@@ -47,12 +47,21 @@ describe("precise Character Box equipment integration", () => {
       const loadout = resolvePersonalLoadout(build);
       expect(loadout.diagnostics.filter((entry) => entry.code.startsWith("unresolved-"))).toEqual([]);
       expect(loadout.mainEcho).toBeDefined();
+      expect(loadout.mainEcho?.action).toBeDefined();
       expect(loadout.sonatas.length).toBeGreaterThan(0);
       expect(loadout.supported).toBe(true);
 
-      expect(() =>
-        simulateRotationLab(loadout, build.finalStats, DEFAULT_LAB_TARGET),
-      ).not.toThrow();
+      const simulation = simulateRotationLab(
+        loadout,
+        build.finalStats,
+        DEFAULT_LAB_TARGET,
+      );
+      expect(simulation).toBeDefined();
+      const mainEchoActionId = loadout.mainEcho!.action!.id;
+      expect(
+        simulation!.audits.some((audit) => audit.actionId === mainEchoActionId),
+      ).toBe(true);
+      expect(simulation!.perAction[mainEchoActionId]).toBeDefined();
     });
   }
 });
