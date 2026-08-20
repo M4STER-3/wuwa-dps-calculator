@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createBuildFromPreset } from "@/domain/character-box";
-import { resolvePersonalLoadout } from "@/domain/personal-dps-lab";
+import {
+  DEFAULT_LAB_TARGET,
+  resolvePersonalLoadout,
+  simulateRotationLab,
+} from "@/domain/personal-dps-lab";
 import { presets, resonators, weapons } from "./catalog";
 import { preciseDpsFutureScenarios } from "./precise-dps-future";
 
@@ -83,12 +87,26 @@ describe("precise Character Box roster integration", () => {
     expect(preset.finalStats.elementalDamageBonus.spectro).toBe(12);
   });
 
-  it("has at least one executable precise Personal DPS scenario for every new build", () => {
+  it("routes every new Character Box build into an executable precise Personal DPS scenario", () => {
     for (const resonatorId of preciseIds) {
       expect(
         preciseDpsFutureScenarios.some((scenario) => scenario.resonatorId === resonatorId),
-        `${resonatorId} scenario`,
+        `${resonatorId} precise scenario`,
       ).toBe(true);
+
+      const preset = presets.find((entry) => entry.resonatorId === resonatorId)!;
+      const build = createBuildFromPreset(preset, {
+        id: `simulation-${resonatorId}`,
+        now: "2026-08-20T13:35:00.000Z",
+      });
+      const loadout = resolvePersonalLoadout(build);
+      const simulation = simulateRotationLab(
+        loadout,
+        build.finalStats,
+        DEFAULT_LAB_TARGET,
+      );
+
+      expect(simulation, `${resonatorId} Personal DPS simulation`).toBeDefined();
     }
   });
 });
