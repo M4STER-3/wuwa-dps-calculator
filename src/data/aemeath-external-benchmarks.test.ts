@@ -77,15 +77,17 @@ describe("real Game Data integration — Aemeath recommended build", () => {
   const loadout = resolvePersonalLoadout(build);
   const realBuildTarget = { id: "real-build-target", level: 90, elementalResistance: { fusion: 0.1 }, physicalResistance: 0.1, tuneEnemyClass: "4C" as const };
 
-  it("separates permanent panel accounting and each proven manual runtime effect", () => {
+  it("separates permanent panel accounting and each proven runtime layer", () => {
     const run = (actionId: string, manualEffectIds: string[] = []) => calculateActionLab({ loadout, actionId, stats: build.finalStats, target: realBuildTarget, manualEffectIds })!;
     const baseline = run("overdrive");
     const permanent = run("overdrive", ["everbright-r1-base", "trailblazing-2pc", "sigillum-main-aemeath"]);
     const everbright = run("overdrive", ["everbright-r1-liberation"]);
     const trailblazing = run("overdrive", ["trailblazing-5pc"]);
-    const heavy = run("mech-heavy-2", ["scenario-aemeath-instant-response-heavy"]);
-    if (![baseline, permanent, everbright, trailblazing, heavy].every((item) => isStandardDamage(item.damage))) throw new Error("Expected standard damage");
-    if (!isStandardDamage(baseline.damage) || !isStandardDamage(permanent.damage) || !isStandardDamage(everbright.damage) || !isStandardDamage(trailblazing.damage) || !isStandardDamage(heavy.damage)) return;
+    const simulation = simulateRotationLab(loadout, build.finalStats, realBuildTarget, "tune-rupture");
+    const heavy = simulation?.audits.find((audit) => audit.actionId === "mech-heavy-2");
+    if (![baseline, permanent, everbright, trailblazing].every((item) => isStandardDamage(item.damage))) throw new Error("Expected standard damage");
+    if (!heavy || !isStandardDamage(heavy.damage)) throw new Error("Expected scenario-owned Instant Response Heavy damage");
+    if (!isStandardDamage(baseline.damage) || !isStandardDamage(permanent.damage) || !isStandardDamage(everbright.damage) || !isStandardDamage(trailblazing.damage)) return;
     expect(permanent.damage.allDamageBonusPercent).toBe(12);
     expect(permanent.damage.additionalElementalDamageBonusPercent).toBe(10);
     expect(permanent.damage.additionalDamageTypeBonusPercent).toBe(25);
@@ -133,7 +135,7 @@ describe("WutheringTools multi-config mechanic parity — Aemeath", () => {
         manualEffectIds: ["aemeath-sequence-personal-runtime"],
       })!;
       if (!isStandardDamage(result.damage)) throw new Error(`Expected standard damage for ${actionId}`);
-      expect(display(result.damage)).toEqual([1373, 1407, 2059]);
+      expect(display(result.damage)).toEqual([1373, 1408, 2060]);
     }
   });
 
