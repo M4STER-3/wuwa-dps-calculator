@@ -28,6 +28,10 @@ export interface TheoreticalPersonalRotationResult {
   simulation: PersonalCombatResult;
 }
 
+type ScenarioWithTargetDuration = PersonalRotationScenario & {
+  targetDuration?: TemporalRotationDefinition["targetDuration"];
+};
+
 const highestApplicableOverride = (
   overrides: readonly SequencePayloadOverride[] | undefined,
   sequence: UserBuild["sequence"],
@@ -62,6 +66,21 @@ function reviewedRotationTarget(
       .filter(Boolean)
       .join(" · "),
   };
+}
+
+function scenarioRotationTarget(
+  scenario: PersonalRotationScenario,
+  resonator: Resonator,
+  sequence: UserBuild["sequence"],
+): TemporalRotationDefinition["targetDuration"] | undefined {
+  const scenarioTarget = (scenario as ScenarioWithTargetDuration).targetDuration;
+  if (scenarioTarget) {
+    if (!Number.isFinite(scenarioTarget.seconds) || scenarioTarget.seconds <= 0) {
+      throw new Error(`Rotation scenario ${scenario.id} has invalid target duration ${scenarioTarget.seconds}.`);
+    }
+    return scenarioTarget;
+  }
+  return reviewedRotationTarget(resonator, sequence);
 }
 
 function compileSpecialEvents(
@@ -112,7 +131,7 @@ function resourceCapForSequence(
 ): number {
   const applicable = Object.entries(resource.capBySequence ?? {})
     .map(([required, cap]) => ({ required: Number(required), cap }))
-    .filter((entry) => Number.isInteger(entry.required) && entry.required <= sequence && typeof entry.cap === "number")
+    .filter((entry) => Number.isInteger(entry.required) && entry.required <= sequence && typeof cap === "number")
     .sort((a, b) => b.required - a.required);
   const cap = applicable[0]?.cap ?? resource.cap;
   if (!Number.isFinite(cap) || cap <= 0) {
@@ -272,7 +291,7 @@ export function runTheoreticalPersonalRotation(
   const timeline = buildTheoreticalRotationTimeline(
     request.scenario.rotation,
     actions,
-    reviewedRotationTarget(request.resonator, request.build.sequence),
+    scenarioRotationTarget(request.scenario, request.resonator, request.build.sequence),
   );
   const externalEvents = compileSpecialEvents(request.scenario, timeline, request.build, request.resonator.id, targetId);
   const build = { ...request.build, finalStats: request.stats };
