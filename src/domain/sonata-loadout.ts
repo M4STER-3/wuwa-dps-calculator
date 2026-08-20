@@ -23,53 +23,66 @@ export interface SonataLoadoutResolutionV1 {
 }
 
 /**
- * Resolves Sonata ownership from the five persisted Echo pieces themselves.
- *
- * This intentionally does not invent a composite Sonata id for mixed sets. Each
- * equipped Echo contributes exactly one piece to its own sonataSetId, and the
- * reached 2p / 3p / 5p thresholds are exposed for the data-owned runtime layer
- * to map to the corresponding effect definitions.
+ * Converts already-validated GameDatabase Sonata piece counts into reached tiers.
+ * This is the canonical gameplay path: Echo legality stays owned by
+ * `resolveEchoLoadoutV1`, while this module only interprets the validated counts.
  */
+export function resolveSonataSetsFromPieceCountsV1(
+  pieceCounts: Readonly<Record<string, number>>,
+): readonly ResolvedSonataSetV1[] {
+  return Object.entries(pieceCounts)
+    .filter(([, pieceCount]) => Number.isInteger(pieceCount) && pieceCount > 0)
+    .map(([sonataSetId, pieceCount]) => ({
+      sonataSetId,
+      pieceCount,
+      reachedThresholds: sonataPieceThresholds.filter(
+        (threshold) => pieceCount >= threshold,
+      ),
+    }));
+}
+
+/**
+ * Compatibility helper for persisted/UI data that has not yet gone through the
+ * GameDatabase Echo resolver. Gameplay callers should prefer validated counts.
+ */
+export function countSonataPiecesFromEchoLoadoutV1(
+  loadout: UserEchoLoadoutV1 | undefined,
+): Readonly<Record<string, number>> {
+  if (!loadout?.echoes.length) return {};
+
+  const counts: Record<string, number> = Object.create(null) as Record<string, number>;
+  for (const echo of loadout.echoes) {
+    counts[echo.sonataSetId] = (counts[echo.sonataSetId] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export function resolveSonataSetsFromEchoLoadoutV1(
   loadout: UserEchoLoadoutV1 | undefined,
 ): readonly ResolvedSonataSetV1[] {
-  if (!loadout?.echoes.length) return [];
+  return resolveSonataSetsFromPieceCountsV1(countSonataPiecesFromEchoLoadoutV1(loadout));
+}
 
-  const counts = new Map<string, number>();
-  for (const echo of loadout.echoes) {
-    counts.set(echo.sonataSetId, (counts.get(echo.sonataSetId) ?? 0) + 1);
-  }
-
-  return [...counts.entries()].map(([sonataSetId, pieceCount]) => ({
-    sonataSetId,
-    pieceCount,
-    reachedThresholds: sonataPieceThresholds.filter(
-      (threshold) => pieceCount >= threshold,
-    ),
-  }));
+export function resolveActiveSonataSetIdsFromPieceCountsV1(
+  pieceCounts: Readonly<Record<string, number>>,
+): readonly string[] {
+  return resolveSonataSetsFromPieceCountsV1(pieceCounts)
+    .filter((set) => set.reachedThresholds.length > 0)
+    .map((set) => set.sonataSetId);
 }
 
 export function resolveActiveSonataSetIdsV1(
   loadout: UserEchoLoadoutV1 | undefined,
 ): readonly string[] {
-  return resolveSonataSetsFromEchoLoadoutV1(loadout)
-    .filter((set) => set.reachedThresholds.length > 0)
-    .map((set) => set.sonataSetId);
+  return resolveActiveSonataSetIdsFromPieceCountsV1(
+    countSonataPiecesFromEchoLoadoutV1(loadout),
+  );
 }
 
-/**
- * Maps reached piece thresholds to explicit Sonata data.
- *
- * Legacy `Sonata.effects` are intentionally ignored here: Echo-derived mixed
- * loadouts may only activate effects that declare their piece requirement in
- * `pieceBonuses`. This prevents a 2p or 3p mixed set from silently receiving a
- * full legacy 5p effect list.
- */
-export function resolveSonataLoadoutV1(
-  loadout: UserEchoLoadoutV1 | undefined,
+function mapActiveSonatasV1(
+  sets: readonly ResolvedSonataSetV1[],
   sonataCatalog: readonly Sonata[],
 ): SonataLoadoutResolutionV1 {
-  const sets = resolveSonataSetsFromEchoLoadoutV1(loadout);
   const activeSets = sets.filter((set) => set.reachedThresholds.length > 0);
   const unresolvedActiveSetIds: string[] = [];
   const activeSonatas: ResolvedActiveSonataV1[] = [];
@@ -94,4 +107,34 @@ export function resolveSonataLoadoutV1(
   }
 
   return { sets, activeSonatas, unresolvedActiveSetIds };
+}
+
+/**
+ * Canonical runtime mapping from GameDatabase-validated piece counts to explicit
+ * Sonata tier data.
+ *
+ * Legacy `Sonata.effects` are intentionally ignored here: Echo-derived mixed
+ * loadouts may only activate effects that declare their piece requirement in
+ * `pieceBonuses`. This prevents a 2p or 3p mixed set from silently receiving a
+ * full legacy 5p effect list.
+ */
+export function resolveSonataLoadoutFromPieceCountsV1(
+  pieceCounts: Readonly<Record<string, number>>,
+  sonataCatalog: readonly Sonata[],
+): SonataLoadoutResolutionV1 {
+  return mapActiveSonatasV1(
+    resolveSonataSetsFromPieceCountsV1(pieceCounts),
+    sonataCatalog,
+  );
+}
+
+/** Compatibility wrapper for callers that only own persisted Echo data. */
+export function resolveSonataLoadoutV1(
+  loadout: UserEchoLoadoutV1 | undefined,
+  sonataCatalog: readonly Sonata[],
+): SonataLoadoutResolutionV1 {
+  return resolveSonataLoadoutFromPieceCountsV1(
+    countSonataPiecesFromEchoLoadoutV1(loadout),
+    sonataCatalog,
+  );
 }
