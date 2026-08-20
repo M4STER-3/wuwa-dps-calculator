@@ -124,6 +124,8 @@ const outroAction: CombatAction = {
   ],
 };
 
+const liberationOverrideNote = "Iuno kit override: this action is considered Resonance Liberation DMG.";
+
 export function applyPreciseIunoActionPatches(actions: readonly CombatAction[]): readonly CombatAction[] {
   let hasOutro = false;
   const patched = actions.map((action) => {
@@ -133,10 +135,9 @@ export function applyPreciseIunoActionPatches(actions: readonly CombatAction[]):
       ...action,
       damageType: "resonanceLiberation" as const,
       scalingAttribute: "attack" as const,
-      notes: [
-        ...(action.notes ?? []),
-        "Iuno kit override: this action is considered Resonance Liberation DMG.",
-      ],
+      notes: action.notes?.includes(liberationOverrideNote)
+        ? action.notes
+        : [...(action.notes ?? []), liberationOverrideNote],
     };
   });
   return hasOutro ? patched : [...patched, outroAction];
@@ -184,7 +185,10 @@ const sentience: EffectDefinition = {
     {
       id: "iuno-s6-fullness-refill",
       event: "action-end",
-      predicates: [actionPredicate(IUNO.absoluteFullness)],
+      predicates: [
+        actionPredicate(IUNO.absoluteFullness),
+        { kind: "state-active", id: "sequence-at-least-6" },
+      ],
       operations: [{ kind: "resource", operation: "set-max", resourceId: "sentience" }],
     },
   ],
@@ -222,7 +226,7 @@ const lunarCycle: EffectDefinition = {
       event: "action-end",
       predicates: [
         actionPredicate(IUNO.absoluteFullness),
-        { kind: "not", predicate: { kind: "stat", stat: "sequence", comparison: "gte", value: constant(6) } },
+        { kind: "not", predicate: { kind: "state-active", id: "sequence-at-least-6" } },
       ],
       operations: [{ kind: "change-form", stateId: "Baseline" }],
     },
@@ -340,7 +344,10 @@ const sequences: EffectDefinition = {
   triggers: [{
     id: "iuno-s6-fullness-new-moon",
     event: "action-end",
-    predicates: [actionPredicate(IUNO.absoluteFullness)],
+    predicates: [
+      actionPredicate(IUNO.absoluteFullness),
+      { kind: "state-active", id: "sequence-at-least-6" },
+    ],
     operations: [{ kind: "change-form", stateId: "Lunar Cycle - New Moon" }],
   }],
 };
