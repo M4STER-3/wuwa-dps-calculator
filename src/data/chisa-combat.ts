@@ -75,10 +75,6 @@ const chisaFinalStats = {
   ...withEchoes,
   attack: withEchoes.attack + chisaBaseStatBasis.attack * 0.24,
   critRate: withEchoes.critRate + 8,
-  elementalDamageBonus: {
-    ...withEchoes.elementalDamageBonus,
-    havoc: withEchoes.elementalDamageBonus.havoc + 10,
-  },
 };
 
 export const chisaPreset = {
@@ -92,8 +88,8 @@ export const chisaPreset = {
   mainEchoId: "reminiscence-threnodian-leviathan",
   notes: [
     "Permanent panel stats are derived from the exact Lv90 Chisa + Kumokiri baseline and the validated five-Echo loadout exactly once.",
-    "The panel also includes Chisa's +8% Crit Rate / +12% ATK minor Fortes, Kumokiri R1's permanent +12% ATK, and the mixed Havoc Eclipse 2-piece +10% Havoc bonus exactly once.",
-    "The three-piece Thread of Severed Fate trigger and Threnodian Leviathan main-slot bonuses remain runtime effects and are not baked into finalStats.",
+    "The panel includes Chisa's +8% Crit Rate / +12% ATK minor Fortes and Kumokiri R1's permanent +12% ATK exactly once.",
+    "The mixed Havoc Eclipse 2-piece +10% Havoc, the three-piece Thread of Severed Fate trigger and Threnodian Leviathan main-slot bonuses are resolved as runtime equipment effects and are not baked into finalStats.",
     "Personal timing uses the shared theoretical WUWA LAB profile policy.",
   ],
 };
