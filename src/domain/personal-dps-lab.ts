@@ -8,6 +8,7 @@ import type { ActiveEffectInstance, EffectDefinition } from "./effect-models";
 import type { CombatAction, FinalStats, MainEcho, Resonator, Sonata, UserBuild, Weapon } from "./models";
 import { loadPersonalEffects, type PersonalCombatResult, type PersonalDiagnostic } from "./personal-combat-simulation";
 import { runTheoreticalPersonalRotation } from "./personal-rotation-runner";
+import { resolvePersonalSonataLoadout } from "./personal-sonata-loadout";
 import type { RuntimeBaseStatBasis } from "./combat-context";
 import { buildEffectiveCombatStats, evaluatePredicate, evaluateValueExpression, type CombatContext } from "./combat-context";
 import { calculateActionOutcomes, type PersonalActionOutcome } from "./action-outcome-engine";
@@ -17,7 +18,7 @@ import { applyMotionValueModifiers } from "./motion-value-engine";
 
 export interface LoadoutDiagnostic { code: string; message: string; }
 export interface ResolvedPersonalLoadout {
-  build: UserBuild; resonator?: Resonator; weapon?: Weapon; sonata?: Sonata; mainEcho?: MainEcho;
+  build: UserBuild; resonator?: Resonator; weapon?: Weapon; sonata?: Sonata; sonatas: readonly Sonata[]; sonataEffects: readonly EffectDefinition[]; mainEcho?: MainEcho;
   actions: readonly CombatAction[]; effects: readonly EffectDefinition[]; baseStatBasis?: RuntimeBaseStatBasis;
   diagnostics: readonly LoadoutDiagnostic[]; supported: boolean;
 }
@@ -26,11 +27,14 @@ export function resolvePersonalLoadout(build: UserBuild): ResolvedPersonalLoadou
   const diagnostics: LoadoutDiagnostic[] = [];
   const resonator = resonators.find((item) => item.id === build.resonatorId);
   const weapon = weapons.find((item) => item.id === build.weapon.weaponId);
-  const sonata = build.sonataId ? sonatas.find((item) => item.id === build.sonataId) : undefined;
+  const hasEchoDerivedSonatas = Boolean(build.echoLoadout?.echoes.length);
+  const sonata = !hasEchoDerivedSonatas && build.sonataId ? sonatas.find((item) => item.id === build.sonataId) : undefined;
+  const resolvedSonatas = resolvePersonalSonataLoadout(build, sonatas);
   const mainEcho = build.mainEchoId ? mainEchoes.find((item) => item.id === build.mainEchoId) : undefined;
   if (!resonator) diagnostics.push({ code: "unresolved-resonator-id", message: `Unknown Resonator id: ${build.resonatorId}.` });
   if (!weapon) diagnostics.push({ code: "unresolved-weapon-id", message: `Unknown weapon id: ${build.weapon.weaponId}.` });
-  if (build.sonataId && !sonata) diagnostics.push({ code: "unresolved-sonata-id", message: `Unknown Sonata id: ${build.sonataId}.` });
+  if (!hasEchoDerivedSonatas && build.sonataId && !sonata) diagnostics.push({ code: "unresolved-sonata-id", message: `Unknown Sonata id: ${build.sonataId}.` });
+  diagnostics.push(...resolvedSonatas.diagnostics);
   if (build.mainEchoId && !mainEcho) diagnostics.push({ code: "unresolved-main-echo-id", message: `Unknown Main Echo id: ${build.mainEchoId}.` });
   const characterBase = resonator?.baseStats?.find((item) => item.level === build.characterLevel);
   const exactWeapon = build.weapon.level === 90 ? weapon?.level90Stats : undefined;
@@ -39,9 +43,9 @@ export function resolvePersonalLoadout(build: UserBuild): ResolvedPersonalLoadou
     : undefined;
   if (!baseStatBasis) diagnostics.push({ code: "missing-base-stat-basis", message: "Exact character and weapon base stats are unavailable at the selected levels; runtime percent stats cannot be applied." });
   const actions = [...(resonator?.combat?.actions ?? []), ...(mainEcho?.action ? [mainEcho.action] : [])];
-  const loaded = resonator ? loadPersonalEffects(resonator, build.sequence, { weapon, sonata, mainEcho }) : { definitions: [], diagnostics: [] };
+  const loaded = resonator ? loadPersonalEffects(resonator, build.sequence, { weapon, sonata, mainEcho, extraEffects: resolvedSonatas.effects }) : { definitions: [], diagnostics: [] };
   diagnostics.push(...loaded.diagnostics.map(({ code, message }) => ({ code, message })));
-  return { build, resonator, weapon, sonata, mainEcho, actions, effects: loaded.definitions, baseStatBasis, diagnostics, supported: Boolean(resonator && weapon && actions.length) };
+  return { build, resonator, weapon, sonata, sonatas: resolvedSonatas.sonatas, sonataEffects: resolvedSonatas.effects, mainEcho, actions, effects: loaded.definitions, baseStatBasis, diagnostics, supported: Boolean(resonator && weapon && actions.length) };
 }
 
 export interface LabTarget extends DamageTarget { id: string; tuneEnemyClass: TuneEnemyClass; }
@@ -101,8 +105,14 @@ export function simulateRotationLab(loadout: ResolvedPersonalLoadout, stats: Fin
       (candidate) => candidate.resonatorId === loadout.resonator!.id,
     );
   if (!scenario) return undefined;
+  const scenarioWithSonataEffects = loadout.sonataEffects.length
+    ? {
+        ...scenario,
+        extraEffects: [...(scenario.extraEffects ?? []), ...loadout.sonataEffects],
+      }
+    : scenario;
   return runTheoreticalPersonalRotation({
-    scenario,
+    scenario: scenarioWithSonataEffects,
     resonator: loadout.resonator,
     build: loadout.build,
     stats,
