@@ -13,8 +13,18 @@ type Registry = {
 };
 
 type ExternalIds = { wuwa?: string };
+type DatabaseSkill = {
+  id: string;
+  name: string;
+  description?: string;
+  sourceParameters?: unknown;
+};
 type Database = {
-  characters: readonly { name: string; externalIds?: ExternalIds }[];
+  characters: readonly {
+    name: string;
+    externalIds?: ExternalIds;
+    skills?: readonly DatabaseSkill[];
+  }[];
   weapons: readonly {
     name: string;
     externalIds?: ExternalIds;
@@ -67,8 +77,20 @@ function permanentRules(
   );
 }
 
+function permanentStatCandidates(skills: readonly DatabaseSkill[] | undefined) {
+  const marker = /(crit|atk|attack|hp|def|energy|regen|damage|dmg|bonus)/i;
+  return (skills ?? [])
+    .filter((skill) => marker.test(`${skill.name} ${skill.description ?? ""}`))
+    .map((skill) => ({
+      id: skill.id,
+      name: skill.name,
+      description: skill.description,
+      sourceParameters: skill.sourceParameters,
+    }));
+}
+
 describe("precise Character Box projection probe", () => {
-  it("prints exact Lv90 signature stats, catalog ids, local UI bindings and permanent panel rules", () => {
+  it("prints exact Lv90 signature stats, local UI bindings and permanent panel inputs", () => {
     const registry = rawRegistry as Registry;
     const database = JSON.parse(
       readFileSync(resolve(process.cwd(), "public/data/wuwa/game-database-v1.json"), "utf8"),
@@ -109,10 +131,11 @@ describe("precise Character Box projection probe", () => {
         weaponName: entry.signatureWeaponName,
         weaponAssetId,
         weaponPath,
-        stat: secondary!.stat,
-        value: selected.value,
+        secondaryStat: secondary!.stat,
+        secondaryValue: selected.value,
         characterPermanentRules: permanentRules(projectedResonator?.combat?.effects),
         weaponPermanentRules: permanentRules(projectedWeapon?.effects),
+        permanentStatCandidates: permanentStatCandidates(character?.skills),
       };
     });
 
