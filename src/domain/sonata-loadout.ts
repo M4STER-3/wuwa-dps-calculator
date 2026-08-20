@@ -1,3 +1,4 @@
+import type { CombatEffect, Sonata, SonataPieceBonus } from "./models";
 import type { UserEchoLoadoutV1 } from "./user-echo-loadout";
 
 export const sonataPieceThresholds = [2, 3, 5] as const;
@@ -7,6 +8,18 @@ export interface ResolvedSonataSetV1 {
   sonataSetId: string;
   pieceCount: number;
   reachedThresholds: readonly SonataPieceThreshold[];
+}
+
+export interface ResolvedActiveSonataV1 extends ResolvedSonataSetV1 {
+  sonata: Sonata;
+  activePieceBonuses: readonly SonataPieceBonus[];
+  effects: readonly CombatEffect[];
+}
+
+export interface SonataLoadoutResolutionV1 {
+  sets: readonly ResolvedSonataSetV1[];
+  activeSonatas: readonly ResolvedActiveSonataV1[];
+  unresolvedActiveSetIds: readonly string[];
 }
 
 /**
@@ -42,4 +55,43 @@ export function resolveActiveSonataSetIdsV1(
   return resolveSonataSetsFromEchoLoadoutV1(loadout)
     .filter((set) => set.reachedThresholds.length > 0)
     .map((set) => set.sonataSetId);
+}
+
+/**
+ * Maps reached piece thresholds to explicit Sonata data.
+ *
+ * Legacy `Sonata.effects` are intentionally ignored here: Echo-derived mixed
+ * loadouts may only activate effects that declare their piece requirement in
+ * `pieceBonuses`. This prevents a 2p or 3p mixed set from silently receiving a
+ * full legacy 5p effect list.
+ */
+export function resolveSonataLoadoutV1(
+  loadout: UserEchoLoadoutV1 | undefined,
+  sonataCatalog: readonly Sonata[],
+): SonataLoadoutResolutionV1 {
+  const sets = resolveSonataSetsFromEchoLoadoutV1(loadout);
+  const activeSets = sets.filter((set) => set.reachedThresholds.length > 0);
+  const unresolvedActiveSetIds: string[] = [];
+  const activeSonatas: ResolvedActiveSonataV1[] = [];
+
+  for (const set of activeSets) {
+    const sonata = sonataCatalog.find((candidate) => candidate.id === set.sonataSetId);
+    if (!sonata) {
+      unresolvedActiveSetIds.push(set.sonataSetId);
+      continue;
+    }
+
+    const activePieceBonuses = (sonata.pieceBonuses ?? []).filter((bonus) =>
+      set.reachedThresholds.includes(bonus.pieces),
+    );
+    const effects = activePieceBonuses.flatMap((bonus) => bonus.effects ?? []);
+    activeSonatas.push({
+      ...set,
+      sonata,
+      activePieceBonuses,
+      effects,
+    });
+  }
+
+  return { sets, activeSonatas, unresolvedActiveSetIds };
 }
