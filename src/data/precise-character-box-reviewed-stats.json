@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "verifiedAt": "2026-08-20",
+  "sourcePolicy": "Only permanent Lv90/S0 panel contributions that are independently reviewed are promoted here. Character minor Fortes and R1 signature passives are applied exactly once to UserBuild.finalStats; temporary/runtime effects stay out of this file.",
+  "entries": [
+    {
+      "id": "phrolova",
+      "name": "Phrolova",
+      "wuwaId": "1608",
+      "weapon": { "id": "precise-phrolova-signature", "name": "Lethean Elegy", "wuwaId": "21050066" },
+      "minorFortes": { "attackPercent": 12, "critRate": 8 },
+      "weaponPermanent": { "attackPercent": 12 }
+    },
+    {
+      "id": "denia",
+      "name": "Denia",
+      "wuwaId": "1211",
+      "weapon": { "id": "precise-denia-signature", "name": "Forged Dwarf Star", "wuwaId": "21050076" },
+      "minorFortes": { "attackPercent": 12, "critDamage": 16 },
+      "weaponPermanent": { "attackPercent": 12 }
+    },
+    {
+      "id": "lynae",
+      "name": "Lynae",
+      "wuwaId": "1509",
+      "weapon": { "id": "precise-lynae-signature", "name": "Spectrum Blaster", "wuwaId": "21030046" },
+      "minorFortes": { "attackPercent": 12, "critRate": 8 },
+      "weaponPermanent": { "attackPercent": 12 }
+    },
+    {
+      "id": "mornye",
+      "name": "Mornye",
+      "wuwaId": "1209",
+      "weapon": { "id": "precise-mornye-signature", "name": "Starfield Calibrator", "wuwaId": "21010066" },
+      "minorFortes": { "defensePercent": 11, "healingBonus": 10 },
+      "weaponPermanent": { "defensePercent": 16 }
+    },
+    {
+      "id": "qiuyuan",
+      "name": "Qiuyuan",
+      "wuwaId": "1411",
+      "weapon": { "id": "precise-qiuyuan-signature", "name": "Emerald Sentence", "wuwaId": "21020066" },
+      "minorFortes": { "attackPercent": 12, "critRate": 8 },
+      "weaponPermanent": { "attackPercent": 12 }
+    },
+    {
+      "id": "jinhsi",
+      "name": "Jinhsi",
+      "wuwaId": "1304",
+      "weapon": { "id": "precise-jinhsi-signature", "name": "Ages of Harvest", "wuwaId": "21010026" },
+      "minorFortes": { "attackPercent": 12, "critRate": 8 },
+      "weaponPermanent": { "spectroDamageBonus": 12 }
+    },
+    {
+      "id": "galbrena",
+      "name": "Galbrena",
+      "wuwaId": "1208",
+      "weapon": { "id": "precise-galbrena-signature", "name": "Lux & Umbra", "wuwaId": "21030036" },
+      "minorFortes": { "attackPercent": 12, "critDamage": 16 },
+      "weaponPermanent": { "attackPercent": 12 }
+    },
+    {
+      "id": "iuno",
+      "name": "Iuno",
+      "wuwaId": "1410",
+      "weapon": { "id": "precise-iuno-signature", "name": "Moongazer's Sigil", "wuwaId": "21040046" },
+      "minorFortes": { "attackPercent": 12, "critRate": 8 },
+      "weaponPermanent": { "attackPercent": 12 }
+    },
+    {
+      "id": "shorekeeper",
+      "name": "Shorekeeper",
+      "wuwaId": "1505",
+      "weapon": { "id": "precise-shorekeeper-signature", "name": "Stellar Symphony", "wuwaId": "21050036" },
+      "minorFortes": { "hpPercent": 12, "healingBonus": 12 },
+      "weaponPermanent": { "hpPercent": 12 }
+    },
+    {
+      "id": "hiyuki",
+      "name": "Hiyuki",
+      "wuwaId": "1108",
+      "weapon": { "id": "precise-hiyuki-signature", "name": "Frostburn", "wuwaId": "21020086" },
+      "minorFortes": { "attackPercent": 12, "critRate": 8 },
+      "weaponPermanent": { "attackPercent": 12 }
+    }
+  ]
+}
