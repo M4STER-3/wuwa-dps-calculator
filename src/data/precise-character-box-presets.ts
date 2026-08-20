@@ -76,6 +76,9 @@ export const preciseCharacterBoxPresets: readonly RecommendedBuildPreset[] =
       ).finalStats;
       const variantSuffix = "variant" in variant ? `-${variant.variant.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "";
       const variantLabel = "variant" in variant ? ` · ${variant.variant}` : "";
+      const mainEchoId = resonator.id === "shorekeeper"
+        ? "fallacy-of-no-return"
+        : variant.mainEchoCanonicalId;
 
       return {
         id: `${resonator.id}-s0-l90-signature-precise${variantSuffix}`,
@@ -95,7 +98,7 @@ export const preciseCharacterBoxPresets: readonly RecommendedBuildPreset[] =
         },
         finalStats,
         echoLoadout: variant.echoLoadout,
-        mainEchoId: variant.mainEchoCanonicalId,
+        mainEchoId,
         notes: [
           "Personnage Lv90, S0, talents Lv10, arme signature Lv90 R1.",
           "Les minor Fortes, la statistique secondaire de l'arme et le passif permanent R1 sont déjà inclus exactement une fois dans finalStats.",
