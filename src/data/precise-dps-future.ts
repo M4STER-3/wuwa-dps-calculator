@@ -11,6 +11,7 @@ import type { TheoreticalRotationPreset } from "@/domain/theoretical-rotation";
 import { generatedPreciseDpsFutureProjection } from "@/generated/precise-dps-future-projection";
 import { applyPreciseQiuyuanActionPatches } from "./precise-dps-qiuyuan-core";
 import { applyPreciseShorekeeperActionPatches } from "./precise-dps-shorekeeper-core";
+import { preciseScenarioOverrideFor } from "./precise-dps-scenario-overrides";
 import {
   applyPreciseSpecialActionPatches,
   preciseScenarioMechanicsFor,
@@ -266,11 +267,13 @@ function combatResources(model: CombatModelRecipe | undefined): readonly CombatR
   }));
 }
 
-function oneReviewedDuration(entry: RegistryEntry): number | undefined {
-  const durations = entry.scenarios
-    .map((scenario) => scenario.reviewedDurationSeconds)
-    .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0);
-  const unique = [...new Set(durations)];
+function sharedReviewedDuration(entry: RegistryEntry): number | undefined {
+  if (!entry.scenarios.length) return undefined;
+  const durations = entry.scenarios.map((scenario) => scenario.reviewedDurationSeconds);
+  if (durations.some((value) => typeof value !== "number" || !Number.isFinite(value) || value <= 0)) {
+    return undefined;
+  }
+  const unique = [...new Set(durations as number[])];
   return unique.length === 1 ? unique[0] : undefined;
 }
 
@@ -293,7 +296,7 @@ export const preciseDpsFutureResonators: readonly Resonator[] = registry.entries
   const actions = (entry.id === "shorekeeper"
     ? applyPreciseShorekeeperActionPatches(qiuyuanActions)
     : qiuyuanActions) as readonly ProjectedAction[];
-  const duration = oneReviewedDuration(entry);
+  const duration = sharedReviewedDuration(entry);
   const combat: ResonatorCombatData = {
     level10Only: false,
     forms: model?.forms ?? [entry.name],
@@ -386,7 +389,7 @@ export const preciseDpsScenarioInventory: readonly PreciseDpsScenarioInventoryEn
     ...(scenario.resonanceMode ? { resonanceMode: scenario.resonanceMode } : {}),
     ...(scenario.variant ? { variant: scenario.variant } : {}),
     mechanicsStatus: entry.mechanicsStatus,
-    executable: Boolean(rawScenarioSteps(entry, scenario)),
+    executable: Boolean(preciseScenarioOverrideFor(scenario.id) ?? rawScenarioSteps(entry, scenario)),
     ...(scenario.reviewedDurationSeconds ? { reviewedDurationSeconds: scenario.reviewedDurationSeconds } : {}),
     ...(scenario.eligibility ? { eligibility: scenario.eligibility } : {}),
   })),
@@ -396,6 +399,13 @@ export const preciseDpsFutureScenarios: readonly PersonalRotationScenario[] = re
   const resonator = preciseDpsFutureResonators.find((candidate) => candidate.id === entry.id)!;
   const actions = resonator.combat!.actions as readonly ProjectedAction[];
   return entry.scenarios.flatMap((scenario) => {
+    const override = preciseScenarioOverrideFor(scenario.id);
+    if (override) {
+      if (override.resonatorId !== entry.id) {
+        throw new Error(`Precise scenario override ${scenario.id} belongs to ${override.resonatorId}, not ${entry.id}.`);
+      }
+      return [override];
+    }
     const recipe = rawScenarioSteps(entry, scenario);
     if (!recipe) return [];
     const mechanics = preciseScenarioMechanicsFor(scenario.id);
