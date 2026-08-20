@@ -20,6 +20,11 @@ import type {
   Weapon,
 } from "@/domain/models";
 import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa-combat";
+import { preciseCharacterBoxPresets } from "./precise-character-box-presets";
+import {
+  preciseDpsLoadoutResonators,
+  preciseDpsLoadoutWeapons,
+} from "./precise-dps-loadouts";
 import { roster10R1BaselinePresets } from "./roster-10r1-presets";
 import {
   roster10R1PromotedResonators,
@@ -71,6 +76,7 @@ const promotedResonators = [
   ...generated10R1Resonators,
   chisa,
   verina,
+  ...preciseDpsLoadoutResonators,
 ].map(withOptionalLocalUiPortrait);
 
 export const resonators: readonly Resonator[] = [
@@ -91,6 +97,7 @@ const richWeaponIds = new Set(["everbright-polestar", "lustrous-razor", "kumokir
 const generated10R1Weapons = roster10R1PromotedWeapons.filter(
   (weapon) => !richWeaponIds.has(weapon.id),
 );
+const preciseWeapons = preciseDpsLoadoutWeapons.map((entry) => entry.weapon);
 
 export const weapons: readonly Weapon[] = [
   everbrightPolestar,
@@ -98,6 +105,7 @@ export const weapons: readonly Weapon[] = [
   ...generated10R1Weapons,
   kumokiri,
   variation,
+  ...preciseWeapons,
   {
     id: "fixture-pistols",
     name: "Pistolets de démonstration",
@@ -188,5 +196,6 @@ export const presets: readonly RecommendedBuildPreset[] = [
   ...roster10R1BaselinePresets,
   chisaPreset,
   verinaPreset,
+  ...preciseCharacterBoxPresets,
   fixturePreset,
 ];
