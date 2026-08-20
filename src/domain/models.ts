@@ -234,11 +234,20 @@ export interface Weapon {
   source: SourceMetadata;
 }
 
+export interface SonataPieceBonus {
+  pieces: 2 | 3 | 5;
+  effectDescription?: string;
+  effects?: readonly CombatEffect[];
+}
+
 export interface Sonata {
   id: string;
   name: string;
   effectDescription?: string;
+  /** Legacy single-set effect list retained for existing presets. */
   effects?: readonly CombatEffect[];
+  /** Data-owned thresholds used by Echo-derived multi-set loadouts. */
+  pieceBonuses?: readonly SonataPieceBonus[];
   source: SourceMetadata;
 }
 
