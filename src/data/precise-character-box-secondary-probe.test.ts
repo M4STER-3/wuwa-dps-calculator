@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { preciseDpsLoadoutWeapons } from "./precise-dps-loadouts";
+import {
+  preciseDpsLoadoutResonators,
+  preciseDpsLoadoutWeapons,
+} from "./precise-dps-loadouts";
 import rawRegistry from "./precise-dps-future-registry.json";
 
 type Registry = {
@@ -31,18 +34,59 @@ type Manifest = {
   };
 };
 
+function permanentRules(
+  effects: readonly {
+    id: string;
+    structuredEffect?: {
+      id: string;
+      activationPolicy?: string;
+      rules: readonly {
+        id: string;
+        accounting: string;
+        requiredSequence?: number;
+        predicates?: readonly unknown[];
+        selectors?: readonly unknown[];
+        modifiers: readonly unknown[];
+      }[];
+    };
+  }[] | undefined,
+) {
+  return (effects ?? []).flatMap((effect) =>
+    (effect.structuredEffect?.rules ?? [])
+      .filter((rule) => rule.accounting === "already-in-final-stats")
+      .map((rule) => ({
+        effectId: effect.structuredEffect!.id,
+        combatEffectId: effect.id,
+        activationPolicy: effect.structuredEffect!.activationPolicy,
+        ruleId: rule.id,
+        requiredSequence: rule.requiredSequence,
+        predicates: rule.predicates ?? [],
+        selectors: rule.selectors ?? [],
+        modifiers: rule.modifiers,
+      })),
+  );
+}
+
 describe("precise Character Box projection probe", () => {
-  it("prints exact Lv90 signature stats, catalog ids and local UI bindings", () => {
+  it("prints exact Lv90 signature stats, catalog ids, local UI bindings and permanent panel rules", () => {
     const registry = rawRegistry as Registry;
-    const database = JSON.parse(readFileSync(resolve(process.cwd(), "public/data/wuwa/game-database-v1.json"), "utf8")) as Database;
-    const manifest = JSON.parse(readFileSync(resolve(process.cwd(), "public/assets/wuwa/manifest.json"), "utf8")) as Manifest;
+    const database = JSON.parse(
+      readFileSync(resolve(process.cwd(), "public/data/wuwa/game-database-v1.json"), "utf8"),
+    ) as Database;
+    const manifest = JSON.parse(
+      readFileSync(resolve(process.cwd(), "public/assets/wuwa/manifest.json"), "utf8"),
+    ) as Manifest;
 
     const rows = registry.entries.map((entry) => {
       const character = database.characters.find((candidate) => candidate.name === entry.name);
       const weapon = database.weapons.find((candidate) => candidate.name === entry.signatureWeaponName);
-      const projectedWeapon = preciseDpsLoadoutWeapons.find((candidate) => candidate.resonatorId === entry.id)?.weapon;
+      const projectedResonator = preciseDpsLoadoutResonators.find((candidate) => candidate.id === entry.id);
+      const projectedWeapon = preciseDpsLoadoutWeapons.find(
+        (candidate) => candidate.resonatorId === entry.id,
+      )?.weapon;
       expect(character, `character ${entry.name}`).toBeDefined();
       expect(weapon, `weapon ${entry.signatureWeaponName}`).toBeDefined();
+      expect(projectedResonator, `projected resonator ${entry.id}`).toBeDefined();
       expect(projectedWeapon, `projected weapon ${entry.id}`).toBeDefined();
       expect(projectedWeapon?.name).toBe(entry.signatureWeaponName);
       const secondary = weapon?.baseStats?.secondaryStat;
@@ -67,6 +111,8 @@ describe("precise Character Box projection probe", () => {
         weaponPath,
         stat: secondary!.stat,
         value: selected.value,
+        characterPermanentRules: permanentRules(projectedResonator?.combat?.effects),
+        weaponPermanentRules: permanentRules(projectedWeapon?.effects),
       };
     });
 
