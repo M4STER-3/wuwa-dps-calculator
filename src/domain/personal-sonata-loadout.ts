@@ -1,5 +1,8 @@
 import echoCatalogProjection from "../../public/data/wuwa/echo-catalog-v1.json";
-import { resolveEchoLoadoutV1 } from "@/game-data/echo-loadout";
+import {
+  resolveEchoLoadoutV1,
+  type EchoLoadoutCatalogV1,
+} from "@/game-data/echo-loadout";
 import type { EffectDefinition } from "./effect-models";
 import type { Sonata, UserBuild } from "./models";
 import {
@@ -13,6 +16,22 @@ export interface PersonalSonataLoadoutResolution {
   effects: readonly EffectDefinition[];
   diagnostics: readonly { code: string; message: string }[];
 }
+
+function reviewedEchoCost(value: number, echoId: string): 1 | 3 | 4 {
+  if (value !== 1 && value !== 3 && value !== 4) {
+    throw new Error(`Echo catalogue ${echoId} has unsupported cost ${value}.`);
+  }
+  return value;
+}
+
+const echoLoadoutCatalog: EchoLoadoutCatalogV1 = {
+  echoes: echoCatalogProjection.echoes.map((echo) => ({
+    id: echo.id,
+    cost: reviewedEchoCost(echo.cost, echo.id),
+    sonataSetIds: echo.sonataSetIds,
+  })),
+  sonataSets: echoCatalogProjection.sonataSets.map((sonata) => ({ id: sonata.id })),
+};
 
 /**
  * Canonical Personal DPS bridge for Echo-derived Sonata tiers.
@@ -31,7 +50,7 @@ export function resolvePersonalSonataLoadout(
 
   try {
     const echoResolution = resolveEchoLoadoutV1(
-      echoCatalogProjection,
+      echoLoadoutCatalog,
       build.echoLoadout,
     );
     const resolution = resolveSonataLoadoutFromPieceCountsV1(
