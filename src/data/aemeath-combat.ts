@@ -139,7 +139,7 @@ const generatedNameByActionId: Readonly<Record<string, readonly string[]>> = {
   "seraphic-encore": ["Seraphic Duet: Encore"],
   "seraphic-overture": ["Seraphic Duet: Overture"],
   starburst: ["Tune Rupture Response - Starburst", "Tune Rupture Response: Starburst"],
-  "seraphic-bonus": ["Seraphic Duet Bonus", "Seraphic Duet Bonus (Per Instance)"],
+  "seraphic-bonus": ["Seraphic Duet Bonus DMG (Per Instance)"],
 };
 
 const generatedAemeathActions = generatedCharacterBoxCombat10R1.aemeath.actions;
