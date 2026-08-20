@@ -20,6 +20,7 @@ import type {
   Weapon,
 } from "@/domain/models";
 import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa-combat";
+import { canonicalLegacySonatas } from "./legacy-sonata-canonical-runtime";
 import { preciseCharacterBoxPresets } from "./precise-character-box-presets";
 import {
   preciseDpsLoadoutResonators,
@@ -122,6 +123,7 @@ export const sonatas: readonly Sonata[] = [
   voidThunder,
   threadOfSeveredFate,
   rejuvenatingGlow,
+  ...canonicalLegacySonatas,
   ...preciseModernSonatas,
   { id: "fixture-sonata", name: "Sonata à renseigner", source: fixtureSource },
 ];
