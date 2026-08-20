@@ -1,5 +1,5 @@
 import { generatedVerinaGameDatabaseCombat } from "@/generated/verina-game-database-combat";
-import type { CombatAction, Resonator } from "@/domain/models";
+import type { CombatAction, MotionValueGroup, Resonator } from "@/domain/models";
 import {
   fallacyOfNoReturn,
   rejuvenatingGlow,
@@ -9,7 +9,15 @@ import {
   verinaSource,
 } from "./verina-complete";
 
-const generatedVerinaActions = generatedVerinaGameDatabaseCombat.actions;
+type GeneratedVerinaAction = {
+  id: string;
+  talent: CombatAction["talent"];
+  multipliers: readonly MotionValueGroup[];
+  multipliersByTalentLevel: NonNullable<CombatAction["multipliersByTalentLevel"]>;
+};
+
+const generatedVerinaActions: readonly GeneratedVerinaAction[] =
+  generatedVerinaGameDatabaseCombat.actions;
 
 const sameGroup = (
   left: CombatAction["multipliers"][number],
@@ -66,22 +74,21 @@ function withExactTalentLevels(action: CombatAction): CombatAction {
   }
 
   const grouped = groupedGeneratedMatches(action);
-  const multipliersByTalentLevel = Object.fromEntries(
-    Array.from({ length: 10 }, (_, index) => {
-      const level = String(index + 1);
-      const groups = grouped.flatMap((candidate) =>
-        candidate.multipliersByTalentLevel[
-          level as keyof typeof candidate.multipliersByTalentLevel
-        ] ?? [],
-      );
-      if (groups.length !== action.multipliers.length) {
-        throw new Error(
-          `Verina action ${action.id} produced ${groups.length} GameDatabase groups at Lv${level}.`,
+  const multipliersByTalentLevel: NonNullable<CombatAction["multipliersByTalentLevel"]> =
+    Object.fromEntries(
+      Array.from({ length: 10 }, (_, index) => {
+        const level = (index + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+        const groups = grouped.flatMap((candidate) =>
+          candidate.multipliersByTalentLevel[level] ?? [],
         );
-      }
-      return [level, groups];
-    }),
-  );
+        if (groups.length !== action.multipliers.length) {
+          throw new Error(
+            `Verina action ${action.id} produced ${groups.length} GameDatabase groups at Lv${level}.`,
+          );
+        }
+        return [level, groups] as const;
+      }),
+    );
 
   return {
     ...action,
