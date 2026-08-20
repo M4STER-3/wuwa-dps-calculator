@@ -107,7 +107,7 @@ describe("10R1 functional Character Box promotion", () => {
         preset?.echoLoadout?.echoes.some((echo) => echo.echoId === expectedMainEchoId),
         reviewed.id,
       ).toBe(true);
-      expect(preset?.notes.join(" ")).toMatch(/nodes permanents.*passifs d'arme.*non résolus/i);
+      expect(preset?.notes.join(" ")).toMatch(/nodes permanents.*passifs d['’]arme.*non résolus/i);
       expect(preset?.source.kind).toBe("verified-game-data");
     }
   });
