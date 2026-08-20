@@ -118,13 +118,13 @@ const sequenceRuntime: EffectDefinition = {
     },
     {
       id: "aemeath-s6-mode-fixed-crit",
-      label: "S6 Tune Rupture / Fusion Burst fixed Crit",
+      label: "S6 Fusion Burst fixed Crit",
       accounting: "runtime",
       requiredSequence: 6,
       selectors: [
         {
           kind: "action-id",
-          anyOf: ["starburst", "seraphic-bonus", "aemeath-fusion-burst"],
+          anyOf: ["aemeath-fusion-burst"],
         },
       ],
       modifiers: [

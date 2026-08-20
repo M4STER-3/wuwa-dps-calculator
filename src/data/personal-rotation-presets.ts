@@ -82,13 +82,21 @@ const aemeathSteps: TheoreticalRotationPreset["steps"] = [
   { label: "Outro / handoff", profileId: "outro" },
 ];
 
-const aemeathModeApplications = (kind: "tune-rupture" | "fusion-burst") =>
-  [0, 1, 2, 5, 6, 10, 11].map((stepIndex, index) => ({
+const aemeathModeApplications = (kind: "tune-rupture" | "fusion-burst") => [
+  ...[0, 1, 2, 5, 6, 10, 11].map((stepIndex, index) => ({
     id: `aemeath-${kind}-application-${index}`,
     kind,
     anchor: { stepIndex, at: "end" as const, offsetSeconds: 0.001 },
     payload: { noDamage: true, applicationOnly: true },
-  }));
+  })),
+  {
+    id: `aemeath-${kind}-s3-heavy-application`,
+    kind,
+    anchor: { stepIndex: 13, at: "end" as const, offsetSeconds: 0.001 },
+    minimumSequence: 3 as const,
+    payload: { noDamage: true, applicationOnly: true, source: "s3-instant-response-heavy-ii" },
+  },
+];
 
 const aemeathInstantResponseScenario: EffectDefinition = {
   id: "scenario-aemeath-instant-response-heavy",
@@ -298,6 +306,7 @@ const aemeathTune: PersonalRotationScenario = {
     "All durations and hit positions use the shared WUWA LAB theoretical timing profiles.",
     "Rupturous Trail uses a deterministic single-target personal scenario: 30 removed before Encore and 20 before Overture at S0-S5; S6 uses the doubled/cap-60 rules plus the verified Seraphic application.",
     "Stardust Resonance uses 10 Seraphic Tune Rupture instances per enhanced Seraphic cast. S2 stacks are driven by damage events and use a separate MV multiplier layer.",
+    "At S3+, Instant Response Charged II emits the current mode application after the Heavy, matching the Sequence replacement without assuming hit timing.",
   ],
 };
 
@@ -345,6 +354,7 @@ const aemeathFusion: PersonalRotationScenario = {
     "Fusion Burst application events refresh Aemeath weapon/Sonata windows without falsely adding damage for each stack application.",
     "The deterministic personal scenario starts from zero Fusion Burst stacks: five eligible applications before Encore, then the >5 automatic threshold after the next eligible application. Seraphic-triggered Burst uses the normal max-stack value 10.",
     "Fusion Trail removal multipliers are data-owned in the event payloads; S2 and S6 overrides do not branch inside the engine.",
+    "At S3+, Instant Response Charged II emits Fusion Burst as an application-only event before Finale, as specified by the Sequence node.",
   ],
 };
 

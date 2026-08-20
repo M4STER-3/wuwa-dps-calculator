@@ -120,12 +120,12 @@ describe("cohérence du catalogue", () => {
     });
   });
 
-  it("documente le kit Lv10 et les inconnues temporelles sans timeline DPS", () => {
-    expect(aemeath.combat?.level10Only).toBe(true);
+  it("documente le kit Lv1-Lv10 et les inconnues temporelles sans bloquer le DPS", () => {
+    expect(aemeath.combat?.level10Only).toBe(false);
     expect(aemeath.combat?.actions.find((entry) => entry.id === "finale")?.multipliers).toEqual([{ percent: 1789.29, hits: 1 }]);
     expect(aemeath.combat?.effects.find((entry) => entry.id === "starburst-icd")?.internalCooldown).toEqual({ seconds: 8, scope: "target" });
     expect(aemeath.combat?.actions.every((entry) => entry.castDurationSeconds.confidence === "unknown")).toBe(true);
-    expect(aemeath.combat?.unknowns).toHaveLength(6);
+    expect(aemeath.combat?.unknowns).toHaveLength(5);
     expect(aemeath.combat?.rotations[0]).toMatchObject({
       policy: "no-quickswap",
       totalDurationSeconds: { value: 11.69, confidence: "community-calculation" },

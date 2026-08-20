@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { generatedCommunityEchoPresets10R1 } from "@/generated/community-echo-presets-10r1";
 import { presets, resonators, weapons } from "./catalog";
+import { legacyRosterMainEchoIdByResonatorId } from "./legacy-roster-equipment-runtime";
 import { excludedRosterResonatorIds, roster10R1 } from "./roster-10r1";
 
 const realResonators = resonators.filter(
@@ -67,7 +68,7 @@ describe("10R1 functional Character Box promotion", () => {
     }
   });
 
-  it("uses exact incomplete baselines for the seven promoted Resonators that do not yet own rich combat data", () => {
+  it("keeps exact baselines while promoting runtime equipment for the seven legacy Resonators", () => {
     const baselineIds = new Set([
       "augusta",
       "brant",
@@ -80,6 +81,9 @@ describe("10R1 functional Character Box promotion", () => {
 
     for (const reviewed of roster10R1.filter((entry) => baselineIds.has(entry.id))) {
       const preset = presets.find((entry) => entry.resonatorId === reviewed.id);
+      const expectedMainEchoId = legacyRosterMainEchoIdByResonatorId[
+        reviewed.id as keyof typeof legacyRosterMainEchoIdByResonatorId
+      ];
       expect(preset).toMatchObject({
         characterLevel: 90,
         sequence: 0,
@@ -95,10 +99,15 @@ describe("10R1 functional Character Box promotion", () => {
           level: 90,
           rank: 1,
         },
+        mainEchoId: expectedMainEchoId,
       });
       expect(preset?.sonataId).toBeUndefined();
-      expect(preset?.mainEchoId).toBeUndefined();
-      expect(preset?.notes.join(" ")).toMatch(/non résolu/i);
+      expect(preset?.echoLoadout?.echoes).toHaveLength(5);
+      expect(
+        preset?.echoLoadout?.echoes.some((echo) => echo.echoId === expectedMainEchoId),
+        reviewed.id,
+      ).toBe(true);
+      expect(preset?.notes.join(" ")).toMatch(/nodes permanents.*passifs d['’]arme.*non résolus/i);
       expect(preset?.source.kind).toBe("verified-game-data");
     }
   });

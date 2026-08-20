@@ -10,8 +10,8 @@ export const nakedAemeathLevel90Stats: FinalStats = {
 
 type Display = readonly [actionId: string, normal: number, average: number, crit: number, perHit?: readonly number[]];
 
-// Static transcription of the WutheringTools 2026-08-16 output. Values are
-// intentionally not generated from our Motion Values or engine at test time.
+// Static transcription of the WutheringTools output, rechecked against the live
+// calculator on 2026-08-20. Values are intentionally independent from our engine.
 const standardDisplays: readonly Display[] = [
   ["aemeath-basic-1", 89, 92, 134, [89]],
   ["aemeath-basic-2", 134, 137, 200, [27, 40, 67]],
@@ -40,12 +40,12 @@ const standardDisplays: readonly Display[] = [
 ];
 
 const common = {
-  resonator: "Aemeath", sourceName: "WutheringTools", sourceVerificationDate: "2026-08-16",
+  resonator: "Aemeath", sourceName: "WutheringTools", sourceVerificationDate: "2026-08-20",
   scenarioDescription: "Naked Aemeath S0 Lv90, talent 10, no weapon/Echo/runtime buffs, against Lv90 10% RES target.",
   characterLevel: 90, sequence: 0 as const, talentLevel: 10, finalStats: nakedAemeathLevel90Stats,
   weaponEquipmentState: "No weapon; no Echo; no Sonata; no equipment effects.",
   targetLevel: 90, targetResistance: { elemental: 0.1, physical: 0.1 }, tuneEnemyClass: "4C" as const,
-  enabledEffects: [] as const, provenance: "Manually verified and transcribed from WutheringTools; offline versioned fixture.",
+  enabledEffects: [] as const, provenance: "Manually transcribed and rechecked against the live WutheringTools calculator on 2026-08-20; offline versioned fixture.",
   confidence: "high" as const, displayRule: "ceiling" as const,
   notes: "External totals and individual hits are displayed as integers. Comparison applies ceiling only at the display boundary; internal values remain full precision.",
 };
