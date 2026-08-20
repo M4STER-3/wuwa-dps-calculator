@@ -1,4 +1,4 @@
-import type { CombatEffect, MainEcho } from "@/domain/models";
+import type { CombatAction, CombatEffect, MainEcho } from "@/domain/models";
 import type { EffectDefinition, EffectModifier, EffectSelector, RuntimeStatModifier } from "@/domain/effect-models";
 import { generatedPreciseCharacterBoxEchoPresets } from "@/generated/precise-character-box-echo-presets";
 
@@ -57,11 +57,11 @@ const action = (
   multipliers: readonly { percent: number; hits: number }[],
   cooldownSeconds: number,
   scalingAttribute: "attack" | "hp" | "defense" = "attack",
-) => ({
+): CombatAction => ({
   id,
   name,
-  talent: "echoSkill" as const,
-  damageType: "echoSkill" as const,
+  talent: "echoSkill",
+  damageType: "echoSkill",
   scalingAttribute,
   level: 10,
   multipliers,
