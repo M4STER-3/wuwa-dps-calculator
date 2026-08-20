@@ -24,6 +24,25 @@ const talentBySourceType = {
   "Resonance Liberation": "resonanceLiberation",
   "Intro Skill": "introSkill",
 };
+const reviewedMappings = [
+  { actionId: "verina-basic-1", talent: "basicAttack", sourceAttributeIds: ["1700001"], level10: [{ percent: 37.86, hits: 1 }] },
+  { actionId: "verina-basic-2", talent: "basicAttack", sourceAttributeIds: ["1700002"], level10: [{ percent: 51.16, hits: 1 }] },
+  { actionId: "verina-basic-3", talent: "basicAttack", sourceAttributeIds: ["1700003"], level10: [{ percent: 25.58, hits: 2 }] },
+  { actionId: "verina-basic-4", talent: "basicAttack", sourceAttributeIds: ["1700004"], level10: [{ percent: 67.32, hits: 1 }] },
+  { actionId: "verina-basic-5", talent: "basicAttack", sourceAttributeIds: ["1700005"], level10: [{ percent: 71.62, hits: 1 }] },
+  { actionId: "verina-heavy", talent: "basicAttack", sourceAttributeIds: ["1700007"], level10: [{ percent: 99.41, hits: 1 }] },
+  { actionId: "verina-midair-1", talent: "basicAttack", sourceAttributeIds: ["1700009"], level10: [{ percent: 56.37, hits: 1 }] },
+  { actionId: "verina-midair-2", talent: "basicAttack", sourceAttributeIds: ["1700010"], level10: [{ percent: 53.19, hits: 1 }] },
+  { actionId: "verina-midair-3", talent: "basicAttack", sourceAttributeIds: ["1700011"], level10: [{ percent: 25.42, hits: 3 }] },
+  { actionId: "verina-midair-heavy", talent: "basicAttack", sourceAttributeIds: ["1700013"], level10: [{ percent: 61.64, hits: 1 }] },
+  { actionId: "verina-dodge", talent: "basicAttack", sourceAttributeIds: ["1700015"], level10: [{ percent: 129.23, hits: 1 }] },
+  { actionId: "verina-botany-experiment", talent: "resonanceSkill", sourceAttributeIds: ["1700016"], level10: [{ percent: 35.79, hits: 3 }, { percent: 71.58, hits: 1 }] },
+  { actionId: "verina-starflower-midair", talent: "forteCircuit", sourceAttributeIds: ["1700028", "1700029", "1700030"], level10: [{ percent: 67.64, hits: 1 }, { percent: 63.82, hits: 1 }, { percent: 30.5, hits: 3 }] },
+  { actionId: "verina-starflower-heavy", talent: "forteCircuit", sourceAttributeIds: ["1700035"], level10: [{ percent: 64.95, hits: 1 }, { percent: 97.42, hits: 1 }] },
+  { actionId: "verina-arboreal-flourish", talent: "resonanceLiberation", sourceAttributeIds: ["1700018"], level10: [{ percent: 198.81, hits: 1 }] },
+  { actionId: "verina-intro", talent: "introSkill", sourceAttributeIds: ["1700025"], level10: [{ percent: 99.41, hits: 1 }] },
+  { actionId: "verina-coordinated-attack", talent: "resonanceLiberation", sourceAttributeIds: ["1700020"], level10: [{ percent: 9.95, hits: 1 }] },
+];
 
 function fail(message) {
   throw new Error(`Verina GameDatabase combat projection: ${message}`);
@@ -79,6 +98,12 @@ function isDamageAttribute(name) {
   if (/\bDMG\b/i.test(name)) return true;
   return /^(?:Basic Attack|Heavy Attack|Mid-air Attack|Dodge Counter)(?::|\s|$)/i.test(name);
 }
+function sameGroups(left, right) {
+  return left.length === right.length && left.every((group, index) => {
+    const expected = right[index];
+    return expected && group.percent === expected.percent && group.hits === expected.hits;
+  });
+}
 
 contained(inputPath, "input");
 contained(outputPath, "output");
@@ -92,18 +117,18 @@ try {
   fail(`unable to parse GameDatabase: ${error instanceof Error ? error.message : "unknown error"}`);
 }
 if (!Array.isArray(database.characters)) fail("characters must be an array");
-const matches = database.characters.filter((raw) => {
+const characterMatches = database.characters.filter((raw) => {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return false;
   const externalIds = raw.externalIds;
   return externalIds && typeof externalIds === "object" && !Array.isArray(externalIds) && externalIds.wuwa === WUWA_ID;
 });
-if (matches.length !== 1) fail(`Wuwa ID ${WUWA_ID} resolves to ${matches.length} characters`);
-const character = record(matches[0], "character");
+if (characterMatches.length !== 1) fail(`Wuwa ID ${WUWA_ID} resolves to ${characterMatches.length} characters`);
+const character = record(characterMatches[0], "character");
 if (character.name !== NAME) fail(`Wuwa ID ${WUWA_ID} identity mismatch: ${JSON.stringify(character.name)}`);
 if (!Array.isArray(character.skills)) fail("Verina skills must be an array");
 
-const actions = [];
-const ids = new Set();
+const sourceRows = [];
+const rowIds = new Set();
 for (const [skillIndex, rawSkill] of character.skills.entries()) {
   const skill = record(rawSkill, `skills[${skillIndex}]`);
   const sourceParameters = record(skill.sourceParameters, `skills[${skillIndex}].sourceParameters`);
@@ -130,15 +155,12 @@ for (const [skillIndex, rawSkill] of character.skills.entries()) {
       parsedByLevel.push(parsed.groups);
     }
     if (!supported || parsedByLevel.length !== 10 || !scalingAttribute) continue;
-    const id = `verina-gamedb-attr-${sourceAttributeId.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-    if (ids.has(id)) fail(`duplicate action ${id}`);
-    ids.add(id);
-    actions.push({
-      id,
+    if (rowIds.has(sourceAttributeId)) fail(`duplicate sourceAttributeId ${sourceAttributeId}`);
+    rowIds.add(sourceAttributeId);
+    sourceRows.push({
       sourceAttributeId,
       sourceSkillId: text(sourceParameters.sourceSkillId, `${name}.sourceSkillId`, 160),
       sourceSkillName: text(skill.name, `${name}.sourceSkillName`, 200),
-      sourceSkillType: sourceType,
       name: name.replace(/\s+DMG\s*$/i, ""),
       talent,
       scalingAttribute,
@@ -147,14 +169,50 @@ for (const [skillIndex, rawSkill] of character.skills.entries()) {
     });
   }
 }
-if (actions.length !== 19) fail(`expected 19 exact damage rows, received ${actions.length}`);
+if (sourceRows.length !== 19) fail(`expected 19 exact damage rows, received ${sourceRows.length}`);
+
+const reviewedSourceIds = reviewedMappings.flatMap((mapping) => mapping.sourceAttributeIds);
+if (new Set(reviewedSourceIds).size !== reviewedSourceIds.length || reviewedSourceIds.length !== sourceRows.length) {
+  fail("reviewed sourceAttributeId coverage is not one-to-one with projected rows");
+}
+for (const row of sourceRows) {
+  if (!reviewedSourceIds.includes(row.sourceAttributeId)) fail(`unreviewed projected row ${row.sourceAttributeId}`);
+}
+
+const mappedActions = reviewedMappings.map((mapping) => {
+  const rows = mapping.sourceAttributeIds.map((sourceAttributeId) => {
+    const matches = sourceRows.filter((row) => row.sourceAttributeId === sourceAttributeId);
+    if (matches.length !== 1) fail(`${mapping.actionId} sourceAttributeId ${sourceAttributeId} resolves to ${matches.length} rows`);
+    const row = matches[0];
+    if (row.talent !== mapping.talent) fail(`${mapping.actionId} talent mismatch at ${sourceAttributeId}: ${row.talent}`);
+    return row;
+  });
+  const level10 = rows.flatMap((row) => row.multipliersByTalentLevel["10"] ?? []);
+  if (!sameGroups(level10, mapping.level10)) {
+    fail(`${mapping.actionId} Lv10 mismatch: GameDatabase=${JSON.stringify(level10)} reviewed=${JSON.stringify(mapping.level10)}`);
+  }
+  const multipliersByTalentLevel = Object.fromEntries(
+    Array.from({ length: 10 }, (_, index) => {
+      const level = String(index + 1);
+      const groups = rows.flatMap((row) => row.multipliersByTalentLevel[level] ?? []);
+      if (groups.length !== mapping.level10.length) fail(`${mapping.actionId} Lv${level} group count mismatch`);
+      return [level, groups];
+    }),
+  );
+  return {
+    actionId: mapping.actionId,
+    talent: mapping.talent,
+    sourceAttributeIds: mapping.sourceAttributeIds,
+    multipliersByTalentLevel,
+  };
+});
 
 await mkdir(outputDirectory, { recursive: true });
 await assertRealDirectoryContained(path.dirname(inputPath), "input directory");
 await assertRealDirectoryContained(outputDirectory, "output directory");
 await rejectSymlink(outputPath, "output", true);
 await rejectSymlink(temporaryPath, "temporary output", true);
-const serialized = `/* Generated from GameDatabase V1 for Verina (Wuwa ID 1503). Do not edit manually. */\nexport const generatedVerinaGameDatabaseCombat = ${JSON.stringify({ sourceItemId: WUWA_ID, name: NAME, actions }, null, 2)} as const;\n`;
+const serialized = `/* Generated from GameDatabase V1 for Verina (Wuwa ID 1503). Do not edit manually. */\nexport const generatedVerinaGameDatabaseCombat = ${JSON.stringify({ sourceItemId: WUWA_ID, name: NAME, mappedActions }, null, 2)} as const;\n`;
 const outputBytes = Buffer.byteLength(serialized);
 if (outputBytes <= 0 || outputBytes > MAX_OUTPUT_BYTES) fail(`output size ${outputBytes} is outside allowed range`);
 try {
@@ -164,4 +222,4 @@ try {
   await rm(temporaryPath, { force: true }).catch(() => undefined);
   throw error;
 }
-console.log(`Generated ${path.relative(root, outputPath)} with ${actions.length} exact Verina damage rows from Wuwa ID ${WUWA_ID}.`);
+console.log(`Generated ${path.relative(root, outputPath)} with ${mappedActions.length} reviewed Verina actions from ${sourceRows.length} exact GameDatabase rows.`);
