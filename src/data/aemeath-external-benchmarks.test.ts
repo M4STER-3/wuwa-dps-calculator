@@ -126,7 +126,13 @@ describe("talent-level readiness — Aemeath", () => {
 describe("WutheringTools multi-config mechanic parity — Aemeath", () => {
   it("matches S2 Seraphic Duet damage derived from the current WutheringTools naked profile", () => {
     const { loadout } = loadoutAtSequence(2);
-    for (const actionId of ["seraphic-encore", "seraphic-overture"]) {
+    const cases = [
+      ["seraphic-encore", 715.8, [1373, 1407, 2059]],
+      ["seraphic-overture", 715.9, [1373, 1408, 2060]],
+    ] as const;
+    // S0 ceiling hides the 357.90% vs 357.95% GameDatabase MV difference.
+    // S2 doubles each exact MV, so Overture legitimately crosses the next display boundary.
+    for (const [actionId, effectiveMotionValuePercent, expectedDisplay] of cases) {
       const result = calculateActionLab({
         loadout,
         actionId,
@@ -135,7 +141,8 @@ describe("WutheringTools multi-config mechanic parity — Aemeath", () => {
         manualEffectIds: ["aemeath-sequence-personal-runtime"],
       })!;
       if (!isStandardDamage(result.damage)) throw new Error(`Expected standard damage for ${actionId}`);
-      expect(display(result.damage)).toEqual([1373, 1407, 2059]);
+      expect(result.damage.totalMotionValue * 100).toBeCloseTo(effectiveMotionValuePercent, 12);
+      expect(display(result.damage)).toEqual(expectedDisplay);
     }
   });
 
