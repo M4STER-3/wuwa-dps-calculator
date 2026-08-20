@@ -77,7 +77,7 @@ function parseFormula(raw, label) {
 function isDamageAttribute(name) {
   if (/(?:DMG\s+Bonus|DMG\s+Amplification|DMG\s+Amp|DMG\s+Increase|DMG\s+Multiplier|Crit\.?\s*DMG)/i.test(name)) return false;
   if (/\bDMG\b/i.test(name)) return true;
-  return /^(?:Basic Attack|Heavy Attack|Mid-air Attack|Dodge Counter)(?:\s|$)/i.test(name);
+  return /^(?:Basic Attack|Heavy Attack|Mid-air Attack|Dodge Counter)(?::|\s|$)/i.test(name);
 }
 
 contained(inputPath, "input");
@@ -101,22 +101,6 @@ if (matches.length !== 1) fail(`Wuwa ID ${WUWA_ID} resolves to ${matches.length}
 const character = record(matches[0], "character");
 if (character.name !== NAME) fail(`Wuwa ID ${WUWA_ID} identity mismatch: ${JSON.stringify(character.name)}`);
 if (!Array.isArray(character.skills)) fail("Verina skills must be an array");
-
-const forteAudit = [];
-for (const [skillIndex, rawSkill] of character.skills.entries()) {
-  const skill = record(rawSkill, `skills[${skillIndex}]`);
-  const sourceParameters = record(skill.sourceParameters, `skills[${skillIndex}].sourceParameters`);
-  if (sourceParameters.type !== "Forte Circuit" || !Array.isArray(sourceParameters.attributes)) continue;
-  for (const [attributeIndex, rawAttribute] of sourceParameters.attributes.entries()) {
-    const attribute = record(rawAttribute, `skills[${skillIndex}].attributes[${attributeIndex}]`);
-    forteAudit.push({
-      sourceAttributeId: attribute.sourceAttributeId,
-      name: attribute.name,
-      level1: Array.isArray(attribute.values) ? attribute.values[0] ?? null : null,
-      level10: Array.isArray(attribute.values) ? attribute.values[9] ?? null : null,
-    });
-  }
-}
 
 const actions = [];
 const ids = new Set();
@@ -163,7 +147,7 @@ for (const [skillIndex, rawSkill] of character.skills.entries()) {
     });
   }
 }
-if (!actions.length || actions.length > 160) fail(`projected action count ${actions.length} is invalid`);
+if (actions.length !== 19) fail(`expected 19 exact damage rows, received ${actions.length}`);
 
 await mkdir(outputDirectory, { recursive: true });
 await assertRealDirectoryContained(path.dirname(inputPath), "input directory");
@@ -181,4 +165,3 @@ try {
   throw error;
 }
 console.log(`Generated ${path.relative(root, outputPath)} with ${actions.length} exact Verina damage rows from Wuwa ID ${WUWA_ID}.`);
-console.log(`[VERINA_FORTE_AUDIT] ${JSON.stringify(forteAudit)}`);
