@@ -1,4 +1,4 @@
-import { generatedCharacterBoxCombat10R1 } from "@/generated/character-box-combat-10r1";
+import { generatedVerinaGameDatabaseCombat } from "@/generated/verina-game-database-combat";
 import type { CombatAction, Resonator } from "@/domain/models";
 import {
   fallacyOfNoReturn,
@@ -9,7 +9,7 @@ import {
   verinaSource,
 } from "./verina-complete";
 
-const generatedVerinaActions = generatedCharacterBoxCombat10R1.verina.actions;
+const generatedVerinaActions = generatedVerinaGameDatabaseCombat.actions;
 
 const sameGroup = (
   left: CombatAction["multipliers"][number],
