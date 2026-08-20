@@ -440,7 +440,7 @@
       "id": "hiyuki",
       "name": "Hiyuki",
       "signatureWeaponName": "Frostburn",
-      "mechanicsStatus": "partial",
+      "mechanicsStatus": "complete",
       "scenarios": [
         { "id": "hiyuki-opener", "label": "Opener · Inward Vision / Whiteout Bitterfrost", "variant": "opener" },
         { "id": "hiyuki-loop", "label": "Loop · banked Bitterfrost", "variant": "loop" }
