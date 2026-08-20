@@ -25,6 +25,7 @@ import {
   preciseDpsLoadoutResonators,
   preciseDpsLoadoutWeapons,
 } from "./precise-dps-loadouts";
+import { preciseModernMainEchoes } from "./precise-main-echo-runtime";
 import { preciseModernSonatas } from "./precise-sonata-runtime";
 import { roster10R1BaselinePresets } from "./roster-10r1-presets";
 import {
@@ -130,6 +131,7 @@ export const mainEchoes: readonly MainEcho[] = [
   nightmareThunderingMephis,
   threnodianLeviathan,
   fallacyOfNoReturn,
+  ...preciseModernMainEchoes,
   {
     id: "fixture-main-echo",
     name: "Main Echo à renseigner",
