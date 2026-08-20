@@ -73,7 +73,9 @@ export const roster10R1BaselinePresets: readonly RecommendedBuildPreset[] =
         : baseline;
 
       if (mainEchoId && promotedCommunityPreset) {
-        const equippedIds = new Set(promotedCommunityPreset.echoLoadout.echoes.map((echo) => echo.echoId));
+        const equippedIds = new Set<string>(
+          promotedCommunityPreset.echoLoadout.echoes.map((echo) => echo.echoId),
+        );
         if (!equippedIds.has(mainEchoId)) {
           throw new Error(`Reviewed Main Echo ${mainEchoId} is not equipped by ${registry.id}.`);
         }
