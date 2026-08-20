@@ -1,5 +1,5 @@
 import type { CombatEffect, MainEcho } from "@/domain/models";
-import type { EffectDefinition, EffectModifier, RuntimeStatModifier } from "@/domain/effect-models";
+import type { EffectDefinition, EffectModifier, EffectSelector, RuntimeStatModifier } from "@/domain/effect-models";
 import { generatedPreciseCharacterBoxEchoPresets } from "@/generated/precise-character-box-echo-presets";
 
 const gameSource = {
@@ -30,6 +30,7 @@ const alwaysOn = (
   id: string,
   label: string,
   modifiers: readonly (EffectModifier | RuntimeStatModifier)[],
+  selectors?: readonly EffectSelector[],
 ): CombatEffect => {
   const definition: EffectDefinition = {
     id,
@@ -42,6 +43,7 @@ const alwaysOn = (
         id: `${id}-rule`,
         label,
         accounting: "runtime",
+        ...(selectors ? { selectors } : {}),
         modifiers,
       },
     ],
@@ -126,10 +128,12 @@ export const preciseModernMainEchoes: readonly MainEcho[] = [
       "Three Havoc hits at 152.39% ATK each. Main slot: +12% Havoc DMG and +20% Echo Skill DMG. CD 25s.",
     action: action("precise-nightmare-hecate-echo-skill", "Nightmare: Hecate · Smash", [{ percent: 152.39, hits: 3 }], 25),
     effects: [
-      alwaysOn("precise-nightmare-hecate-main-slot", "Nightmare: Hecate · Main-slot bonus", [
+      alwaysOn("precise-nightmare-hecate-element", "Nightmare: Hecate · +12% Havoc DMG", [
         { kind: "elemental-damage-bonus", stacking: "additive", value: 12 },
-        { kind: "damage-type-bonus", stacking: "additive", value: 20 },
       ]),
+      alwaysOn("precise-nightmare-hecate-echo", "Nightmare: Hecate · +20% Echo Skill DMG", [
+        { kind: "damage-type-bonus", stacking: "additive", value: 20 },
+      ], [{ kind: "damage-type", anyOf: ["echoSkill"] }]),
     ],
     source: gameSource,
   },
@@ -188,10 +192,12 @@ export const preciseModernMainEchoes: readonly MainEcho[] = [
       "Summon Talons of Decree for 273.60% Aero DMG. Main slot: +12% Aero DMG and +12% Heavy Attack DMG. CD 20s.",
     action: action("precise-fenrico-echo-skill", "Reminiscence: Fenrico · Talons of Decree", [{ percent: 273.6, hits: 1 }], 20),
     effects: [
-      alwaysOn("precise-fenrico-main-slot", "Reminiscence: Fenrico · Main-slot bonus", [
+      alwaysOn("precise-fenrico-element", "Reminiscence: Fenrico · +12% Aero DMG", [
         { kind: "elemental-damage-bonus", stacking: "additive", value: 12 },
-        { kind: "damage-type-bonus", stacking: "additive", value: 12 },
       ]),
+      alwaysOn("precise-fenrico-heavy", "Reminiscence: Fenrico · +12% Heavy Attack DMG", [
+        { kind: "damage-type-bonus", stacking: "additive", value: 12 },
+      ], [{ kind: "damage-type", anyOf: ["heavyAttack"] }]),
     ],
     source: gameSource,
   },
@@ -217,10 +223,12 @@ export const preciseModernMainEchoes: readonly MainEcho[] = [
       "Summon Corrosaurus for 273.60% Fusion DMG. Main slot: +12% Fusion DMG and +20% Echo Skill DMG. CD 20s.",
     action: action("precise-corrosaurus-echo-skill", "Corrosaurus · Summon", [{ percent: 273.6, hits: 1 }], 20),
     effects: [
-      alwaysOn("precise-corrosaurus-main-slot", "Corrosaurus · Main-slot bonus", [
+      alwaysOn("precise-corrosaurus-element", "Corrosaurus · +12% Fusion DMG", [
         { kind: "elemental-damage-bonus", stacking: "additive", value: 12 },
-        { kind: "damage-type-bonus", stacking: "additive", value: 20 },
       ]),
+      alwaysOn("precise-corrosaurus-echo", "Corrosaurus · +20% Echo Skill DMG", [
+        { kind: "damage-type-bonus", stacking: "additive", value: 20 },
+      ], [{ kind: "damage-type", anyOf: ["echoSkill"] }]),
     ],
     source: gameSource,
   },
@@ -235,10 +243,12 @@ export const preciseModernMainEchoes: readonly MainEcho[] = [
       { percent: 164.16, hits: 1 },
     ], 20),
     effects: [
-      alwaysOn("precise-lady-of-the-sea-main-slot", "Lady of the Sea · Main-slot bonus", [
+      alwaysOn("precise-lady-of-the-sea-element", "Lady of the Sea · +12% Aero DMG", [
         { kind: "elemental-damage-bonus", stacking: "additive", value: 12 },
-        { kind: "damage-type-bonus", stacking: "additive", value: 12 },
       ]),
+      alwaysOn("precise-lady-of-the-sea-liberation", "Lady of the Sea · +12% Resonance Liberation DMG", [
+        { kind: "damage-type-bonus", stacking: "additive", value: 12 },
+      ], [{ kind: "damage-type", anyOf: ["resonanceLiberation"] }]),
     ],
     source: gameSource,
   },
@@ -253,10 +263,12 @@ export const preciseModernMainEchoes: readonly MainEcho[] = [
       { percent: 164.16, hits: 1 },
     ], 20),
     effects: [
-      alwaysOn("precise-voidborne-construct-main-slot", "Voidborne Construct · Main-slot bonus", [
+      alwaysOn("precise-voidborne-construct-element", "Voidborne Construct · +12% Glacio DMG", [
         { kind: "elemental-damage-bonus", stacking: "additive", value: 12 },
-        { kind: "damage-type-bonus", stacking: "additive", value: 12 },
       ]),
+      alwaysOn("precise-voidborne-construct-liberation", "Voidborne Construct · +12% Resonance Liberation DMG", [
+        { kind: "damage-type-bonus", stacking: "additive", value: 12 },
+      ], [{ kind: "damage-type", anyOf: ["resonanceLiberation"] }]),
     ],
     source: gameSource,
   },
