@@ -21,6 +21,7 @@ import type {
 } from "@/domain/models";
 import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa-combat";
 import { canonicalLegacySonatas } from "./legacy-sonata-canonical-runtime";
+import { legacyRosterMainEchoes, legacyRosterSonatas } from "./legacy-roster-equipment-runtime";
 import { preciseCharacterBoxPresets } from "./precise-character-box-presets";
 import {
   preciseDpsLoadoutResonators,
@@ -124,6 +125,7 @@ export const sonatas: readonly Sonata[] = [
   threadOfSeveredFate,
   rejuvenatingGlow,
   ...canonicalLegacySonatas,
+  ...legacyRosterSonatas,
   ...preciseModernSonatas,
   { id: "fixture-sonata", name: "Sonata à renseigner", source: fixtureSource },
 ];
@@ -133,6 +135,7 @@ export const mainEchoes: readonly MainEcho[] = [
   nightmareThunderingMephis,
   threnodianLeviathan,
   fallacyOfNoReturn,
+  ...legacyRosterMainEchoes,
   ...preciseModernMainEchoes,
   {
     id: "fixture-main-echo",

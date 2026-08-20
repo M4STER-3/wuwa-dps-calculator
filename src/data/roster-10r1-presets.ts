@@ -3,6 +3,7 @@ import { generatedCharacterBoxRosterBaselines10R1 } from "@/generated/character-
 import { generatedCharacterBoxCombat10R1 } from "@/generated/character-box-combat-10r1";
 import { generatedCommunityEchoPresets10R1 } from "@/generated/community-echo-presets-10r1";
 import { applyEchoLoadoutStatsV1 } from "@/game-data/echo-loadout-stats";
+import { legacyRosterMainEchoIdByResonatorId } from "./legacy-roster-equipment-runtime";
 import { roster10R1 } from "./roster-10r1";
 
 const RESONATORS_WITH_RICH_PRESETS = new Set(["aemeath", "calcharo", "chisa"]);
@@ -13,13 +14,14 @@ type GeneratedCommunityPreset =
 const communityPresetsByResonator = generatedCommunityEchoPresets10R1 as Readonly<
   Record<string, GeneratedCommunityPreset | undefined>
 >;
+const mainEchoByResonator = legacyRosterMainEchoIdByResonatorId as Readonly<Record<string, string | undefined>>;
 
 const baselineSource = {
   kind: "verified-game-data" as const,
   source: "WUWA GameDatabase V1 · exact Lv90 baseline + reviewed Echo resolver",
-  verifiedAt: "2026-08-19",
+  verifiedAt: "2026-08-20",
   notes:
-    "Baseline déterministe : base personnage, base arme, statistique secondaire d’arme et cinq Echoes validés sont appliqués exactement une fois. Les nodes permanents du personnage, passifs d’arme et effets Sonata/Main Echo non structurés restent hors panel.",
+    "Baseline déterministe : base personnage, base arme, statistique secondaire d’arme et cinq Echoes validés sont appliqués exactement une fois. Sonata et Main Echo sont maintenant résolus au runtime depuis les identités GameDatabase; nodes permanents et passifs d’arme encore non structurés restent hors panel.",
 };
 
 const allSkillLevels10 = {
@@ -56,6 +58,7 @@ export const roster10R1BaselinePresets: readonly RecommendedBuildPreset[] =
         communityPreset?.promotionStatus === "curated-balanced"
           ? communityPreset
           : undefined;
+      const mainEchoId = mainEchoByResonator[registry.id];
 
       const finalStats = promotedCommunityPreset
         ? applyEchoLoadoutStatsV1(
@@ -68,6 +71,15 @@ export const roster10R1BaselinePresets: readonly RecommendedBuildPreset[] =
             promotedCommunityPreset.echoLoadout,
           ).finalStats
         : baseline;
+
+      if (mainEchoId && promotedCommunityPreset) {
+        const equippedIds = new Set<string>(
+          promotedCommunityPreset.echoLoadout.echoes.map((echo) => echo.echoId),
+        );
+        if (!equippedIds.has(mainEchoId)) {
+          throw new Error(`Reviewed Main Echo ${mainEchoId} is not equipped by ${registry.id}.`);
+        }
+      }
 
       return {
         id: `${registry.id}-s0-l90-signature-baseline-10r1`,
@@ -85,12 +97,16 @@ export const roster10R1BaselinePresets: readonly RecommendedBuildPreset[] =
         ...(promotedCommunityPreset
           ? { echoLoadout: promotedCommunityPreset.echoLoadout }
           : {}),
+        ...(mainEchoId ? { mainEchoId } : {}),
         notes: [
           "Baseline endgame : personnage Lv90, S0, talents Lv10, arme signature Lv90 R1.",
           promotedCommunityPreset
             ? "Les statistiques permanentes des cinq Echoes validés sont résolues dans finalStats exactement une fois via Echo Resolver V1."
             : "Aucun Echo promu n’est appliqué au panel ; aucune valeur manquante n’est inventée.",
-          "Nodes permanents, passif d’arme et effets Sonata/Main Echo non structurés restent explicitement non résolus à ce checkpoint.",
+          mainEchoId
+            ? "Le Main Echo équipé et les paliers Sonata réels sont résolus au runtime; aucun de leurs bonus temporaires n'est réinjecté dans finalStats."
+            : "Aucun Main Echo runtime n'est promu pour ce preset.",
+          "Les nodes permanents du personnage, passifs d’arme et mécaniques de kit non structurées restent explicitement non résolus à ce checkpoint.",
           ...(promotedCommunityPreset
             ? [
                 promotedCommunityPreset.promotionStatus === "verified"
