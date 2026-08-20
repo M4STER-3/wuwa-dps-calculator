@@ -20,11 +20,14 @@ import type {
   Weapon,
 } from "@/domain/models";
 import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa-combat";
+import { canonicalLegacySonatas } from "./legacy-sonata-canonical-runtime";
 import { preciseCharacterBoxPresets } from "./precise-character-box-presets";
 import {
   preciseDpsLoadoutResonators,
   preciseDpsLoadoutWeapons,
 } from "./precise-dps-loadouts";
+import { preciseModernMainEchoes } from "./precise-main-echo-runtime";
+import { preciseModernSonatas } from "./precise-sonata-runtime";
 import { roster10R1BaselinePresets } from "./roster-10r1-presets";
 import {
   roster10R1PromotedResonators,
@@ -120,6 +123,8 @@ export const sonatas: readonly Sonata[] = [
   voidThunder,
   threadOfSeveredFate,
   rejuvenatingGlow,
+  ...canonicalLegacySonatas,
+  ...preciseModernSonatas,
   { id: "fixture-sonata", name: "Sonata à renseigner", source: fixtureSource },
 ];
 
@@ -128,6 +133,7 @@ export const mainEchoes: readonly MainEcho[] = [
   nightmareThunderingMephis,
   threnodianLeviathan,
   fallacyOfNoReturn,
+  ...preciseModernMainEchoes,
   {
     id: "fixture-main-echo",
     name: "Main Echo à renseigner",

@@ -5,6 +5,7 @@ import {
   resolvePersonalLoadout,
   simulateRotationLab,
 } from "@/domain/personal-dps-lab";
+import { generatedPreciseCharacterBoxBaselines } from "@/generated/precise-character-box-baselines";
 import { presets, resonators, weapons } from "./catalog";
 import { preciseDpsFutureScenarios } from "./precise-dps-future";
 
@@ -49,7 +50,9 @@ describe("precise Character Box roster integration", () => {
         },
         weapon: { level: 90, rank: 1 },
       });
-      expect(preset?.echoLoadout).toBeUndefined();
+      expect(preset?.echoLoadout?.echoes, `${resonatorId} five-Echo loadout`).toHaveLength(5);
+      expect(preset?.echoLoadout?.mainEchoId, `${resonatorId} equipped Main Echo`).toBeDefined();
+      expect(preset?.mainEchoId, `${resonatorId} runtime Main Echo`).toBeDefined();
       expect(weapon?.type).toBe(resonator?.weaponType);
       expect(weapon?.rarity).toBe(5);
     }
@@ -82,9 +85,16 @@ describe("precise Character Box roster integration", () => {
     }
   });
 
-  it("keeps Jinhsi Ages of Harvest permanent Attribute DMG in finalStats exactly once", () => {
+  it("keeps Jinhsi Ages of Harvest and equipped Echo Spectro stats exactly once", () => {
     const preset = presets.find((entry) => entry.resonatorId === "jinhsi")!;
-    expect(preset.finalStats.elementalDamageBonus.spectro).toBe(12);
+    const baseline = generatedPreciseCharacterBoxBaselines.jinhsi;
+
+    expect(baseline.elementalDamageBonus.spectro).toBe(12);
+    expect(
+      preset.finalStats.elementalDamageBonus.spectro -
+        baseline.elementalDamageBonus.spectro,
+    ).toBe(60);
+    expect(preset.finalStats.elementalDamageBonus.spectro).toBe(72);
   });
 
   it("routes every new Character Box build into an executable precise Personal DPS scenario", () => {
