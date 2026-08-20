@@ -17,7 +17,7 @@ const recipes = [
   { key: "galbrena", resonatorId: "galbrena", characterName: "Galbrena", mainEcho: "Corrosaurus", sets: [["Flamewing's Shadow", 3], ["Chromatic Foam", 2]], style: "dps", damageSubstat: "echo-sub-heavy-attack-damage" },
   { key: "iuno", resonatorId: "iuno", characterName: "Iuno", mainEcho: "Lady of the Sea", sets: [["Crown of Valor", 3], ["Sound of True Name", 2]], style: "dps", damageSubstat: "echo-sub-resonance-liberation-damage" },
   { key: "shorekeeper", resonatorId: "shorekeeper", characterName: "Shorekeeper", mainEcho: "Fallacy of No Return", sets: [["Rejuvenating Glow", 5]], style: "hp-support", damageSubstat: "echo-sub-resonance-liberation-damage" },
-  { key: "hiyuki", resonatorId: "hiyuki", characterName: "Hiyuki", mainEcho: "Voidborne Construct", sets: [["Wishes of Quiet Snowfall", 5]], style: "dps", damageSubstat: "echo-sub-resonance-liberation-damage" },
+  { key: "hiyuki", resonatorId: "hiyuki", characterName: "Hiyuki", mainEcho: "Reminiscence: Threnodian - Voidborne Construct", sets: [["Wishes of Quiet Snowfall", 5]], style: "dps", damageSubstat: "echo-sub-resonance-liberation-damage" },
 ];
 
 const normalize = (value) => value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "");
