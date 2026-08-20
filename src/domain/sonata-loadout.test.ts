@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { Sonata } from "./models";
 import type { UserEchoLoadoutV1 } from "./user-echo-loadout";
 import {
+  countSonataPiecesFromEchoLoadoutV1,
+  resolveActiveSonataSetIdsFromPieceCountsV1,
   resolveActiveSonataSetIdsV1,
+  resolveSonataLoadoutFromPieceCountsV1,
   resolveSonataLoadoutV1,
   resolveSonataSetsFromEchoLoadoutV1,
+  resolveSonataSetsFromPieceCountsV1,
 } from "./sonata-loadout";
 
 const echo = (
@@ -53,10 +57,8 @@ const sonataCatalog: readonly Sonata[] = [
 ];
 
 describe("Sonata resolver from equipped Echo pieces", () => {
-  it("resolves a 5-piece set without duplicating lower thresholds", () => {
-    const resolved = resolveSonataSetsFromEchoLoadoutV1(
-      loadout(["set:a", "set:a", "set:a", "set:a", "set:a"]),
-    );
+  it("resolves a 5-piece validated count without duplicating lower thresholds", () => {
+    const resolved = resolveSonataSetsFromPieceCountsV1({ "set:a": 5 });
 
     expect(resolved).toEqual([
       {
@@ -65,12 +67,12 @@ describe("Sonata resolver from equipped Echo pieces", () => {
         reachedThresholds: [2, 3, 5],
       },
     ]);
-    expect(resolveActiveSonataSetIdsV1(loadout(["set:a", "set:a", "set:a", "set:a", "set:a"]))).toEqual(["set:a"]);
+    expect(resolveActiveSonataSetIdsFromPieceCountsV1({ "set:a": 5 })).toEqual(["set:a"]);
   });
 
-  it("resolves 3+2 as two independent sets and never invents a composite id", () => {
-    const mixed = loadout(["dream", "dream", "dream", "midnight", "midnight"]);
-    const resolved = resolveSonataSetsFromEchoLoadoutV1(mixed);
+  it("resolves validated 3+2 counts as two independent sets and never invents a composite id", () => {
+    const counts = { dream: 3, midnight: 2 };
+    const resolved = resolveSonataSetsFromPieceCountsV1(counts);
 
     expect(resolved).toEqual([
       {
@@ -84,12 +86,25 @@ describe("Sonata resolver from equipped Echo pieces", () => {
         reachedThresholds: [2],
       },
     ]);
-    expect(resolveActiveSonataSetIdsV1(mixed)).toEqual(["dream", "midnight"]);
+    expect(resolveActiveSonataSetIdsFromPieceCountsV1(counts)).toEqual(["dream", "midnight"]);
+  });
+
+  it("keeps persisted-loadout counting as a compatibility adapter to the validated-count resolver", () => {
+    const mixed = loadout(["dream", "dream", "dream", "midnight", "midnight"]);
+    const counts = countSonataPiecesFromEchoLoadoutV1(mixed);
+
+    expect({ ...counts }).toEqual({ dream: 3, midnight: 2 });
+    expect(resolveSonataSetsFromEchoLoadoutV1(mixed)).toEqual(
+      resolveSonataSetsFromPieceCountsV1(counts),
+    );
+    expect(resolveActiveSonataSetIdsV1(mixed)).toEqual(
+      resolveActiveSonataSetIdsFromPieceCountsV1(counts),
+    );
   });
 
   it("maps only explicitly declared piece bonuses for a mixed set", () => {
-    const resolved = resolveSonataLoadoutV1(
-      loadout(["dream", "dream", "dream", "midnight", "midnight"]),
+    const resolved = resolveSonataLoadoutFromPieceCountsV1(
+      { dream: 3, midnight: 2 },
       sonataCatalog,
     );
 
@@ -106,6 +121,14 @@ describe("Sonata resolver from equipped Echo pieces", () => {
     ]);
   });
 
+  it("keeps raw-loadout Sonata mapping equivalent to canonical validated counts", () => {
+    const mixed = loadout(["dream", "dream", "dream", "midnight", "midnight"]);
+
+    expect(resolveSonataLoadoutV1(mixed, sonataCatalog)).toEqual(
+      resolveSonataLoadoutFromPieceCountsV1({ dream: 3, midnight: 2 }, sonataCatalog),
+    );
+  });
+
   it("never promotes legacy full-set effects for an Echo-derived mixed loadout", () => {
     const legacyOnly: Sonata = {
       id: "legacy",
@@ -113,8 +136,8 @@ describe("Sonata resolver from equipped Echo pieces", () => {
       effects: [],
       source: fixtureSource,
     };
-    const resolved = resolveSonataLoadoutV1(
-      loadout(["legacy", "legacy", "other", "other", "other"]),
+    const resolved = resolveSonataLoadoutFromPieceCountsV1(
+      { legacy: 2, other: 3 },
       [legacyOnly],
     );
 
@@ -124,9 +147,9 @@ describe("Sonata resolver from equipped Echo pieces", () => {
   });
 
   it("resolves 2+2+1 while leaving the singleton inactive", () => {
-    const mixed = loadout(["set:a", "set:a", "set:b", "set:b", "set:c"]);
+    const counts = { "set:a": 2, "set:b": 2, "set:c": 1 };
 
-    expect(resolveSonataSetsFromEchoLoadoutV1(mixed)).toEqual([
+    expect(resolveSonataSetsFromPieceCountsV1(counts)).toEqual([
       {
         sonataSetId: "set:a",
         pieceCount: 2,
@@ -143,7 +166,19 @@ describe("Sonata resolver from equipped Echo pieces", () => {
         reachedThresholds: [],
       },
     ]);
-    expect(resolveActiveSonataSetIdsV1(mixed)).toEqual(["set:a", "set:b"]);
+    expect(resolveActiveSonataSetIdsFromPieceCountsV1(counts)).toEqual(["set:a", "set:b"]);
+  });
+
+  it("ignores invalid non-positive or fractional count entries defensively", () => {
+    expect(
+      resolveSonataSetsFromPieceCountsV1({ active: 2, zero: 0, negative: -1, fractional: 2.5 }),
+    ).toEqual([
+      {
+        sonataSetId: "active",
+        pieceCount: 2,
+        reachedThresholds: [2],
+      },
+    ]);
   });
 
   it("returns no active Sonata for a missing or empty Echo loadout", () => {
