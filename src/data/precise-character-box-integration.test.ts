@@ -1,0 +1,94 @@
+import { describe, expect, it } from "vitest";
+import { createBuildFromPreset } from "@/domain/character-box";
+import { resolvePersonalLoadout } from "@/domain/personal-dps-lab";
+import { presets, resonators, weapons } from "./catalog";
+import { preciseDpsFutureScenarios } from "./precise-dps-future";
+
+const preciseIds = [
+  "phrolova",
+  "denia",
+  "lynae",
+  "mornye",
+  "qiuyuan",
+  "jinhsi",
+  "galbrena",
+  "iuno",
+  "shorekeeper",
+  "hiyuki",
+] as const;
+
+const unresolvedCodes = new Set([
+  "unresolved-resonator-id",
+  "unresolved-weapon-id",
+  "missing-base-stat-basis",
+]);
+
+describe("precise Character Box roster integration", () => {
+  it("exposes all ten precise Resonators, signatures and Lv90 presets", () => {
+    for (const resonatorId of preciseIds) {
+      const resonator = resonators.find((entry) => entry.id === resonatorId);
+      const preset = presets.find((entry) => entry.resonatorId === resonatorId);
+      const weapon = preset
+        ? weapons.find((entry) => entry.id === preset.weapon.weaponId)
+        : undefined;
+
+      expect(resonator, `${resonatorId} resonator`).toBeDefined();
+      expect(resonator?.portrait?.src, `${resonatorId} portrait`).toMatch(
+        /^\/assets\/wuwa\/objects\/[a-f0-9]+\.webp$/,
+      );
+      expect(preset, `${resonatorId} preset`).toMatchObject({
+        characterLevel: 90,
+        sequence: 0,
+        progression: {
+          inherentSkillsUnlocked: true,
+          minorFortesUnlocked: true,
+        },
+        weapon: { level: 90, rank: 1 },
+      });
+      expect(preset?.echoLoadout).toBeUndefined();
+      expect(weapon?.type).toBe(resonator?.weaponType);
+      expect(weapon?.rarity).toBe(5);
+    }
+  });
+
+  it("copies the reviewed permanent panel into UserBuild without rebuilding equipment", () => {
+    for (const resonatorId of preciseIds) {
+      const preset = presets.find((entry) => entry.resonatorId === resonatorId)!;
+      const build = createBuildFromPreset(preset, {
+        id: `test-${resonatorId}`,
+        now: "2026-08-20T13:30:00.000Z",
+      });
+
+      expect(build.finalStats).toEqual(preset.finalStats);
+      expect(build.finalStats).not.toBe(preset.finalStats);
+      expect(build.finalStats.elementalDamageBonus).not.toBe(
+        preset.finalStats.elementalDamageBonus,
+      );
+      expect(build.finalStats.hp).toBeGreaterThan(0);
+      expect(build.finalStats.attack).toBeGreaterThan(0);
+      expect(build.finalStats.defense).toBeGreaterThan(0);
+
+      const loadout = resolvePersonalLoadout(build);
+      expect(loadout.supported, `${resonatorId} Personal DPS loadout`).toBe(true);
+      expect(loadout.baseStatBasis, `${resonatorId} exact base stat basis`).toBeDefined();
+      expect(
+        loadout.diagnostics.filter((entry) => unresolvedCodes.has(entry.code)),
+        `${resonatorId} unresolved diagnostics`,
+      ).toEqual([]);
+    }
+  });
+
+  it("keeps Jinhsi Ages of Harvest permanent Attribute DMG in finalStats exactly once", () => {
+    const preset = presets.find((entry) => entry.resonatorId === "jinhsi")!;
+    expect(preset.finalStats.elementalDamageBonus.spectro).toBe(12);
+  });
+
+  it("has at least one executable precise Personal DPS scenario for every new build", () => {
+    for (const resonatorId of preciseIds) {
+      expect(
+        preciseDpsFutureScenarios.some((scenario) => scenario.resonatorId === resonatorId),
+        `${resonatorId} scenario`,
+      ).toBe(true);
+    }
+  });
+});
