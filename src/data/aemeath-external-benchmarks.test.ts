@@ -3,10 +3,15 @@ import { createBuildFromPreset } from "@/domain/character-box";
 import { calculateActionDamage, calculateTuneBreakDamage, calculateTuneRuptureDamage } from "@/domain/damage-engine";
 import { compareExternalDisplay } from "@/domain/external-benchmark";
 import { calculateActionLab, isStandardDamage, resolvePersonalLoadout } from "@/domain/personal-dps-lab";
-import { aemeath, aemeathPreset } from "./aemeath";
+import { resolveActionTalentLevel } from "@/domain/talent-engine";
+import { findPersonalRotationScenario } from "./personal-rotation-presets";
+import { aemeath, aemeathPreset } from "./aemeath-combat";
 import { aemeathNakedStandardBenchmarks, aemeathNakedTuneBenchmarks } from "./aemeath-external-benchmarks";
 
 const action = (id: string) => aemeath.combat!.actions.find((candidate) => candidate.id === id)!;
+const structuredEffects = () => aemeath.combat!.effects.flatMap((effect) => effect.structuredEffect ? [effect.structuredEffect] : []);
+const structuredEffect = (id: string) => structuredEffects().find((effect) => effect.id === id)!;
+const rule = (effectId: string, ruleId: string) => structuredEffect(effectId).rules.find((candidate) => candidate.id === ruleId)!;
 
 describe("external benchmark fixtures — WutheringTools Aemeath", () => {
   it.each(aemeathNakedStandardBenchmarks)("matches $actionId displayed Normal/Average/Crit", (benchmark) => {
@@ -55,7 +60,7 @@ describe("external benchmark fixtures — WutheringTools Aemeath", () => {
 });
 
 describe("real Game Data integration — Aemeath recommended build", () => {
-  const build = createBuildFromPreset(aemeathPreset, { id: "real-build-benchmark", now: "2026-08-16T00:00:00Z" });
+  const build = createBuildFromPreset(aemeathPreset, { id: "real-build-benchmark", now: "2026-08-20T00:00:00Z" });
   const loadout = resolvePersonalLoadout(build);
   const target = { id: "real-build-target", level: 90, elementalResistance: { fusion: 0.1 }, physicalResistance: 0.1, tuneEnemyClass: "4C" as const };
 
@@ -65,7 +70,7 @@ describe("real Game Data integration — Aemeath recommended build", () => {
     const permanent = run("overdrive", ["everbright-r1-base", "trailblazing-2pc", "sigillum-main-aemeath"]);
     const everbright = run("overdrive", ["everbright-r1-liberation"]);
     const trailblazing = run("overdrive", ["trailblazing-5pc"]);
-    const heavy = run("mech-heavy-2", ["before-all-sounds"]);
+    const heavy = run("mech-heavy-2", ["scenario-aemeath-instant-response-heavy"]);
     if (![baseline, permanent, everbright, trailblazing, heavy].every((item) => isStandardDamage(item.damage))) throw new Error("Expected standard damage");
     if (!isStandardDamage(baseline.damage) || !isStandardDamage(permanent.damage) || !isStandardDamage(everbright.damage) || !isStandardDamage(trailblazing.damage) || !isStandardDamage(heavy.damage)) return;
     expect(permanent.damage.allDamageBonusPercent).toBe(12);
@@ -77,12 +82,57 @@ describe("real Game Data integration — Aemeath recommended build", () => {
     expect(trailblazing.damage.additionalElementalDamageBonusPercent).toBe(20);
     expect(trailblazing.damage.total.expected).toBeGreaterThan(baseline.damage.total.expected);
     expect(heavy.damage.damageAmplificationPercent).toBe(200);
+    expect(action("aemeath-heavy-2").damageType).toBe("resonanceLiberation");
+    expect(action("mech-heavy-2").damageType).toBe("resonanceLiberation");
   });
 });
 
 describe("talent-level readiness — Aemeath", () => {
-  it("marks every current action family Lv10 verified and Lv1–9 unavailable", () => {
-    expect(aemeath.combat!.level10Only).toBe(true);
-    expect(new Set(aemeath.combat!.actions.map((entry) => entry.level))).toEqual(new Set([10]));
+  it("resolves every configurable damaging action at exact Lv1-Lv10 without interpolation", () => {
+    expect(aemeath.combat!.level10Only).toBe(false);
+    const scalable = aemeath.combat!.actions.filter((entry) => entry.multipliers.length > 0 && entry.id !== "aemeath-fusion-burst");
+    for (const entry of scalable) {
+      expect(Object.keys(entry.multipliersByTalentLevel ?? {}), entry.id).toHaveLength(10);
+      for (let level = 1; level <= 10; level += 1) {
+        expect(resolveActionTalentLevel(entry, level as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10).status, `${entry.id} Lv${level}`).toBe("supported");
+      }
+    }
+  });
+
+  it("matches current Lv1 reference rows across Basic, Skill, Forte and Intro", () => {
+    expect(resolveActionTalentLevel(action("aemeath-basic-1"), 1)).toMatchObject({ status: "supported", action: { multipliers: [{ percent: 23.31, hits: 1 }] } });
+    expect(resolveActionTalentLevel(action("armament-merge"), 1)).toMatchObject({ status: "supported", action: { multipliers: [{ percent: 13.54, hits: 1 }, { percent: 20.31, hits: 1 }, { percent: 33.85, hits: 1 }] } });
+    expect(resolveActionTalentLevel(action("starburst"), 1)).toMatchObject({ status: "supported", action: { multipliers: [{ percent: 300, hits: 1 }] } });
+    expect(resolveActionTalentLevel(action("seraphic-bonus"), 1)).toMatchObject({ status: "supported", action: { multipliers: [{ percent: 55, hits: 1 }] } });
+    expect(resolveActionTalentLevel(action("intro-normal"), 1)).toMatchObject({ status: "supported", action: { multipliers: [{ percent: 6.77, hits: 2 }, { percent: 54.16, hits: 1 }] } });
+  });
+});
+
+describe("WutheringTools multi-config mechanic parity — Aemeath", () => {
+  it("matches S3 Tune and Fusion replacement values and Heavy II mode application", () => {
+    expect(rule("aemeath-sequence-personal-runtime", "aemeath-s3-overdrive-mv")).toMatchObject({ requiredSequence: 3, modifiers: [{ kind: "motion-value", mode: "relative-additive", value: { kind: "constant", value: 40 } }] });
+    expect(rule("aemeath-sequence-personal-runtime", "aemeath-s3-finale-mv")).toMatchObject({ requiredSequence: 3, modifiers: [{ kind: "motion-value", mode: "relative-additive", value: { kind: "constant", value: 100 } }] });
+    expect(rule("aemeath-between-stars-personal-runtime", "between-stars-s3-replacement")).toMatchObject({ requiredSequence: 3, modifiers: [{ kind: "crit-damage-bonus", value: 60 }] });
+    expect(rule("aemeath-between-stars-personal-runtime", "between-stars-s3-finale")).toMatchObject({ requiredSequence: 3, modifiers: [{ kind: "damage-amplification", value: 25 }] });
+    for (const mode of ["tune-rupture", "fusion-burst"] as const) {
+      const scenario = findPersonalRotationScenario("aemeath", mode)!;
+      expect(scenario.specialEvents).toContainEqual(expect.objectContaining({ id: `aemeath-${mode}-s3-heavy-application`, kind: mode, minimumSequence: 3, anchor: expect.objectContaining({ stepIndex: 13, at: "end" }) }));
+    }
+  });
+
+  it("matches S6 Tune/Fusion fixed Crit, Liberation vulnerability and trail-mode payloads", () => {
+    expect(rule("aemeath-sequence-personal-runtime", "aemeath-s6-liberation-amplification")).toMatchObject({ requiredSequence: 6, modifiers: [{ kind: "damage-amplification", value: 40 }] });
+    expect(rule("aemeath-sequence-personal-runtime", "aemeath-s6-mode-fixed-crit")).toMatchObject({ requiredSequence: 6, modifiers: [{ kind: "fixed-crit-override", critRatePercent: 80, critDamagePercent: 275 }] });
+    const tune = findPersonalRotationScenario("aemeath", "tune-rupture")!;
+    expect(tune.specialEvents?.find((event) => event.id === "aemeath-seraphic-encore-bonus")).toMatchObject({ repeat: 10 });
+    expect(tune.specialEvents?.find((event) => event.id === "aemeath-seraphic-overture-bonus")).toMatchObject({ repeat: 10 });
+    const fusion = findPersonalRotationScenario("aemeath", "fusion-burst")!;
+    expect(fusion.specialEvents?.find((event) => event.id === "aemeath-fusion-seraphic-encore")?.sequenceOverrides).toContainEqual({ minimumSequence: 6, payload: { multiplierIncreasePercent: 700 } });
+    expect(fusion.specialEvents?.find((event) => event.id === "aemeath-fusion-seraphic-overture")?.sequenceOverrides).toContainEqual({ minimumSequence: 6, payload: { multiplierIncreasePercent: 610 } });
+  });
+
+  it("keeps S0 Between the Stars mode-specific own-contributor values exact", () => {
+    expect(rule("aemeath-between-stars-personal-runtime", "between-stars-tune-own-contributor")).toMatchObject({ modifiers: [{ kind: "crit-damage-bonus", value: 20 }] });
+    expect(rule("aemeath-between-stars-personal-runtime", "between-stars-fusion-own-contributor")).toMatchObject({ modifiers: [{ kind: "crit-damage-bonus", value: 30 }] });
   });
 });
