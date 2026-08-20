@@ -17,6 +17,7 @@ import {
 } from "./damage-engine";
 import {
   calculateNegativeStatusDamage,
+  type NegativeStatusDamageKind,
   type NegativeStatusDamageResult,
 } from "./negative-status-damage";
 import {
@@ -609,9 +610,15 @@ export function simulatePersonalCombat(
       !event.originEventId &&
       event.payload?.aggregateDamage === true;
     const realHit = event.kind === "action-hit" && !event.external;
-    const special = ["tune-break", "tune-rupture", "fusion-burst"].includes(
-      event.kind,
-    );
+    const negativeStatusKind = event.payload?.negativeStatusKind as
+      | NegativeStatusDamageKind
+      | undefined;
+    const negativeStatusEvent =
+      event.kind === "custom" &&
+      (negativeStatusKind === "fusionBurst" || negativeStatusKind === "glacioChafe");
+    const special =
+      ["tune-break", "tune-rupture", "fusion-burst"].includes(event.kind) ||
+      negativeStatusEvent;
     if (
       (!aggregate && !realHit && !special) ||
       !event.actionId ||
@@ -1043,17 +1050,36 @@ export function simulatePersonalCombat(
         modifiers: resolved.tuneDamageModifiers,
         critOverride: resolved.overrides.fixedCrit,
       });
-    } else if (event.kind === "fusion-burst") {
+    } else if (event.kind === "fusion-burst" || negativeStatusEvent) {
+      const statusKind: NegativeStatusDamageKind =
+        event.kind === "fusion-burst" ? "fusionBurst" : negativeStatusKind!;
+      const stacksFromStatusId = event.payload?.negativeStatusStacksFromStatusId as
+        | string
+        | undefined;
+      const statusStacks = stacksFromStatusId
+        ? state.targets[event.targetId]?.statuses[stacksFromStatusId]?.stacks
+        : undefined;
       damage = calculateNegativeStatusDamage({
-        kind: "fusionBurst",
+        kind: statusKind,
         attackerLevel: req.build.characterLevel,
         target: req.target,
-        stacks: Number(event.payload?.stacks ?? 10),
+        stacks: Number(statusStacks ?? event.payload?.stacks ?? 10),
+        ...(event.payload?.motionValueBasisPointsOverride === undefined
+          ? {}
+          : {
+              motionValueBasisPointsOverride: Number(
+                event.payload.motionValueBasisPointsOverride,
+              ),
+            }),
         multiplierIncreasePercent: Number(
           event.payload?.multiplierIncreasePercent ?? 0,
         ),
         damageAmplificationPercent:
-          resolved.damageModifiers.damageAmplificationPercent ?? 0,
+          (resolved.damageModifiers.damageAmplificationPercent ?? 0) +
+          Number(event.payload?.damageAmplificationPercent ?? 0),
+        totalDamageBonusPercent:
+          (resolved.damageModifiers.allDamageBonusPercent ?? 0) +
+          Number(event.payload?.totalDamageBonusPercent ?? 0),
         defenseReduction: resolved.damageModifiers.defenseReduction ?? 0,
         resistanceReduction:
           resolved.damageModifiers.resistanceReduction ?? 0,
@@ -1085,7 +1111,7 @@ export function simulatePersonalCombat(
 
     const payload = event.payload ?? {};
     const defaultAttribution: DamageAttribution =
-      event.kind === "fusion-burst"
+      event.kind === "fusion-burst" || negativeStatusEvent
         ? "status"
         : event.kind === "tune-break" ||
             event.kind === "tune-rupture" ||

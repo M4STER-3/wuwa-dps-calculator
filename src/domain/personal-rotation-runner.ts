@@ -1,6 +1,7 @@
 import type { RuntimeBaseStatBasis } from "./combat-context";
 import type { DamageAmounts, DamageTarget } from "./damage-engine";
 import type { ActionDefinitionV02 } from "./effect-models";
+import { materializeWeaponForRank } from "./equipment-rank";
 import type { CombatAction, FinalStats, MainEcho, Resonator, Sonata, UserBuild, Weapon } from "./models";
 import { simulatePersonalCombat, type PersonalCombatResult } from "./personal-combat-simulation";
 import { emptyCombatState, type CombatEvent, type CombatState } from "./state-engine";
@@ -26,6 +27,10 @@ export interface TheoreticalPersonalRotationResult {
   scenario: PersonalRotationScenario;
   simulation: PersonalCombatResult;
 }
+
+type ScenarioWithTargetDuration = PersonalRotationScenario & {
+  targetDuration?: TemporalRotationDefinition["targetDuration"];
+};
 
 const highestApplicableOverride = (
   overrides: readonly SequencePayloadOverride[] | undefined,
@@ -61,6 +66,21 @@ function reviewedRotationTarget(
       .filter(Boolean)
       .join(" · "),
   };
+}
+
+function scenarioRotationTarget(
+  scenario: PersonalRotationScenario,
+  resonator: Resonator,
+  sequence: UserBuild["sequence"],
+): TemporalRotationDefinition["targetDuration"] | undefined {
+  const scenarioTarget = (scenario as ScenarioWithTargetDuration).targetDuration;
+  if (scenarioTarget) {
+    if (!Number.isFinite(scenarioTarget.seconds) || scenarioTarget.seconds <= 0) {
+      throw new Error(`Rotation scenario ${scenario.id} has invalid target duration ${scenarioTarget.seconds}.`);
+    }
+    return scenarioTarget;
+  }
+  return reviewedRotationTarget(resonator, sequence);
 }
 
 function compileSpecialEvents(
@@ -105,19 +125,43 @@ function compileSpecialEvents(
   return events;
 }
 
+function resourceCapForSequence(
+  resource: NonNullable<Resonator["combat"]>["resources"][number],
+  sequence: UserBuild["sequence"],
+): number {
+  const applicable = Object.entries(resource.capBySequence ?? {})
+    .map(([required, cap]) => ({ required: Number(required), cap }))
+    .filter((entry) => Number.isInteger(entry.required) && entry.required <= sequence && typeof entry.cap === "number")
+    .sort((a, b) => b.required - a.required);
+  const cap = applicable[0]?.cap ?? resource.cap;
+  if (!Number.isFinite(cap) || cap <= 0) {
+    throw new Error(`Resource ${resource.id} has invalid cap ${String(cap)} at S${sequence}.`);
+  }
+  return cap;
+}
+
+function sequenceRuntimeStates(sequence: UserBuild["sequence"]): readonly string[] {
+  return [
+    `sequence-${sequence}`,
+    ...Array.from({ length: sequence }, (_, index) => `sequence-at-least-${index + 1}`),
+  ];
+}
+
 function initialStateForScenario(
   scenario: PersonalRotationScenario,
   resonator: Resonator,
   stats: FinalStats,
   targetId: string,
+  sequence: UserBuild["sequence"],
 ): CombatState {
   const resources = Object.fromEntries(
     (resonator.combat?.resources ?? []).map((resource) => {
+      const cap = resourceCapForSequence(resource, sequence);
       const current = scenario.initialResources?.[resource.id] ?? 0;
-      if (!Number.isFinite(current) || current < 0 || current > resource.cap) {
-        throw new Error(`Rotation scenario ${scenario.id} has invalid initial ${resource.id}: ${current}/${resource.cap}.`);
+      if (!Number.isFinite(current) || current < 0 || current > cap) {
+        throw new Error(`Rotation scenario ${scenario.id} has invalid initial ${resource.id}: ${current}/${cap} at S${sequence}.`);
       }
-      return [resource.id, { current, max: resource.cap }];
+      return [resource.id, { current, max: cap }];
     }),
   );
   return emptyCombatState({
@@ -126,7 +170,7 @@ function initialStateForScenario(
       maxHp: stats.hp,
       onField: true,
       form: resonator.combat?.defaultForm,
-      namedStates: ["ground"],
+      namedStates: ["ground", ...sequenceRuntimeStates(sequence)],
       resources,
     },
   }, [targetId]);
@@ -196,6 +240,46 @@ function withFixedScenarioDamage(
   };
 }
 
+function withScenarioContextSemantics(
+  simulation: PersonalCombatResult,
+): PersonalCombatResult {
+  const pendingTeamContext = simulation.diagnostics.filter(
+    (diagnostic) => diagnostic.code === "team-context-required",
+  );
+  if (!pendingTeamContext.length) return simulation;
+
+  const diagnostics = simulation.diagnostics.map((diagnostic) =>
+    diagnostic.code === "team-context-required"
+      ? {
+          ...diagnostic,
+          relevance: "not-emitted-due-to-missing-context" as const,
+        }
+      : diagnostic,
+  );
+  const unsupportedMechanics = diagnostics.filter(
+    (diagnostic) =>
+      diagnostic.relevance === "relevant-unsupported" ||
+      diagnostic.relevance === "not-emitted-due-to-missing-context",
+  );
+
+  return {
+    ...simulation,
+    diagnostics,
+    unsupportedMechanics,
+    coverage: {
+      ...simulation.coverage,
+      modeledUnused: Math.max(
+        0,
+        simulation.coverage.modeledUnused - pendingTeamContext.length,
+      ),
+      notEmittedDueToMissingContext:
+        simulation.coverage.notEmittedDueToMissingContext +
+        pendingTeamContext.length,
+    },
+    partial: true,
+  };
+}
+
 export function runTheoreticalPersonalRotation(
   request: TheoreticalPersonalRotationRequest,
 ): TheoreticalPersonalRotationResult {
@@ -207,7 +291,7 @@ export function runTheoreticalPersonalRotation(
   const timeline = buildTheoreticalRotationTimeline(
     request.scenario.rotation,
     actions,
-    reviewedRotationTarget(request.resonator, request.build.sequence),
+    scenarioRotationTarget(request.scenario, request.resonator, request.build.sequence),
   );
   const externalEvents = compileSpecialEvents(request.scenario, timeline, request.build, request.resonator.id, targetId);
   const build = { ...request.build, finalStats: request.stats };
@@ -220,16 +304,25 @@ export function runTheoreticalPersonalRotation(
     baseStatBasis: request.baseStatBasis,
     actions: scenarioActions(request.scenario, actions),
     loadout: {
-      weapon: request.weapon,
+      weapon: materializeWeaponForRank(request.weapon, request.build.weapon.rank),
       sonata: request.sonata,
       mainEcho: request.mainEcho,
       extraEffects: request.scenario.extraEffects,
     },
-    initialState: initialStateForScenario(request.scenario, request.resonator, request.stats, targetId),
+    initialState: initialStateForScenario(
+      request.scenario,
+      request.resonator,
+      request.stats,
+      targetId,
+      request.build.sequence,
+    ),
     externalEvents,
   });
+  const simulation = withScenarioContextSemantics(
+    withFixedScenarioDamage(rawSimulation, externalEvents, request.resonator.id),
+  );
   return {
     scenario: request.scenario,
-    simulation: withFixedScenarioDamage(rawSimulation, externalEvents, request.resonator.id),
+    simulation,
   };
 }

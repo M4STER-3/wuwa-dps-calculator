@@ -32,6 +32,16 @@ const EXPECTED_IDS = {
   kumokiri: "21010056",
   "woodland-aria": "21030026",
   variation: "21050024",
+  "precise-phrolova-signature": "21050066",
+  "precise-denia-signature": "21050076",
+  "precise-lynae-signature": "21030046",
+  "precise-mornye-signature": "21010066",
+  "precise-qiuyuan-signature": "21020066",
+  "precise-jinhsi-signature": "21010026",
+  "precise-galbrena-signature": "21030036",
+  "precise-iuno-signature": "21040046",
+  "precise-shorekeeper-signature": "21050036",
+  "precise-hiyuki-signature": "21020086",
 } as const;
 
 describe("promoted weapon UI assets", () => {
@@ -77,8 +87,8 @@ describe("promoted weapon UI assets", () => {
         `${weaponId} icon should exist in public asset objects`,
       ).toBe(true);
 
-      const legacyPath = getWeaponUiIconPath(weaponId);
-      if (legacyPath) expect(legacyPath).toBe(manifestPath);
+      const directPath = getWeaponUiIconPath(weaponId);
+      if (directPath) expect(directPath).toBe(manifestPath);
     }
   });
 });

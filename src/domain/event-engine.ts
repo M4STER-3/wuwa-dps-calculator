@@ -1,7 +1,24 @@
 import type { SnapshotPolicy, StatusDefinition } from "./effect-models";
 import type { CombatEvent } from "./state-engine";
 
-const priority:Readonly<Record<string,number>>={"effect-expired":0,"state-exit":1,"resource-consumed":2,"rotation-step-start":3,"action-start":4,"action-hit":5,"damage-dealt":6,"action-end":7,"effect-activated":8};
+/**
+ * Same-timestamp ordering is part of the deterministic combat contract.
+ * An action that ends exactly when the next action begins must commit its
+ * after-action resources/state first; otherwise a no-quickswap sequence can
+ * incorrectly reject the next action even though the prior action generated
+ * the required resource at its completion boundary.
+ */
+const priority: Readonly<Record<string, number>> = {
+  "effect-expired": 0,
+  "state-exit": 1,
+  "resource-consumed": 2,
+  "action-end": 3,
+  "rotation-step-start": 4,
+  "action-start": 5,
+  "action-hit": 6,
+  "damage-dealt": 7,
+  "effect-activated": 8,
+};
 export function compareCombatEvents(a:CombatEvent,b:CombatEvent):number{return a.timestamp-b.timestamp||(priority[a.kind]??50)-(priority[b.kind]??50)||a.id.localeCompare(b.id);}
 export interface EventQueueLimits {maxProcessedEvents:number;maxChainDepth:number;maxZeroTimeRecursion:number;}
 export interface QueueDiagnostic {code:"event-limit-reached"|"chain-depth-reached"|"zero-time-cycle"|"invalid-event"|"duplicate-event-id";message:string;eventId?:string;}

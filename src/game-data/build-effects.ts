@@ -1,10 +1,11 @@
-import type { DamageType } from "@/domain/damage-engine";
 import type {
   ActiveEffectInstance,
   EffectDefinition,
   EffectSourceType,
 } from "@/domain/effect-models";
-import type { Element, FinalStats } from "@/domain/models";
+import { damageBonusTypes, type Element, type FinalStats } from "@/domain/models";
+
+type DamageBonusType = (typeof damageBonusTypes)[number];
 
 export const permanentBuildSourceKeyV1 = {
   characterPermanentNodes: (characterId: string) =>
@@ -24,7 +25,7 @@ export type PermanentBuildStatTargetV1 =
   | "healingBonus"
   | "tuneBreakBoost"
   | `elementalDamageBonus:${Element}`
-  | `damageTypeBonus:${DamageType}`;
+  | `damageTypeBonus:${DamageBonusType}`;
 
 export type PermanentBuildStatModeV1 =
   | "flat"
@@ -121,8 +122,8 @@ function addPercentagePoint(
   }
 
   if (target.startsWith("damageTypeBonus:")) {
-    const damageType = target.slice("damageTypeBonus:".length) as DamageType;
-    if (!(damageType in stats.damageTypeBonus)) {
+    const damageType = target.slice("damageTypeBonus:".length) as DamageBonusType;
+    if (!damageBonusTypes.includes(damageType)) {
       fail(`unknown damage type target ${target}`);
     }
     stats.damageTypeBonus[damageType] += value;
