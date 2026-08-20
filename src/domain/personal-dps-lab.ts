@@ -9,6 +9,7 @@ import type { CombatAction, FinalStats, MainEcho, Resonator, Sonata, UserBuild, 
 import { loadPersonalEffects, type PersonalCombatResult, type PersonalDiagnostic } from "./personal-combat-simulation";
 import { runTheoreticalPersonalRotation } from "./personal-rotation-runner";
 import { resolvePersonalSonataLoadout } from "./personal-sonata-loadout";
+import { withPreciseMainEchoCast } from "./precise-main-echo-scenarios";
 import type { RuntimeBaseStatBasis } from "./combat-context";
 import { buildEffectiveCombatStats, evaluatePredicate, evaluateValueExpression, type CombatContext } from "./combat-context";
 import { calculateActionOutcomes, type PersonalActionOutcome } from "./action-outcome-engine";
@@ -98,13 +99,19 @@ function findPreciseRotationScenario(resonatorId: string, resonanceMode?: string
 
 export function simulateRotationLab(loadout: ResolvedPersonalLoadout, stats: FinalStats, target: LabTarget, resonanceMode?: string): PersonalCombatResult | undefined {
   if (!loadout.resonator) return undefined;
-  const scenario =
+  const baseScenario =
     findPersonalRotationScenario(loadout.resonator.id, resonanceMode) ??
     findPreciseRotationScenario(loadout.resonator.id, resonanceMode) ??
     registryPersonalRotationScenarios.find(
       (candidate) => candidate.resonatorId === loadout.resonator!.id,
     );
-  if (!scenario) return undefined;
+  if (!baseScenario) return undefined;
+  const scenario = withPreciseMainEchoCast(
+    baseScenario,
+    loadout.resonator.id,
+    loadout.mainEcho,
+    loadout.actions,
+  );
   const scenarioWithSonataEffects = loadout.sonataEffects.length
     ? {
         ...scenario,
