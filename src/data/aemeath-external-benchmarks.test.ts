@@ -86,7 +86,7 @@ describe("real Game Data integration — Aemeath recommended build", () => {
     const simulation = simulateRotationLab(loadout, build.finalStats, realBuildTarget, "tune-rupture");
     const heavy = simulation?.audits.find((audit) => audit.actionId === "mech-heavy-2");
     if (![baseline, permanent, everbright, trailblazing].every((item) => isStandardDamage(item.damage))) throw new Error("Expected standard damage");
-    if (!heavy || !isStandardDamage(heavy.damage)) throw new Error("Expected scenario-owned Instant Response Heavy damage");
+    if (!heavy || heavy.damage.status !== "supported" || heavy.damage.formula !== "standard-damage-v0.1") throw new Error("Expected scenario-owned Instant Response Heavy damage");
     if (!isStandardDamage(baseline.damage) || !isStandardDamage(permanent.damage) || !isStandardDamage(everbright.damage) || !isStandardDamage(trailblazing.damage)) return;
     expect(permanent.damage.allDamageBonusPercent).toBe(12);
     expect(permanent.damage.additionalElementalDamageBonusPercent).toBe(10);
