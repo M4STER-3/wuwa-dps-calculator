@@ -11,6 +11,14 @@ type ReviewedCombatProjection = {
   readonly mappedActions: readonly ReviewedMappedAction[];
 };
 
+const reviewedTalentTypes = new Set<CombatAction["talent"]>([
+  "basicAttack",
+  "resonanceSkill",
+  "forteCircuit",
+  "resonanceLiberation",
+  "introSkill",
+]);
+
 export function applyReviewedGameDatabaseTalentLevels(
   resonator: Resonator,
   projection: ReviewedCombatProjection,
@@ -26,7 +34,7 @@ export function applyReviewedGameDatabaseTalentLevels(
   );
 
   const actions = resonator.combat?.actions.map((action) => {
-    if (!action.multipliers.length) return action;
+    if (!action.multipliers.length || !reviewedTalentTypes.has(action.talent)) return action;
     const generated = generatedByActionId.get(action.id);
     if (!generated) {
       throw new Error(
