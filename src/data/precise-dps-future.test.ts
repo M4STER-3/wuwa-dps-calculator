@@ -19,11 +19,17 @@ const actionByAttribute = (resonatorId: string, sourceAttributeId: string): Proj
 };
 
 describe("precise future DPS projection", () => {
-  it("keeps all ten requested characters unique and partial until mechanics are complete", () => {
+  it("keeps all ten requested characters unique and preserves explicit mechanics completion status", () => {
     expect(preciseDpsFutureResonators).toHaveLength(10);
     expect(new Set(preciseDpsFutureResonators.map((entry) => entry.id)).size).toBe(10);
     expect(preciseDpsFutureWeapons).toHaveLength(10);
-    expect(preciseDpsScenarioInventory.every((scenario) => scenario.mechanicsStatus === "partial")).toBe(true);
+
+    const hiyuki = preciseDpsScenarioInventory.filter((scenario) => scenario.resonatorId === "hiyuki");
+    expect(hiyuki).toHaveLength(2);
+    expect(hiyuki.every((scenario) => scenario.mechanicsStatus === "complete")).toBe(true);
+
+    const remaining = preciseDpsScenarioInventory.filter((scenario) => scenario.resonatorId !== "hiyuki");
+    expect(remaining.every((scenario) => scenario.mechanicsStatus === "partial")).toBe(true);
   });
 
   it("models Lynae as two explicit resonance-mode scenarios", () => {
