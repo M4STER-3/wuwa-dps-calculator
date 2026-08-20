@@ -102,6 +102,22 @@ const character = record(matches[0], "character");
 if (character.name !== NAME) fail(`Wuwa ID ${WUWA_ID} identity mismatch: ${JSON.stringify(character.name)}`);
 if (!Array.isArray(character.skills)) fail("Verina skills must be an array");
 
+const forteAudit = [];
+for (const [skillIndex, rawSkill] of character.skills.entries()) {
+  const skill = record(rawSkill, `skills[${skillIndex}]`);
+  const sourceParameters = record(skill.sourceParameters, `skills[${skillIndex}].sourceParameters`);
+  if (sourceParameters.type !== "Forte Circuit" || !Array.isArray(sourceParameters.attributes)) continue;
+  for (const [attributeIndex, rawAttribute] of sourceParameters.attributes.entries()) {
+    const attribute = record(rawAttribute, `skills[${skillIndex}].attributes[${attributeIndex}]`);
+    forteAudit.push({
+      sourceAttributeId: attribute.sourceAttributeId,
+      name: attribute.name,
+      level1: Array.isArray(attribute.values) ? attribute.values[0] ?? null : null,
+      level10: Array.isArray(attribute.values) ? attribute.values[9] ?? null : null,
+    });
+  }
+}
+
 const actions = [];
 const ids = new Set();
 for (const [skillIndex, rawSkill] of character.skills.entries()) {
@@ -165,4 +181,4 @@ try {
   throw error;
 }
 console.log(`Generated ${path.relative(root, outputPath)} with ${actions.length} exact Verina damage rows from Wuwa ID ${WUWA_ID}.`);
-console.log(`[VERINA_GAMEDB_AUDIT] ${JSON.stringify(actions.map(({ sourceAttributeId, sourceSkillName, name, talent, multipliers }) => ({ sourceAttributeId, sourceSkillName, name, talent, multipliers })))}`);
+console.log(`[VERINA_FORTE_AUDIT] ${JSON.stringify(forteAudit)}`);
