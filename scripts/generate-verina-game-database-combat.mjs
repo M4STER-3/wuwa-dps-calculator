@@ -38,7 +38,7 @@ const reviewedMappings = [
   { actionId: "verina-dodge", talent: "basicAttack", sourceAttributeIds: ["1700015"], level10: [{ percent: 129.23, hits: 1 }] },
   { actionId: "verina-botany-experiment", talent: "resonanceSkill", sourceAttributeIds: ["1700016"], level10: [{ percent: 35.79, hits: 3 }, { percent: 71.58, hits: 1 }] },
   { actionId: "verina-starflower-midair", talent: "forteCircuit", sourceAttributeIds: ["1700028", "1700029", "1700030"], level10: [{ percent: 67.64, hits: 1 }, { percent: 63.82, hits: 1 }, { percent: 30.5, hits: 3 }] },
-  { actionId: "verina-starflower-heavy", talent: "forteCircuit", sourceAttributeIds: ["1700035"], level10: [{ percent: 64.95, hits: 1 }, { percent: 97.42, hits: 1 }] },
+  { actionId: "verina-starflower-heavy", talent: "forteCircuit", sourceAttributeIds: ["1700026"], level10: [{ percent: 64.95, hits: 1 }, { percent: 97.42, hits: 1 }] },
   { actionId: "verina-arboreal-flourish", talent: "resonanceLiberation", sourceAttributeIds: ["1700018"], level10: [{ percent: 198.81, hits: 1 }] },
   { actionId: "verina-intro", talent: "introSkill", sourceAttributeIds: ["1700025"], level10: [{ percent: 99.41, hits: 1 }] },
   { actionId: "verina-coordinated-attack", talent: "resonanceLiberation", sourceAttributeIds: ["1700020"], level10: [{ percent: 9.95, hits: 1 }] },
@@ -176,7 +176,9 @@ if (new Set(reviewedSourceIds).size !== reviewedSourceIds.length || reviewedSour
   fail("reviewed sourceAttributeId coverage is not one-to-one with projected rows");
 }
 for (const row of sourceRows) {
-  if (!reviewedSourceIds.includes(row.sourceAttributeId)) fail(`unreviewed projected row ${row.sourceAttributeId}`);
+  if (!reviewedSourceIds.includes(row.sourceAttributeId)) {
+    fail(`unreviewed projected row ${row.sourceAttributeId} (${row.sourceSkillId} ${row.sourceSkillName} / ${row.name} / Lv10=${JSON.stringify(row.multipliers)})`);
+  }
 }
 
 const mappedActions = reviewedMappings.map((mapping) => {
