@@ -131,7 +131,7 @@ function resourceCapForSequence(
 ): number {
   const applicable = Object.entries(resource.capBySequence ?? {})
     .map(([required, cap]) => ({ required: Number(required), cap }))
-    .filter((entry) => Number.isInteger(entry.required) && entry.required <= sequence && typeof cap === "number")
+    .filter((entry) => Number.isInteger(entry.required) && entry.required <= sequence && typeof entry.cap === "number")
     .sort((a, b) => b.required - a.required);
   const cap = applicable[0]?.cap ?? resource.cap;
   if (!Number.isFinite(cap) || cap <= 0) {
