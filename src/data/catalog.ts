@@ -34,7 +34,7 @@ import {
   roster10R1PromotedResonators,
   roster10R1PromotedWeapons,
 } from "./roster-10r1-promoted";
-import { fallacyOfNoReturn, rejuvenatingGlow, variation, verina, verinaPreset } from "./verina-runtime";
+import { fallacyOfNoReturn, rejuvenatingGlow, variation, verina, verinaPreset } from "./verina-complete";
 import { getResonatorUiPortraitPath } from "@/game-data/resonator-ui-asset-ids";
 
 const fixtureSource = {
