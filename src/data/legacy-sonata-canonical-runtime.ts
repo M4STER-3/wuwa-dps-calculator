@@ -3,7 +3,7 @@ import type { EffectDefinition } from "@/domain/effect-models";
 import { generatedLegacySonataCanonicalIds } from "@/generated/precise-character-box-echo-presets";
 import { trailblazingStar } from "./aemeath-combat";
 import { voidThunder } from "./calcharo-runtime";
-import { chisaSource, threadOfSeveredFate } from "./chisa-combat";
+import { threadOfSeveredFate } from "./chisa-combat";
 
 const aliasSource = {
   kind: "verified-game-data" as const,
@@ -121,5 +121,3 @@ export const canonicalLegacySonatas: readonly Sonata[] = [
   canonicalThreadOfSeveredFate,
   canonicalHavocEclipse,
 ];
-
-export { chisaSource };
