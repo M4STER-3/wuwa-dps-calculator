@@ -1,11 +1,12 @@
 import { generatedCharacterBoxRosterBaselines10R1 } from "@/generated/character-box-roster-baselines-10r1";
 import { generatedCommunityEchoPresets10R1 } from "@/generated/community-echo-presets-10r1";
+import { generatedReviewedCharacterGameDatabaseCombat } from "@/generated/reviewed-character-game-database-combat";
 import { applyEchoLoadoutStatsV1 } from "@/game-data/echo-loadout-stats";
 import type { CombatEffect } from "@/domain/models";
 import type { EffectDefinition } from "@/domain/effect-models";
+import { applyReviewedGameDatabaseTalentLevels } from "./reviewed-game-database-combat";
 import {
   chisa as runtimeChisa,
-  chisaActions,
   chisaEffects as runtimeEffects,
   chisaPreset as runtimeChisaPreset,
   chisaSource,
@@ -46,10 +47,11 @@ const patchEffect = (effect: CombatEffect): CombatEffect =>
  * - Woven Myriad remains active through Sawring - Eradication damage and ends at action-end.
  * - The Ring Lv10 rule is always present; its resource expression still resolves to zero
  *   when no Ring is available, so the scenario does not need a character branch.
+ * - Exact Lv1-Lv10 character talent multipliers come from the shared reviewed GameDatabase projection.
  */
 export const chisaEffects: readonly CombatEffect[] = runtimeEffects.map(patchEffect);
 
-export const chisa = {
+const patchedRuntimeChisa = {
   ...runtimeChisa,
   combat: runtimeChisa.combat
     ? {
@@ -58,6 +60,13 @@ export const chisa = {
       }
     : undefined,
 };
+
+export const chisa = applyReviewedGameDatabaseTalentLevels(
+  patchedRuntimeChisa,
+  generatedReviewedCharacterGameDatabaseCombat.chisa,
+);
+
+export const chisaActions = chisa.combat?.actions ?? [];
 
 const generatedEcho = generatedCommunityEchoPresets10R1.chisa.echoLoadout;
 const baseline = generatedCharacterBoxRosterBaselines10R1.chisa;
@@ -95,7 +104,6 @@ export const chisaPreset = {
 };
 
 export {
-  chisaActions,
   chisaSource,
   kumokiri,
   threadOfSeveredFate,
