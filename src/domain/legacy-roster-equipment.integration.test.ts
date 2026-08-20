@@ -14,7 +14,7 @@ const legacyIds = [
 ] as const;
 
 const expectedSonatas: Readonly<Record<(typeof legacyIds)[number], readonly string[]>> = {
-  augusta: ["sonata-set:20", "sonata-set:1"],
+  augusta: ["sonata-set:20", "sonata-set:3"],
   brant: ["sonata-set:14"],
   cantarella: ["sonata-set:12"],
   carlotta: ["sonata-set:10"],
