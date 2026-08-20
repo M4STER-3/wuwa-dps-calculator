@@ -20,6 +20,13 @@ const recipes = [
   { key: "hiyuki", resonatorId: "hiyuki", characterName: "Hiyuki", mainEcho: "Reminiscence: Threnodian - Voidborne Construct", sets: [["Wishes of Quiet Snowfall", 5]], style: "dps", damageSubstat: "echo-sub-resonance-liberation-damage" },
 ];
 
+const legacySonataAliasNames = {
+  trailblazingStar: "Trailblazing Star",
+  voidThunder: "Void Thunder",
+  threadOfSeveredFate: "Thread of Severed Fate",
+  havocEclipse: "Havoc Eclipse",
+};
+
 const normalize = (value) => value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "");
 const database = JSON.parse(await readFile(databasePath, "utf8"));
 const exactByName = (entries, name, label) => {
@@ -162,8 +169,16 @@ for (const recipe of recipes) {
   };
 }
 
+const legacySonataCanonicalIds = Object.fromEntries(
+  Object.entries(legacySonataAliasNames).map(([key, name]) => {
+    const sonata = sonataByName.get(normalize(name));
+    if (!sonata) throw new Error(`legacy Sonata alias ${name} is missing from GameDatabase`);
+    return [key, sonata.id];
+  }),
+);
+
 await mkdir(path.dirname(outputPath), { recursive: true });
-const serialized = `/* Generated from WUWA GameDatabase V1. Do not edit manually. */\nexport const generatedPreciseCharacterBoxEchoPresets = ${JSON.stringify(output, null, 2)} as const;\n`;
+const serialized = `/* Generated from WUWA GameDatabase V1. Do not edit manually. */\nexport const generatedPreciseCharacterBoxEchoPresets = ${JSON.stringify(output, null, 2)} as const;\nexport const generatedLegacySonataCanonicalIds = ${JSON.stringify(legacySonataCanonicalIds, null, 2)} as const;\n`;
 try {
   await writeFile(temporaryPath, serialized, { encoding: "utf8", flag: "wx", mode: 0o644 });
   await rename(temporaryPath, outputPath);
@@ -171,4 +186,4 @@ try {
   await rm(temporaryPath, { force: true }).catch(() => undefined);
   throw error;
 }
-console.log(`Generated ${path.relative(root, outputPath)} with ${Object.keys(output).length} precise Echo loadouts.`);
+console.log(`Generated ${path.relative(root, outputPath)} with ${Object.keys(output).length} precise Echo loadouts and ${Object.keys(legacySonataCanonicalIds).length} legacy Sonata aliases.`);
