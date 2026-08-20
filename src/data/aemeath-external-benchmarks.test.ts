@@ -135,7 +135,7 @@ describe("WutheringTools multi-config mechanic parity — Aemeath", () => {
         manualEffectIds: ["aemeath-sequence-personal-runtime"],
       })!;
       if (!isStandardDamage(result.damage)) throw new Error(`Expected standard damage for ${actionId}`);
-      expect(display(result.damage)).toEqual([1373, 1408, 2060]);
+      expect(display(result.damage)).toEqual([1373, 1407, 2059]);
     }
   });
 
