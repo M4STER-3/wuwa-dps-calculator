@@ -45,6 +45,7 @@ export interface TeamCycleValidation {
 const blocking = new Set([
   "timing-required",
   "hit-timing-required",
+  "hit-count-mismatch",
   "action-resource-rejected",
   "action-cooldown",
   "inactive-actor-action",
@@ -132,7 +133,8 @@ export function validateTeamCycle(
     (diagnostic) =>
       diagnostic.code === "team-energy-propagation-required" ||
       diagnostic.code === "timing-required" ||
-      diagnostic.code === "hit-timing-required",
+      diagnostic.code === "hit-timing-required" ||
+      diagnostic.code === "hit-count-mismatch",
   );
   const structureChanged =
     JSON.stringify(cycle1Signature) !== JSON.stringify(cycle2Signature);
