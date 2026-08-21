@@ -1,10 +1,12 @@
 import type { DamageTarget } from "./damage-engine";
+import type { CombatEvent } from "./state-engine";
 import {
   simulateTeam,
-  simulateTeamContinuation,
   type TeamSimulationInput,
   type TeamSimulationResult,
 } from "./team-engine";
+import { adaptPersonalRotationToTeamBlock } from "./team-personal-rotation-adapter";
+import { buildSequentialTeamCycle } from "./team-rotation-builder";
 
 export type CycleRepeatability =
   | "repeatable"
@@ -56,6 +58,73 @@ const blocking = new Set([
   "missing-scaling-owner",
   "missing-damage-owner",
 ]);
+
+interface AutomaticPersonalCycleEvents {
+  relativeEvents: readonly CombatEvent[];
+}
+
+function sameRotationSteps(
+  left: TeamSimulationInput["steps"],
+  right: TeamSimulationInput["steps"],
+): boolean {
+  return JSON.stringify(left ?? []) === JSON.stringify(right ?? []);
+}
+
+/**
+ * Detects the exact automatic Personal -> Team cycle without relying on UI state.
+ * Only that exact cycle inherits Personal scenario events; authored/manual Team
+ * rotations keep their explicit event contract.
+ */
+function automaticPersonalCycleEvents(
+  input: TeamSimulationInput,
+): AutomaticPersonalCycleEvents | undefined {
+  if (!input.actors.length || !input.steps?.length) return undefined;
+
+  const adapted = input.actors.map((actor) =>
+    adaptPersonalRotationToTeamBlock(actor, actor.resonanceMode),
+  );
+  if (adapted.some((rotation) => rotation.diagnostics.length > 0)) {
+    return undefined;
+  }
+  const automaticCycle = buildSequentialTeamCycle(
+    adapted.map((rotation) => rotation.rotation),
+  );
+  if (
+    automaticCycle.diagnostics.length > 0 ||
+    automaticCycle.startingActorId !== input.activeActorId ||
+    !sameRotationSteps(automaticCycle.steps, input.steps)
+  ) {
+    return undefined;
+  }
+
+  const relativeEvents: CombatEvent[] = [];
+  let blockStartSeconds = 0;
+  for (const rotation of adapted) {
+    if (rotation.teamBlockDurationSeconds === undefined) return undefined;
+    for (const event of rotation.scenarioEvents) {
+      relativeEvents.push({
+        ...event,
+        timestamp: blockStartSeconds + event.timestamp,
+        external: true,
+      });
+    }
+    blockStartSeconds += rotation.teamBlockDurationSeconds;
+  }
+  return { relativeEvents };
+}
+
+function shiftScenarioEvents(
+  events: readonly CombatEvent[],
+  offsetSeconds: number,
+  cycleId: string,
+): readonly CombatEvent[] {
+  return events.map((event) => ({
+    ...event,
+    id: `${event.id}:${cycleId}`,
+    timestamp: offsetSeconds + event.timestamp,
+    external: true,
+  }));
+}
 
 export function summarizeTeamDps(result: TeamSimulationResult): TeamDpsSummary {
   const duration = result.resolvedDurationSeconds;
@@ -118,12 +187,31 @@ export function executionSignature(
 export function validateTeamCycle(
   input: TeamSimulationInput,
 ): TeamCycleValidation {
-  const cycle1 = simulateTeam(input);
-  const cycle2 = simulateTeamContinuation(
-    cycle1.finalState,
-    input.steps ?? [],
-    input.target,
-  );
+  const automaticEvents = automaticPersonalCycleEvents(input);
+  const cycle1Start = input.initialState?.currentTimeSeconds ?? 0;
+  const cycle1ScenarioEvents = automaticEvents
+    ? shiftScenarioEvents(automaticEvents.relativeEvents, cycle1Start, "cycle-1")
+    : [];
+  const cycle1 = simulateTeam({
+    ...input,
+    externalEvents: [
+      ...(input.externalEvents ?? []),
+      ...cycle1ScenarioEvents,
+    ],
+  });
+
+  const cycle2Start = cycle1.finalState.currentTimeSeconds;
+  const cycle2ScenarioEvents = automaticEvents
+    ? shiftScenarioEvents(automaticEvents.relativeEvents, cycle2Start, "cycle-2")
+    : [];
+  const cycle2 = simulateTeam({
+    actors: [],
+    activeActorId: cycle1.finalState.activeActorId,
+    target: input.target,
+    steps: input.steps ?? [],
+    initialState: cycle1.finalState,
+    externalEvents: cycle2ScenarioEvents,
+  });
   const cycle1Signature = executionSignature(cycle1);
   const cycle2Signature = executionSignature(cycle2);
   const cycle2BlockingDiagnostics = cycle2.diagnostics.filter((diagnostic) =>
