@@ -44,23 +44,31 @@ describe("Shorekeeper completion audit", () => {
     ).toBe(true);
   });
 
-  it("keeps every native damage row exact at Lv1 and Lv10 while End Loop stays zero-MV", () => {
+  it("keeps every projected native damage row exact at Lv1 and Lv10 while End Loop stays zero-MV", () => {
     const nativeDamageActions = (resonator.combat?.actions ?? []).filter(
       (action) => action.id !== SHOREKEEPER_MANUAL.endLoop && action.multipliers.length > 0,
     );
-    expect(nativeDamageActions.length).toBeGreaterThan(15);
+    expect(nativeDamageActions).toHaveLength(13);
     for (const action of nativeDamageActions) {
       expect(action.multipliersByTalentLevel?.[1], `${action.id} Lv1`).toBeDefined();
       expect(action.multipliersByTalentLevel?.[10], `${action.id} Lv10`).toBeDefined();
     }
 
-    for (const id of Object.values(SHOREKEEPER_NATIVE)) {
-      expect(resonator.combat?.actions.some((action) => action.id === id), id).toBe(true);
+    const requiredNativeIds = Object.values(SHOREKEEPER_NATIVE);
+    expect(requiredNativeIds).toHaveLength(10);
+    for (const id of requiredNativeIds) {
+      const action = resonator.combat?.actions.find((candidate) => candidate.id === id);
+      expect(action, id).toBeDefined();
+      expect(action?.multipliers.length, `${id} damage row`).toBeGreaterThan(0);
+      expect(action?.multipliersByTalentLevel?.[1], `${id} Lv1`).toBeDefined();
+      expect(action?.multipliersByTalentLevel?.[10], `${id} Lv10`).toBeDefined();
     }
+
     const endLoop = resonator.combat?.actions.find(
       (action) => action.id === SHOREKEEPER_MANUAL.endLoop,
     );
     expect(endLoop?.multipliers).toEqual([]);
+    expect(endLoop?.sourceAttributeId).toBeUndefined();
   });
 
   it("keeps Stellar Symphony permanent HP upstream and temporary/team effects out of finalStats", () => {
