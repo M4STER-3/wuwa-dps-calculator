@@ -72,7 +72,14 @@ describe("Shorekeeper current-reference formula parity", () => {
     expect(damage.status).toBe("supported");
     if (damage.status !== "supported") return;
     expect(damage.totalMotionValue).toBeCloseTo(0.5892, 8);
-    expect(damage.total.nonCrit).toBeCloseTo(10605.6, 6);
+    expect(damage.attackerLevelTerm).toBe(1520);
+    expect(damage.enemyBaseDefense).toBe(1512);
+    expect(damage.defenseMultiplier).toBeCloseTo(1520 / 3032, 12);
+    expect(damage.resistanceMultiplier).toBeCloseTo(0.9, 12);
+    expect(damage.total.nonCrit).toBeCloseTo(
+      40000 * 0.5892 * (1520 / 3032) * 0.9,
+      8,
+    );
     expect(damage.total.expected).toBeCloseTo(damage.total.crit, 8);
   });
 
