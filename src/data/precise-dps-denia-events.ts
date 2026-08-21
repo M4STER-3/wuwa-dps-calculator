@@ -231,7 +231,7 @@ export function applyPreciseDeniaWeaponEventMechanics(
   const applicationActionIds = matchingActionIds(resonator);
   return {
     ...weapon,
-    effects: weapon.effects.map((effect) => {
+    effects: (weapon.effects ?? []).map((effect) => {
       const definition = effect.structuredEffect;
       if (!definition) return effect;
       if (definition.id === "precise-forged-dwarf-star-liberation-window") {
