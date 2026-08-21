@@ -94,9 +94,10 @@ export function applyPreciseShorekeeperActionPatches(
       return {
         ...action,
         damageType: "resonanceLiberation" as const,
+        scalingAttribute: "hp" as const,
         notes: [
           ...(action.notes ?? []),
-          "Discernment is guaranteed to Crit and is considered Resonance Liberation DMG.",
+          "Discernment scales from Shorekeeper's HP, is guaranteed to Crit and is considered Resonance Liberation DMG.",
         ],
       };
     }
