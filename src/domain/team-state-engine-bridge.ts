@@ -185,10 +185,12 @@ function projectCombatState(
 function materializeTrigger(
   trigger: TriggerDefinition,
   sequence: UserBuild["sequence"],
+  ownerActorId: string,
 ): TriggerDefinition {
   const exactCooldown = trigger.cooldownSecondsBySequence?.[sequence];
   return {
     ...trigger,
+    id: `team-owner:${ownerActorId}:${trigger.id}`,
     operationOwner: undefined,
     cooldown:
       exactCooldown === undefined
@@ -204,6 +206,7 @@ function singleTriggerDefinitions(
   sourceDefinition: EffectDefinition,
   trigger: TriggerDefinition,
   sequence: UserBuild["sequence"],
+  ownerActorId: string,
 ): readonly EffectDefinition[] {
   const stripped = definitions.map((definition) => ({
     ...definition,
@@ -211,7 +214,7 @@ function singleTriggerDefinitions(
   }));
   const syntheticSource: EffectDefinition = {
     ...sourceDefinition,
-    triggers: [materializeTrigger(trigger, sequence)],
+    triggers: [materializeTrigger(trigger, sequence, ownerActorId)],
   };
   const sourceIndex = stripped.findIndex(
     (definition) => definition.id === sourceDefinition.id,
@@ -225,7 +228,9 @@ function singleTriggerDefinitions(
 /**
  * Executes one complete data-owned TriggerDefinition through the canonical
  * State Engine. Team binding supplies the actor-instance owner, so operations
- * never fall back to a static resonator/weapon/sonata source id.
+ * never fall back to a static resonator/weapon/sonata source id. The runtime
+ * trigger id is namespaced by that actor instance so cooldowns and trigger
+ * counters from identical catalog definitions cannot collide across actors.
  */
 export function applyTeamStructuredTrigger(
   input: TeamStructuredTriggerInput,
@@ -239,6 +244,7 @@ export function applyTeamStructuredTrigger(
     input.sourceDefinition,
     input.trigger,
     input.sequence,
+    input.ownerActorId,
   );
   const result = processEvent(
     toCombatState(input.state),
