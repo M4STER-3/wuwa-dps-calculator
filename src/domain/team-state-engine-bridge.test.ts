@@ -177,7 +177,9 @@ describe("Team State Engine bridge", () => {
     expect(result.state.actorsById[inputActor.actorId]!.currentForm).toBe("empowered");
     expect(result.state.activeEffects.find((effect) => effect.definition.id === "runtime-buff")?.stacks).toBe(2);
     expect(result.state.targetsById.target.statuses[`mark::${inputActor.actorId}`]?.stacks).toBe(1);
-    expect(Object.keys(result.state.cooldowns)).toContain("action-target:starter:target:source-effect:universal-ops");
+    expect(Object.keys(result.state.cooldowns)).toContain(
+      "action-target:starter:target:source-effect:team-owner:slot-any-name:universal-ops",
+    );
     expect(result.emittedEvents.map((entry) => [entry.kind, entry.timestamp, entry.actionId])).toEqual([
       ["custom", 0.25, "starter"],
       ["action-hit", 0.5, "derived-hit"],
@@ -209,6 +211,12 @@ describe("Team State Engine bridge", () => {
     }
     expect(state.targetsById.target.statuses["mark::first-instance"]?.sourceOwnerId).toBe("first-instance");
     expect(state.targetsById.target.statuses["mark::second-instance"]?.sourceOwnerId).toBe("second-instance");
+    expect(Object.keys(state.cooldowns)).toEqual(
+      expect.arrayContaining([
+        "action-target:starter:target:source-effect:team-owner:first-instance:universal-ops",
+        "action-target:starter:target:source-effect:team-owner:second-instance:universal-ops",
+      ]),
+    );
   });
 
   it("uses State Engine expiry semantics for effects and statuses", () => {
