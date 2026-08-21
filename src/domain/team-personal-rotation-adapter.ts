@@ -1,11 +1,7 @@
-import { registryPersonalRotationScenarios } from "@/data/personal-dps-roster-registry";
-import { preciseDpsFutureScenarios } from "@/data/precise-dps-future";
-import {
-  findPersonalRotationScenario,
-  type PersonalRotationScenario,
-} from "@/data/personal-rotation-presets";
+import type { PersonalRotationScenario } from "@/data/personal-rotation-presets";
 
 import type { CombatAction, Resonator, UserBuild } from "./models";
+import { selectPersonalRotationScenario } from "./personal-rotation-selection";
 import { withPreciseMainEchoCast } from "./precise-main-echo-scenarios";
 import type { TeamActorInput } from "./team-engine";
 import type {
@@ -35,37 +31,6 @@ export interface AdaptedTeamPersonalRotation {
 type ScenarioWithTargetDuration = PersonalRotationScenario & {
   targetDuration?: TemporalRotationDefinition["targetDuration"];
 };
-
-function findPreciseRotationScenario(
-  resonatorId: string,
-  resonanceMode?: string,
-): PersonalRotationScenario | undefined {
-  const candidates = preciseDpsFutureScenarios.filter(
-    (candidate) => candidate.resonatorId === resonatorId,
-  );
-  if (resonanceMode) {
-    const exactMode = candidates.find(
-      (candidate) => candidate.resonanceMode === resonanceMode,
-    );
-    if (exactMode) return exactMode;
-  }
-  return candidates.find((candidate) => !candidate.resonanceMode) ?? candidates[0];
-}
-
-/** Mirrors the Personal DPS scenario-selection policy without introducing a
- * resonator-specific Team branch. */
-export function selectPersonalRotationScenario(
-  resonatorId: string,
-  resonanceMode?: string,
-): PersonalRotationScenario | undefined {
-  return (
-    findPersonalRotationScenario(resonatorId, resonanceMode) ??
-    findPreciseRotationScenario(resonatorId, resonanceMode) ??
-    registryPersonalRotationScenarios.find(
-      (candidate) => candidate.resonatorId === resonatorId,
-    )
-  );
-}
 
 function reviewedRotationTarget(
   resonator: Resonator,
