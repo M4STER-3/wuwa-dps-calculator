@@ -28,7 +28,7 @@ import {
   preciseDpsLoadoutWeapons,
 } from "./precise-dps-loadouts";
 import { preciseModernMainEchoes } from "./precise-main-echo-runtime";
-import { preciseModernSonatas } from "./precise-sonata-runtime";
+import { preciseModernSonatasWithPersonalCompletions } from "./precise-sonata-personal-completions";
 import { roster10R1BaselinePresets } from "./roster-10r1-presets";
 import {
   roster10R1PromotedResonators,
@@ -126,7 +126,7 @@ export const sonatas: readonly Sonata[] = [
   rejuvenatingGlow,
   ...canonicalLegacySonatas,
   ...legacyRosterSonatas,
-  ...preciseModernSonatas,
+  ...preciseModernSonatasWithPersonalCompletions,
   { id: "fixture-sonata", name: "Sonata à renseigner", source: fixtureSource },
 ];
 
