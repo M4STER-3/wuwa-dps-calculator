@@ -126,6 +126,7 @@ export const chisaEffects: readonly CombatEffect[] = runtimeEffects.map(patchEff
 const resolvedFinalUnknowns = new Set([
   "Heavy Attack Lv1 disputed.",
   "Basic-family Lv2-9 unavailable.",
+  "External WutheringTools fixture pending.",
 ]);
 
 const patchedRuntimeChisa = {
