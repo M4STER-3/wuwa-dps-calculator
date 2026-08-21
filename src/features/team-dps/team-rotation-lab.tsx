@@ -328,7 +328,8 @@ export function TeamRotationLab() {
               const actor = build
                 ? prepared.actors.find((candidate) => candidate.build.id === build.id)
                 : undefined;
-              const resonator = actor?.resonator ??
+              const resonator =
+                actor?.resonator ??
                 (build
                   ? resonators.find((item) => item.id === build.resonatorId)
                   : undefined);
@@ -370,7 +371,9 @@ export function TeamRotationLab() {
                     )}
                   </div>
                   <span className={styles.slotName}>
-                    {build ? resonator?.name ?? build.resonatorId : "Emplacement libre"}
+                    {build
+                      ? resonator?.name ?? build.resonatorId
+                      : "Emplacement libre"}
                   </span>
                   <span className={styles.slotMeta}>
                     {build
@@ -530,10 +533,15 @@ export function TeamRotationLab() {
                 <div className={styles.autoRotationGrid}>
                   {automaticRotations.map((rotation) => (
                     <div className={styles.autoRotationCard} key={rotation.actorId}>
-                      <strong>{actorLabels[rotation.actorId] ?? rotation.actorId}</strong>
-                      <span>{rotation.scenarioName ?? "Rotation indisponible"}</span>
+                      <strong>
+                        {actorLabels[rotation.actorId] ?? rotation.actorId}
+                      </strong>
+                      <span>
+                        {rotation.scenarioName ?? "Rotation indisponible"}
+                      </span>
                       <small>
-                        {rotation.rotation.steps.length} étapes · {rotation.teamBlockDurationSeconds !== undefined
+                        {rotation.rotation.steps.length} étapes ·{" "}
+                        {rotation.teamBlockDurationSeconds !== undefined
                           ? `${formatNumber(rotation.teamBlockDurationSeconds, 2)} s`
                           : "durée non résolue"}
                       </small>
@@ -573,7 +581,9 @@ export function TeamRotationLab() {
                             setResult(undefined);
                           }}
                           type="number"
-                          value={initialResources[actor.actorId]?.[resource.id] ?? 0}
+                          value={
+                            initialResources[actor.actorId]?.[resource.id] ?? 0
+                          }
                         />
                         <span>/ {resource.cap}</span>
                       </label>
@@ -588,7 +598,10 @@ export function TeamRotationLab() {
                 <section className={styles.advancedSection}>
                   <h2 className={styles.advancedTitle}>Paramètres manuels</h2>
                   <div className={styles.fieldRow}>
-                    <label className={styles.fieldLabel} htmlFor="team-starting-actor">
+                    <label
+                      className={styles.fieldLabel}
+                      htmlFor="team-starting-actor"
+                    >
                       Personnage de départ
                     </label>
                     <select
@@ -614,14 +627,16 @@ export function TeamRotationLab() {
                 <section className={styles.advancedSection}>
                   <h2 className={styles.advancedTitle}>Rotation manuelle</h2>
                   <p className={styles.advancedCopy}>
-                    La durée manuelle ne remplace pas les timings de hit, cancel ou frame.
+                    La durée manuelle ne remplace pas les timings de hit, cancel ou
+                    frame.
                   </p>
 
                   <div className={styles.fieldRow}>
                     <select className={styles.select} id="team-action">
                       {actionOptions.map((option) => (
                         <option key={option.id} value={option.id}>
-                          {option.name} · {option.timing === "verified"
+                          {option.name} ·{" "}
+                          {option.timing === "verified"
                             ? "timing vérifié"
                             : "timing manquant"}
                         </option>
@@ -683,7 +698,10 @@ export function TeamRotationLab() {
 
                   <ol className={styles.rotationList}>
                     {steps.map((step, index) => (
-                      <li className={styles.rotationItem} key={`${index}-${step.kind}`}>
+                      <li
+                        className={styles.rotationItem}
+                        key={`${index}-${step.kind}`}
+                      >
                         <span className={styles.rotationIndex}>{index + 1}</span>
                         <span className={styles.rotationKind}>{step.kind}</span>
                         <span className={styles.rotationMeta}>
@@ -814,9 +832,16 @@ function ResultSummary({
       ].includes(item.code),
     );
   const authoritative = dps.available && !invalid;
+  const displayedDps = authoritative
+    ? dps.teamDps
+    : !invalid
+      ? dps.resolvedDps
+      : undefined;
   const order = rotationActorOrder(startingActorId, steps);
   const uniqueOrder = [...new Set(order)];
-  const orderRank = new Map(uniqueOrder.map((actorId, index) => [actorId, index]));
+  const orderRank = new Map(
+    uniqueOrder.map((actorId, index) => [actorId, index]),
+  );
   const distribution = Object.entries(dps.byActor).sort(
     ([left], [right]) =>
       (orderRank.get(left) ?? Number.MAX_SAFE_INTEGER) -
@@ -838,16 +863,29 @@ function ResultSummary({
         <div className={styles.metricCard}>
           <span className={styles.metricLabel}>DPS équipe</span>
           <span className={styles.dpsValue}>
-            {authoritative ? formatNumber(dps.teamDps ?? 0) : "—"}
-            {authoritative && <span className={styles.metricUnit}>DPS</span>}
+            {displayedDps !== undefined ? formatNumber(displayedDps) : "—"}
+            {displayedDps !== undefined && (
+              <span className={styles.metricUnit}>
+                {authoritative ? "DPS" : "DPS résolu"}
+              </span>
+            )}
           </span>
           {!authoritative && (
             <p className={styles.resultReason}>
               {invalid
                 ? "La rotation contient encore une donnée invalide ou non résolue."
-                : dps.reason ?? "Le calcul est encore partiel."}
+                : displayedDps !== undefined
+                  ? "Valeur provisoire basée uniquement sur les dégâts déjà résolus."
+                  : dps.reason ?? "Le calcul est encore partiel."}
             </p>
           )}
+          <p className={styles.resultReason}>
+            Dégâts résolus{authoritative ? "" : " · provisoires"}
+          </p>
+          <span className={styles.durationValue}>
+            {formatNumber(dps.totalExpectedDamage)}
+            <span className={styles.metricUnit}>DMG</span>
+          </span>
         </div>
 
         <div className={styles.metricCard}>
@@ -889,7 +927,8 @@ function ResultSummary({
                 />
               </div>
               <span className={styles.distributionValue}>
-                {formatNumber(value.expectedDamage)} · {formatNumber(value.contributionPercent, 1)}%
+                {formatNumber(value.expectedDamage)} ·{" "}
+                {formatNumber(value.contributionPercent, 1)}%
               </span>
             </div>
           ))}
@@ -952,7 +991,9 @@ function AdvancedResult({
           value={result.eventLog.map(
             (event) =>
               `${event.timestamp.toFixed(2)} · ${event.kind} · owner ${event.ownerId}${
-                event.triggeringActorId ? ` · trigger ${event.triggeringActorId}` : ""
+                event.triggeringActorId
+                  ? ` · trigger ${event.triggeringActorId}`
+                  : ""
               }`,
           )}
         />
