@@ -175,6 +175,6 @@ describe("Phrolova completion audit", () => {
     const result = run(6, 24, loopScenario);
     expect(result.partial, JSON.stringify(result.diagnostics)).toBe(false);
     expect(result.totalDamage.expected).toBeGreaterThan(run(0).totalDamage.expected);
-    expect(result.offField.perAction[PHROLOVA.apparition]?.expected ?? 0).toBeGreaterThan(0);
+    expect(result.onField.perAction[PHROLOVA.apparition]?.expected ?? 0).toBeGreaterThan(0);
   });
 });
