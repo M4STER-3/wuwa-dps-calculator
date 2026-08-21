@@ -3,9 +3,27 @@ import type { ReactNode } from "react";
 
 import { SiteNavigation } from "@/components/site-navigation";
 
+function SearchIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4.2 4.2" />
+    </svg>
+  );
+}
+
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
-    <div className="wuwa-site-shell">
+    <div className="wuwa-site-shell v4-theme">
       <aside className="wuwa-shell-rail" aria-label="Navigation WUWA LAB">
         <Link href="/" className="wuwa-shell-brand">
           <span className="wuwa-shell-brand__mark" aria-hidden="true">
@@ -13,7 +31,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </span>
           <span className="wuwa-shell-brand__copy">
             <span className="wuwa-shell-brand__title">WUWA LAB</span>
-            <span className="wuwa-shell-brand__subtitle">Theorycraft workspace</span>
+            <span className="wuwa-shell-brand__subtitle">Theorycraft</span>
           </span>
         </Link>
 
@@ -22,10 +40,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <div className="wuwa-shell-status">
           <span className="wuwa-shell-status__label">
             <span className="wuwa-shell-status__dot" aria-hidden="true" />
-            Calculs vérifiés uniquement
+            Workspace local
           </span>
           <span className="wuwa-shell-status__copy">
-            Les modules incomplets restent identifiés et ne sont jamais présentés comme résultats validés.
+            Builds, données et assets restent reliés aux sources validées du calculateur.
           </span>
         </div>
       </aside>
@@ -43,19 +61,33 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </Link>
 
           <details className="wuwa-shell-mobile-menu">
-            <summary>Menu</summary>
+            <summary>Navigation</summary>
             <div className="wuwa-shell-mobile-menu__panel">
               <SiteNavigation mobile />
             </div>
           </details>
         </header>
 
-        <div className="wuwa-shell-context" aria-label="Contexte de l’espace de travail">
-          <div className="wuwa-shell-context__identity">
-            <span className="wuwa-shell-context__kicker">WUWA LAB</span>
-            <span className="wuwa-shell-context__name">Wuthering Waves theorycraft calculator</span>
+        <div className="wuwa-shell-context" aria-label="Barre d’outils WUWA LAB">
+          <Link
+            href="/data"
+            className="wuwa-shell-search"
+            aria-label="Ouvrir Données pour rechercher un personnage, une arme ou un Echo"
+          >
+            <SearchIcon />
+            <span className="wuwa-shell-search__text">
+              Rechercher un personnage, une arme, un Echo…
+            </span>
+            <span className="wuwa-shell-search__hint" aria-hidden="true">
+              Données
+            </span>
+          </Link>
+
+          <div className="wuwa-shell-actions">
+            <Link href="/character-box" className="wuwa-shell-action-link">
+              Character Box
+            </Link>
           </div>
-          <span className="wuwa-shell-context__meta">Visual system · Phase 1</span>
         </div>
 
         <main className="wuwa-shell-main">{children}</main>

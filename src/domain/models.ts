@@ -29,7 +29,8 @@ export const skillTypes = [
 ] as const;
 export type SkillType = (typeof skillTypes)[number];
 
-export const damageTypes = [
+/** Damage categories that own a permanent FinalStats damage-bonus channel. */
+export const damageBonusTypes = [
   "basicAttack",
   "heavyAttack",
   "resonanceSkill",
@@ -37,6 +38,13 @@ export const damageTypes = [
   "introSkill",
   "echoSkill",
 ] as const;
+
+/**
+ * Standard formula damage categories. Outro damage is intentionally neutral: it
+ * receives element/all-DMG/amplification/crit/DEF/RES modifiers, but has no
+ * dedicated permanent damage-type-bonus stat unless the game explicitly adds one.
+ */
+export const damageTypes = [...damageBonusTypes, "outroSkill"] as const;
 
 export type Sequence = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type Rarity = 4 | 5;
@@ -86,6 +94,8 @@ export interface CombatResource {
   id: string;
   name: string;
   cap: number;
+  /** Sparse exact cap replacements gated by Resonance Sequence; the highest applicable Sequence wins. */
+  capBySequence?: Readonly<Partial<Record<Sequence, number>>>;
   naturalRegeneration?: DataValue<number>;
   notes: readonly string[];
   /** Game-rule meaning; runtime logic must not infer this from the resource id. */
@@ -105,6 +115,8 @@ export interface CombatAction {
     condition: string;
   };
   scaling?: "damage" | "tuneAmp";
+  /** Damage scaling is data-owned per action; ordinary character attacks default to ATK. */
+  scalingAttribute?: "attack" | "hp" | "defense";
   /** Default/authoring level. Exact alternate levels are sparse and never interpolated. */
   level: TalentLevel;
   multipliers: readonly MotionValueGroup[];
@@ -222,11 +234,20 @@ export interface Weapon {
   source: SourceMetadata;
 }
 
+export interface SonataPieceBonus {
+  pieces: 2 | 3 | 5;
+  effectDescription?: string;
+  effects?: readonly CombatEffect[];
+}
+
 export interface Sonata {
   id: string;
   name: string;
   effectDescription?: string;
+  /** Legacy single-set effect list retained for existing presets. */
   effects?: readonly CombatEffect[];
+  /** Data-owned thresholds used by Echo-derived multi-set loadouts. */
+  pieceBonuses?: readonly SonataPieceBonus[];
   source: SourceMetadata;
 }
 
@@ -251,7 +272,7 @@ export interface FinalStats {
   /** Permanent Tune Break Boost, expressed in percentage points. */
   tuneBreakBoost: number;
   elementalDamageBonus: Record<Element, number>;
-  damageTypeBonus: Record<(typeof damageTypes)[number], number>;
+  damageTypeBonus: Record<(typeof damageBonusTypes)[number], number>;
 }
 
 export interface RecommendedBuildPreset {
@@ -273,6 +294,8 @@ export interface RecommendedBuildPreset {
       elementalDamageBonus?: Partial<Record<Element, { minimum: number; maximum?: number }>>;
     }
   >;
+  /** Exact five-Echo recommendation input. It is upstream build data, never a second runtime stat source. */
+  echoLoadout?: import("./user-echo-loadout").UserEchoLoadoutV1;
   sonataId?: string;
   mainEchoId?: string;
   notes: readonly string[];

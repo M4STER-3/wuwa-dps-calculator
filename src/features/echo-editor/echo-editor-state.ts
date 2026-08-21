@@ -59,15 +59,25 @@ export function draftSlotsFromLoadout(loadout?: UserEchoLoadoutV1): DraftEchoSlo
   return slots;
 }
 
+function incompleteSlotMessage(slot: DraftEchoSlot, slotNumber: number): string {
+  const missing: string[] = [];
+  if (!slot.sonataSetId) missing.push("un Sonata");
+  if (!slot.primaryMainStatId) missing.push("une main stat");
+  return `Slot ${slotNumber} incomplet : choisissez ${missing.join(" et ")}.`;
+}
+
 export function loadoutFromDraftSlots(slots: readonly DraftEchoSlot[]): UserEchoLoadoutV1 {
   if (slots.length !== ECHO_EDITOR_SLOT_COUNT) {
-    throw new Error(`Echo editor requires exactly ${ECHO_EDITOR_SLOT_COUNT} draft slots.`);
+    throw new Error(`L’éditeur Echo attend exactement ${ECHO_EDITOR_SLOT_COUNT} slots.`);
   }
 
-  const equipped = slots.filter((slot) => slot.echoId.length > 0);
-  const echoes = equipped.map((slot, index) => {
+  const equipped = slots
+    .map((slot, slotIndex) => ({ slot, slotIndex }))
+    .filter(({ slot }) => slot.echoId.length > 0);
+
+  const echoes = equipped.map(({ slot, slotIndex }) => {
     if (!slot.sonataSetId || !slot.primaryMainStatId) {
-      throw new Error(`Echo slot ${index + 1} is incomplete.`);
+      throw new Error(incompleteSlotMessage(slot, slotIndex + 1));
     }
 
     return {
@@ -78,11 +88,13 @@ export function loadoutFromDraftSlots(slots: readonly DraftEchoSlot[]): UserEcho
       primaryMainStatId: slot.primaryMainStatId,
       substats: slot.substats.map((substat, subIndex) => {
         if (!substat.statId || substat.value.length === 0) {
-          throw new Error(`Echo slot ${index + 1} substat ${subIndex + 1} is incomplete.`);
+          throw new Error(
+            `Slot ${slotIndex + 1} · substat ${subIndex + 1} incomplète : choisissez la stat et son roll.`,
+          );
         }
         const value = Number(substat.value);
         if (!Number.isFinite(value) || value < 0) {
-          throw new Error(`Echo slot ${index + 1} substat ${subIndex + 1} has an invalid value.`);
+          throw new Error(`Slot ${slotIndex + 1} · substat ${subIndex + 1} : valeur invalide.`);
         }
         return { statId: substat.statId, value };
       }),
@@ -96,7 +108,7 @@ export function loadoutFromDraftSlots(slots: readonly DraftEchoSlot[]): UserEcho
   };
 
   if (!isUserEchoLoadoutV1(candidate)) {
-    throw new Error("Echo editor produced an invalid persisted loadout.");
+    throw new Error("Le loadout Echo produit par l’éditeur est invalide.");
   }
   return sanitizeUserEchoLoadoutV1(candidate);
 }

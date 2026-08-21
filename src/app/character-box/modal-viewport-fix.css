@@ -1,0 +1,51 @@
+.v4-theme > [role="dialog"] {
+  z-index: 10000 !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+  padding: clamp(12px, 2.4vw, 28px) !important;
+}
+
+.v4-theme > [role="dialog"] > div {
+  width: min(100%, 1160px) !important;
+  max-height: calc(100dvh - clamp(24px, 4.8vw, 56px)) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.v4-theme > [role="dialog"] > div > header {
+  flex: 0 0 auto;
+}
+
+.v4-theme > [role="dialog"] > div > :last-child:not(header) {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 780px) {
+  .v4-theme > [role="dialog"] {
+    padding: 12px !important;
+  }
+
+  .v4-theme > [role="dialog"] > div {
+    max-height: calc(100dvh - 24px) !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .v4-theme > [role="dialog"] {
+    padding: 0 !important;
+  }
+
+  .v4-theme > [role="dialog"] > div {
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+}

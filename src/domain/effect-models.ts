@@ -160,6 +160,8 @@ export interface ActionDefinitionV02 {
   action: CombatAction;
   multipliersByTalentLevel?: Readonly<Partial<Record<TalentLevel, CombatAction["multipliers"]>>>;
   requirements?: readonly CombatPredicate[];
+  /** The scenario owns the ordering when legacy resource quantities have no exact event stage. */
+  assumeLegacyResourceStagesSatisfied?: boolean;
 }
 
 export interface ActiveEffectInstance {

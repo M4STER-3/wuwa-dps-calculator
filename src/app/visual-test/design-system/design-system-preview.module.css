@@ -1,0 +1,131 @@
+.stage {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  overflow: auto;
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(440px, 1.28fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.stack {
+  display: grid;
+  gap: 18px;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.selectorList {
+  display: grid;
+  gap: 8px;
+}
+
+.statSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.statTile {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--v4-line-soft);
+  border-radius: var(--v4-radius-sm);
+  background: var(--v4-surface-muted);
+}
+
+.statTileLabel {
+  color: var(--v4-text-muted);
+  font-size: 0.66rem;
+  font-weight: 680;
+}
+
+.statTileValue {
+  margin-top: 5px;
+  color: var(--v4-text);
+  font-size: 1.15rem;
+  font-weight: 780;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mediaPlaceholder {
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--v4-line-soft);
+  border-radius: var(--v4-radius-md);
+  background:
+    radial-gradient(circle at 68% 38%, rgba(118, 88, 214, 0.12), transparent 30%),
+    radial-gradient(circle at 35% 65%, rgba(53, 102, 232, 0.12), transparent 28%),
+    var(--v4-surface-muted);
+  color: var(--v4-text-muted);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.skeletonGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.caption {
+  margin: 16px 0 0;
+  color: var(--v4-text-muted);
+  font-size: 0.68rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .controls,
+  .statSummary {
+    grid-template-columns: 1fr;
+  }
+}

@@ -13,6 +13,7 @@ export interface CombatContext {
   actorHpRatio?: number; targetHpRatio?: number; onField?: boolean; shieldActive?: boolean;
   panelStats: FinalStats; effectiveStats?: Readonly<Record<string, number>>;
   resources?: Readonly<Record<string, ResourceView>>; activeEffectIds?: readonly string[];
+  activeEffectStacks?: Readonly<Record<string, number>>;
   states?: readonly string[]; statuses?: Readonly<Record<string, number>>;
   targetStatuses?: Readonly<Record<string, number>>; domains?: readonly string[];
 }
@@ -53,22 +54,25 @@ export function evaluatePredicate(p: CombatPredicate, c: CombatContext): Predica
   else if(p.kind==="number")actual=c[p.field];
   else if(p.kind==="stat")actual=(c.effectiveStats??c.panelStats)[p.stat as keyof FinalStats];
   else if(p.kind==="resource")actual=c.resources?.[p.resourceId];
-  else if(p.kind==="has-effect")actual=c.activeEffectIds?.includes(p.id);
+  else if(p.kind==="has-effect")actual=c.activeEffectStacks?.[p.id] ?? (c.activeEffectIds===undefined?undefined:(c.activeEffectIds.includes(p.id)?1:0));
   else if(p.kind==="state-active")actual=c.states?.includes(p.id);
   else if(p.kind==="has-status")actual=c.statuses===undefined?undefined:c.statuses[p.id]??0;
   else if(p.kind==="target-has-status")actual=c.targetStatuses===undefined?undefined:c.targetStatuses[p.id]??0;
   else if(p.kind==="shield-active")actual=c.shieldActive;
   else if(p.kind==="on-field")actual=c.onField;
   else if(p.kind==="inside-domain")actual=c.domains?.includes(p.domainId);
-  if(actual===undefined)return{status:"unsupported",reason:"missing-context"};
+  if(actual===undefined){
+    if(p.kind==="identity"||p.kind==="action-category")return{status:"ignored",reason:"dimension-absent"};
+    return{status:"unsupported",reason:"missing-context"};
+  }
   let ok=false;
   if(p.kind==="identity")ok=p.anyOf.includes(String(actual));
   else if(p.kind==="action-category")ok=(actual as readonly string[]).some(x=>p.anyOf.includes(x));
   else if(p.kind==="number"){const n=actual as number;ok=p.comparison==="eq"?n===p.value:p.comparison==="gte"?n>=p.value:n<=p.value;}
   else if(p.kind==="stat"){const v=evaluateValueExpression(p.value,c);if(v.status==="unsupported")return{status:"unsupported",reason:"predicate-value-unsupported"};ok=p.comparison==="eq"?actual===v.value:p.comparison==="gte"?(actual as number)>=v.value!:(actual as number)<=v.value!;}
   else if(p.kind==="resource"){const r=actual as ResourceView;if(p.comparison==="max")ok=r.current===r.max;else if(p.comparison==="available")ok=r.current>0;else{const v=p.value&&evaluateValueExpression(p.value,c);if(!v||v.status==="unsupported")return{status:"unsupported",reason:"predicate-value-unsupported"};ok=p.comparison==="eq"?r.current===v.value:p.comparison==="gte"?r.current>=v.value!:r.current<=v.value!;}}
-  else if(p.kind==="has-status"||p.kind==="target-has-status")ok=(actual as number)>=(p.minStacks??1);
-  else if(p.kind==="has-effect"||p.kind==="state-active"||p.kind==="shield-active"||p.kind==="inside-domain")ok=Boolean(actual);
+  else if(p.kind==="has-status"||p.kind==="target-has-status"||p.kind==="has-effect")ok=(actual as number)>=(p.minStacks??1);
+  else if(p.kind==="state-active"||p.kind==="shield-active"||p.kind==="inside-domain")ok=Boolean(actual);
   else if(p.kind==="on-field")ok=actual===p.value;
   return{status:ok?"matched":"ignored",reason:ok?"predicate-matched":"predicate-false"};
 }

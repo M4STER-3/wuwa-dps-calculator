@@ -3,7 +3,7 @@ import type {
   Element,
   FinalStats,
 } from "./models";
-import { damageTypes, elements } from "./models";
+import { damageBonusTypes, damageTypes, elements } from "./models";
 
 export type DamageType = (typeof damageTypes)[number];
 export type ScalingAttribute = "attack" | "hp" | "defense";
@@ -437,7 +437,7 @@ function validateFinalStats(finalStats: FinalStats): void {
       `${element} DMG Bonus`,
     );
   }
-  for (const damageType of damageTypes) {
+  for (const damageType of damageBonusTypes) {
     assertFinite(
       finalStats.damageTypeBonus[damageType],
       `${damageType} DMG Bonus`,
@@ -513,8 +513,11 @@ export function calculateActionDamage(
 
   const elementalDamageBonusPercent =
     finalStats.elementalDamageBonus[element];
-  const damageTypeBonusPercent =
-    finalStats.damageTypeBonus[effectiveDamageType as DamageType];
+  const damageTypeBonusPercent = effectiveDamageType === "outroSkill"
+    ? 0
+    : finalStats.damageTypeBonus[
+        effectiveDamageType as (typeof damageBonusTypes)[number]
+      ];
   const totalDamageBonusPercent =
     elementalDamageBonusPercent +
     damageTypeBonusPercent +

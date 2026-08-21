@@ -4,7 +4,14 @@ import {
   everbrightPolestar,
   sigillum,
   trailblazingStar,
-} from "./aemeath";
+} from "./aemeath-combat";
+import {
+  calcharo,
+  calcharoPreset,
+  lustrousRazor,
+  nightmareThunderingMephis,
+  voidThunder,
+} from "./calcharo-runtime";
 import type {
   MainEcho,
   RecommendedBuildPreset,
@@ -12,8 +19,23 @@ import type {
   Sonata,
   Weapon,
 } from "@/domain/models";
-import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa";
-import { fallacyOfNoReturn, rejuvenatingGlow, variation, verina, verinaPreset } from "./verina";
+import { chisa, chisaPreset, kumokiri, threadOfSeveredFate, threnodianLeviathan } from "./chisa-combat";
+import { canonicalLegacySonatas } from "./legacy-sonata-canonical-runtime";
+import { legacyRosterMainEchoes, legacyRosterSonatas } from "./legacy-roster-equipment-runtime";
+import { preciseCharacterBoxPresets } from "./precise-character-box-presets";
+import {
+  preciseDpsLoadoutResonators,
+  preciseDpsLoadoutWeapons,
+} from "./precise-dps-loadouts";
+import { preciseModernMainEchoes } from "./precise-main-echo-runtime";
+import { preciseModernSonatas } from "./precise-sonata-runtime";
+import { roster10R1BaselinePresets } from "./roster-10r1-presets";
+import {
+  roster10R1PromotedResonators,
+  roster10R1PromotedWeapons,
+} from "./roster-10r1-promoted";
+import { fallacyOfNoReturn, rejuvenatingGlow, variation, verina, verinaPreset } from "./verina-game-database";
+import { getResonatorUiPortraitPath } from "@/game-data/resonator-ui-asset-ids";
 
 const fixtureSource = {
   kind: "technical-fixture" as const,
@@ -30,10 +52,39 @@ const skillNames = {
   introSkill: "Intro Skill",
 } as const;
 
-export const resonators: readonly Resonator[] = [
+const promotedPortraitByResonatorId = new Map(
+  roster10R1PromotedResonators.flatMap((resonator) =>
+    resonator.portrait ? [[resonator.id, resonator.portrait] as const] : [],
+  ),
+);
+
+const withOptionalLocalUiPortrait = (resonator: Resonator): Resonator => {
+  const portraitPath = getResonatorUiPortraitPath(resonator.id);
+  const generatedPortrait = promotedPortraitByResonatorId.get(resonator.id);
+  const portrait = portraitPath
+    ? {
+        src: portraitPath,
+        alt: `Portrait de ${resonator.name}`,
+      }
+    : generatedPortrait;
+  return portrait ? { ...resonator, portrait } : resonator;
+};
+
+const rich10R1Ids = new Set(["aemeath", "calcharo", "chisa"]);
+const generated10R1Resonators = roster10R1PromotedResonators.filter(
+  (resonator) => !rich10R1Ids.has(resonator.id),
+);
+const promotedResonators = [
   aemeath,
+  calcharo,
+  ...generated10R1Resonators,
   chisa,
   verina,
+  ...preciseDpsLoadoutResonators,
+].map(withOptionalLocalUiPortrait);
+
+export const resonators: readonly Resonator[] = [
+  ...promotedResonators,
   {
     id: "fixture-fusion-pistols",
     name: "Resonator démo · Fusion",
@@ -46,10 +97,19 @@ export const resonators: readonly Resonator[] = [
   },
 ];
 
+const richWeaponIds = new Set(["everbright-polestar", "lustrous-razor", "kumokiri"]);
+const generated10R1Weapons = roster10R1PromotedWeapons.filter(
+  (weapon) => !richWeaponIds.has(weapon.id),
+);
+const preciseWeapons = preciseDpsLoadoutWeapons.map((entry) => entry.weapon);
+
 export const weapons: readonly Weapon[] = [
   everbrightPolestar,
+  lustrousRazor,
+  ...generated10R1Weapons,
   kumokiri,
   variation,
+  ...preciseWeapons,
   {
     id: "fixture-pistols",
     name: "Pistolets de démonstration",
@@ -61,15 +121,22 @@ export const weapons: readonly Weapon[] = [
 
 export const sonatas: readonly Sonata[] = [
   trailblazingStar,
+  voidThunder,
   threadOfSeveredFate,
   rejuvenatingGlow,
+  ...canonicalLegacySonatas,
+  ...legacyRosterSonatas,
+  ...preciseModernSonatas,
   { id: "fixture-sonata", name: "Sonata à renseigner", source: fixtureSource },
 ];
 
 export const mainEchoes: readonly MainEcho[] = [
   sigillum,
+  nightmareThunderingMephis,
   threnodianLeviathan,
   fallacyOfNoReturn,
+  ...legacyRosterMainEchoes,
+  ...preciseModernMainEchoes,
   {
     id: "fixture-main-echo",
     name: "Main Echo à renseigner",
@@ -134,7 +201,10 @@ const fixturePreset: RecommendedBuildPreset = {
 
 export const presets: readonly RecommendedBuildPreset[] = [
   aemeathPreset,
+  calcharoPreset,
+  ...roster10R1BaselinePresets,
   chisaPreset,
   verinaPreset,
+  ...preciseCharacterBoxPresets,
   fixturePreset,
 ];

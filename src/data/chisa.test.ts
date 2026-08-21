@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { chisa, chisaActions, chisaPreset } from "./chisa";
+import { chisa as finalChisa, chisaActions as finalChisaActions } from "./chisa-combat";
+import { generatedReviewedCharacterGameDatabaseCombat } from "@/generated/reviewed-character-game-database-combat";
 import { resolveActionTalentLevel } from "@/domain/talent-engine";
 import { calculateActionOutcomes } from "@/domain/action-outcome-engine";
 import { applyMotionValueModifiers } from "@/domain/motion-value-engine";
@@ -12,6 +14,7 @@ import type { FinalStats } from "@/domain/models";
 import type { TemporalTimeline } from "@/domain/temporal-engine";
 
 const byId = (id:string) => chisaActions.find(action=>action.id===id)!;
+const finalById = (id:string) => finalChisaActions.find(action=>action.id===id)!;
 const stats: FinalStats = {...chisaPreset.finalStats,attack:1000,healingBonus:0};
 
 describe("Chisa verified sparse Game Data",()=>{
@@ -20,7 +23,7 @@ describe("Chisa verified sparse Game Data",()=>{
     expect(chisa.minorFortes).toEqual(["Crit Rate +8%","ATK +12%"]);
   });
 
-  it("selects Basic Lv1/Lv10 exactly and rejects missing/disputed levels",()=>{
+  it("keeps the raw source layer sparse where the historical packet was incomplete",()=>{
     expect(resolveActionTalentLevel(byId("chisa-basic-1"),1)).toMatchObject({status:"supported",action:{multipliers:[{percent:8.4,hits:2}]}});
     expect(resolveActionTalentLevel(byId("chisa-basic-1"),10)).toMatchObject({status:"supported",action:{multipliers:[{percent:16.71,hits:2}]}});
     expect(resolveActionTalentLevel(byId("chisa-basic-1"),6).status).toBe("unsupported");
@@ -80,6 +83,20 @@ describe("Chisa verified sparse Game Data",()=>{
   });
 });
 
+describe("Chisa final reviewed GameDatabase projection",()=>{
+  it("uses Wuwa ID 1508 and exact Lv1-Lv10 character talent data",()=>{
+    expect(generatedReviewedCharacterGameDatabaseCombat.chisa.sourceItemId).toBe("1508");
+    expect(finalChisa.combat?.level10Only).toBe(false);
+    expect(resolveActionTalentLevel(finalById("chisa-basic-1"),6)).toMatchObject({status:"supported",action:{multipliers:[{percent:12.23,hits:2}]}});
+    expect(resolveActionTalentLevel(finalById("chisa-heavy"),1)).toMatchObject({status:"supported",action:{multipliers:[{percent:18,hits:2}]}});
+    expect(resolveActionTalentLevel(finalById("chisa-heavy"),10)).toMatchObject({status:"supported",action:{multipliers:[{percent:35.79,hits:2}]}});
+    for(const mapping of generatedReviewedCharacterGameDatabaseCombat.chisa.mappedActions){
+      const action=finalById(mapping.actionId);
+      for(let level=1;level<=10;level+=1)expect(resolveActionTalentLevel(action,level).status).toBe("supported");
+    }
+  });
+});
+
 describe("Chisa target-local Snare/Bane ICD",()=>{
   const panel=chisaPreset.finalStats;
   const event=(id:string,timestamp:number,kind:CombatEvent["kind"],targetId:string,extra:Partial<CombatEvent>={}):CombatEvent=>({id,timestamp,kind,ownerId:"chisa",actorId:"chisa",targetId,...extra});
@@ -115,7 +132,7 @@ describe("Chisa Character Box and Personal Action Lab",()=>{
     expect(loadout.baseStatBasis).toEqual({attack:937.5,hp:10775,defense:1136.65});
     expect(loadout.supported).toBe(true);
   });
-  it("uses selected sparse talent data and exposes sustain outcomes",()=>{
+  it("uses selected exact talent data and exposes sustain outcomes",()=>{
     const build=createBuildFromPreset(chisaPreset,{id:"chisa-test",now:"2026-08-16"});build.skillLevels.resonanceLiberation=6;
     const loadout=resolvePersonalLoadout(build);
     const result=calculateActionLab({loadout,actionId:"chisa-moment-of-nihility",stats:{...build.finalStats,attack:1000},target:DEFAULT_LAB_TARGET})!;
@@ -140,9 +157,10 @@ describe("Chisa Character Box and Personal Action Lab",()=>{
     expect(result.audits[0].damage.status==="supported"&&result.audits[0].damage.defenseReduction).toBe(.02);
     expect(result.perSource.ally).toBeUndefined();
   });
-  it("returns unsupported for unavailable Basic Lv6 rather than interpolating",()=>{
+  it("uses exact GameDatabase Basic Lv6 instead of interpolation or unsupported fallback",()=>{
     const build=createBuildFromPreset(chisaPreset,{id:"chisa-test",now:"2026-08-16"});build.skillLevels.basicAttack=6;
     const result=calculateActionLab({loadout:resolvePersonalLoadout(build),actionId:"chisa-basic-1",stats:build.finalStats,target:DEFAULT_LAB_TARGET})!;
-    expect(result.damage).toMatchObject({status:"unsupported",reason:"missing-exact-talent-data"});
+    expect(result.action).toMatchObject({level:6,multipliers:[{percent:12.23,hits:2}]});
+    expect(result.damage.status).toBe("supported");
   });
 });

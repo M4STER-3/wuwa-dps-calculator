@@ -1,0 +1,66 @@
+import { lstat, mkdir, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { loadRosterPromotionBatch } from "./lib/roster-promotion-registry.mjs";
+
+const root = path.resolve(process.cwd());
+const inputPath = path.resolve(root, "public/data/wuwa/ui-asset-projection-v1.json");
+const outputPath = path.resolve(root, "src/generated/character-box-roster-media-10r1.ts");
+const outputDirectory = path.dirname(outputPath);
+const temporaryPath = path.join(outputDirectory, `.character-box-roster-media-10r1.${process.pid}.tmp`);
+const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
+const MAX_OUTPUT_BYTES = 64 * 1024;
+const { entries: batch } = await loadRosterPromotionBatch(root, "10R1");
+const preferredRoles = ["list-roleheadicon"];
+const localAssetPattern = /^\/assets\/wuwa\/objects\/[a-f0-9]{64}\.(?:png|jpg|webp)$/;
+
+function fail(message) { throw new Error(`Character Box roster media 10R1 projection: ${message}`); }
+function assertContained(candidate, label) {
+  const relative = path.relative(root, candidate);
+  if (relative === "" || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) fail(`${label} escapes repository root`);
+}
+async function rejectSymlink(candidate, label, allowMissing = false) {
+  try { const metadata = await lstat(candidate); if (metadata.isSymbolicLink()) fail(`${label} must not be a symlink`); }
+  catch (error) { if (allowMissing && error && typeof error === "object" && "code" in error && error.code === "ENOENT") return; throw error; }
+}
+async function assertRealDirectoryContained(directory, label) {
+  const realRoot = await realpath(root); const realDirectory = await realpath(directory); const relative = path.relative(realRoot, realDirectory);
+  if (relative === "" || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) fail(`${label} resolves outside repository root`);
+}
+function record(value, label) { if (!value || typeof value !== "object" || Array.isArray(value)) fail(`${label} must be an object`); return value; }
+
+assertContained(inputPath, "input"); assertContained(outputPath, "output"); await rejectSymlink(inputPath, "input");
+const metadata = await stat(inputPath);
+if (!metadata.isFile() || metadata.size <= 0 || metadata.size > MAX_SOURCE_BYTES) fail(`input size ${metadata.size} is outside the allowed range`);
+let projection;
+try { projection = JSON.parse(await readFile(inputPath, "utf8")); } catch (error) { fail(`unable to parse UI asset projection: ${error instanceof Error ? error.message : "unknown error"}`); }
+const rootRecord = record(projection, "projection");
+if (!Array.isArray(rootRecord.entries)) fail("projection.entries must be an array");
+
+const byCharacterId = new Map();
+for (const [index, rawEntry] of rootRecord.entries.entries()) {
+  const entry = record(rawEntry, `entries[${index}]`);
+  if (entry.category !== "characters" || typeof entry.id !== "string" || !Array.isArray(entry.assets)) continue;
+  if (byCharacterId.has(entry.id)) fail(`duplicate character asset entry ${entry.id}`);
+  byCharacterId.set(entry.id, entry);
+}
+const media = {};
+for (const promoted of batch) {
+  const entry = byCharacterId.get(promoted.wuwaId);
+  if (!entry) fail(`missing character asset entry ${promoted.wuwaId} (${promoted.name})`);
+  let selected;
+  for (const role of preferredRoles) {
+    const asset = entry.assets.find((candidate) => candidate && typeof candidate === "object" && candidate.role === role);
+    if (asset) { selected = asset; break; }
+  }
+  if (!selected || typeof selected.path !== "string" || !localAssetPattern.test(selected.path)) fail(`missing verified local portrait for character ${promoted.wuwaId}`);
+  media[promoted.wuwaId] = selected.path;
+}
+if (Object.keys(media).length !== batch.length) fail("portrait projection size mismatch");
+
+await mkdir(outputDirectory, { recursive: true }); await assertRealDirectoryContained(path.dirname(inputPath), "input directory"); await assertRealDirectoryContained(outputDirectory, "output directory"); await rejectSymlink(outputPath, "output", true); await rejectSymlink(temporaryPath, "temporary output", true);
+const serialized = `/* Generated from roster-promotion-registry.json. Do not edit manually. */\nexport const generatedCharacterBoxRosterMedia10R1 = ${JSON.stringify(media, null, 2)} as const;\n`;
+const outputBytes = Buffer.byteLength(serialized);
+if (outputBytes <= 0 || outputBytes > MAX_OUTPUT_BYTES) fail(`output size ${outputBytes} is outside the allowed range`);
+try { await writeFile(temporaryPath, serialized, { encoding: "utf8", flag: "wx", mode: 0o644 }); await rename(temporaryPath, outputPath); }
+catch (error) { await rm(temporaryPath, { force: true }).catch(() => undefined); throw error; }
+console.log(`Generated ${path.relative(root, outputPath)} with ${Object.keys(media).length} verified portraits (${outputBytes} bytes).`);
