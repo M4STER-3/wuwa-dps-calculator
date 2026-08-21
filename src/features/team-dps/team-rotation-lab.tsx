@@ -6,7 +6,12 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { mainEchoes, resonators, sonatas, weapons } from "@/data/catalog";
 import { emptyCharacterBox } from "@/domain/character-box";
 import {
+  adaptPersonalRotationToTeamBlock,
+  type AdaptedTeamPersonalRotation,
+} from "@/domain/team-personal-rotation-adapter";
+import {
   actorIdForBuild,
+  buildSequentialTeamCycle,
   buildTeamActorInputs,
   deriveRotationActionOptions,
   TEAM_ROTATION_STORAGE_VERSION,
@@ -47,6 +52,13 @@ const formatNumber = (value: number, digits = 0) =>
     maximumFractionDigits: digits,
   });
 
+const modeLabel = (mode: string) =>
+  mode === "tune-rupture"
+    ? "Tune Rupture"
+    : mode === "fusion-burst"
+      ? "Fusion Burst"
+      : mode;
+
 function rotationActorOrder(
   startingActorId: string,
   steps: readonly TeamRotationStep[],
@@ -77,6 +89,12 @@ export function TeamRotationLab() {
   const [initialResources, setInitialResources] = useState<
     Record<string, Record<string, number>>
   >({});
+  const [rotationModesByBuildId, setRotationModesByBuildId] = useState<
+    Record<string, string>
+  >({});
+  const [rotationSource, setRotationSource] = useState<"personal" | "manual">(
+    "personal",
+  );
   const [storageReady, setStorageReady] = useState(false);
 
   useEffect(() => {
@@ -139,6 +157,36 @@ export function TeamRotationLab() {
     initialResources,
     actorIdsByBuildId,
   );
+  const actorLabels = Object.fromEntries(
+    prepared.actors.map((actor) => [actor.actorId, actor.resonator.name]),
+  );
+
+  const automaticRotations = prepared.actors.map((actor) => {
+    const modes = actor.resonator.combat?.modes ?? [];
+    const selectedMode = rotationModesByBuildId[actor.build.id];
+    const mode = selectedMode && modes.includes(selectedMode)
+      ? selectedMode
+      : modes[0];
+    return adaptPersonalRotationToTeamBlock(actor, mode);
+  });
+  const automaticByBuildId = Object.fromEntries(
+    automaticRotations.map((rotation, index) => [
+      prepared.actors[index]!.build.id,
+      rotation,
+    ]),
+  ) as Readonly<Record<string, AdaptedTeamPersonalRotation>>;
+  const automaticCycle = buildSequentialTeamCycle(
+    automaticRotations.map((rotation) => rotation.rotation),
+  );
+  const automaticDiagnostics = [
+    ...automaticRotations.flatMap((rotation) =>
+      rotation.diagnostics.map(
+        (diagnostic) => `${diagnostic.code}:${diagnostic.message}`,
+      ),
+    ),
+    ...automaticCycle.diagnostics,
+  ];
+
   const expected = walkRotationActiveActors(starting, steps);
   const authoredActive = steps.reduce(
     (active, step) => (step.kind === "switch" ? step.toActorId : active),
@@ -150,26 +198,43 @@ export function TeamRotationLab() {
   const actionOptions = activeActor
     ? deriveRotationActionOptions(activeActor.resonator, activeActor.build)
     : [];
-  const actorLabels = Object.fromEntries(
-    prepared.actors.map((actor) => [actor.actorId, actor.resonator.name]),
-  );
+
+  const effectiveStarting =
+    rotationSource === "personal"
+      ? automaticCycle.startingActorId ?? ""
+      : starting;
+  const effectiveSteps =
+    rotationSource === "personal" ? automaticCycle.steps : steps;
+  const effectivePreDiagnostics = [
+    ...staleBuildDiagnostics,
+    ...prepared.diagnostics,
+    ...(rotationSource === "personal" ? automaticDiagnostics : []),
+  ];
   const canRun =
-    prepared.actors.length > 0 && Boolean(starting) && steps.length > 0;
+    prepared.actors.length > 0 &&
+    Boolean(effectiveStarting) &&
+    effectiveSteps.length > 0 &&
+    effectivePreDiagnostics.length === 0;
+
+  function resetManualRotation() {
+    setSteps([]);
+    setResult(undefined);
+  }
 
   function toggleBuild(id: string) {
     if (buildIds.includes(id)) {
       const remaining = buildIds.filter((item) => item !== id);
       setBuildIds(remaining);
-      if (actorIdsByBuildId[id] === starting) {
+      const removedActorId = actorIdsByBuildId[id] ?? actorIdForBuild(id);
+      if (removedActorId === starting) {
         const firstRemaining = remaining[0];
         setStarting(
           firstRemaining
             ? actorIdsByBuildId[firstRemaining] ?? actorIdForBuild(firstRemaining)
             : "",
         );
-        setSteps([]);
       }
-      setResult(undefined);
+      resetManualRotation();
       return;
     }
     if (buildIds.length >= 3) return;
@@ -179,7 +244,18 @@ export function TeamRotationLab() {
     }
     if (buildIds.length === 0 && !starting) setStarting(actorId);
     setBuildIds([...buildIds, id]);
-    setResult(undefined);
+    resetManualRotation();
+  }
+
+  function moveBuild(index: number, delta: number) {
+    setBuildIds((items) => {
+      const to = index + delta;
+      if (to < 0 || to >= items.length) return items;
+      const next = [...items];
+      [next[index], next[to]] = [next[to], next[index]];
+      return next;
+    });
+    resetManualRotation();
   }
 
   function addAction(id: string) {
@@ -207,12 +283,16 @@ export function TeamRotationLab() {
     setResult(
       validateTeamCycle({
         actors: prepared.actors,
-        activeActorId: starting,
+        activeActorId: effectiveStarting,
         target,
-        steps,
+        steps: effectiveSteps,
       }),
     );
   }
+
+  const automaticOrder = automaticCycle.actorOrder
+    .map((actorId) => actorLabels[actorId] ?? actorId)
+    .join(" → ");
 
   return (
     <div className={styles.page}>
@@ -222,9 +302,9 @@ export function TeamRotationLab() {
             <p className={styles.eyebrow}>Theorycraft · équipe</p>
             <h1 className={styles.title}>DPS équipe</h1>
             <p className={styles.lead}>
-              Composez votre équipe à partir de la Character Box, puis retrouvez
-              directement le DPS de la rotation complète et la répartition des
-              dégâts.
+              Composez votre équipe à partir de la Character Box. WUWA LAB reprend
+              automatiquement la rotation DPS personnelle de chaque build et les
+              enchaîne en P1 → P2 → P3 → P1.
             </p>
           </div>
           <Link className={styles.heroLink} href="/character-box">
@@ -239,7 +319,8 @@ export function TeamRotationLab() {
                 Équipe
               </h2>
               <p className={styles.sectionDescription}>
-                Sélectionnez jusqu’à trois builds enregistrés.
+                Sélectionnez jusqu’à trois builds puis placez-les librement en P1,
+                P2 ou P3.
               </p>
             </div>
             <span className={styles.counter}>{buildIds.length}/3</span>
@@ -248,16 +329,50 @@ export function TeamRotationLab() {
           <div className={styles.slots}>
             {Array.from({ length: 3 }, (_, index) => {
               const build = selected[index];
-              const resonator = build
-                ? resonators.find((item) => item.id === build.resonatorId)
+              const actor = build
+                ? prepared.actors.find((candidate) => candidate.build.id === build.id)
                 : undefined;
+              const resonator = actor?.resonator ??
+                (build
+                  ? resonators.find((item) => item.id === build.resonatorId)
+                  : undefined);
+              const modes = actor?.resonator.combat?.modes ?? [];
+              const selectedMode = build
+                ? rotationModesByBuildId[build.id] &&
+                  modes.includes(rotationModesByBuildId[build.id]!)
+                  ? rotationModesByBuildId[build.id]!
+                  : modes[0]
+                : undefined;
+              const automatic = build ? automaticByBuildId[build.id] : undefined;
               return (
                 <div
                   className={styles.slot}
                   data-filled={Boolean(build)}
                   key={`team-slot-${index}`}
                 >
-                  <span className={styles.slotLabel}>P{index + 1}</span>
+                  <div className={styles.slotTopline}>
+                    <span className={styles.slotLabel}>P{index + 1}</span>
+                    {build && (
+                      <span className={styles.slotActions}>
+                        <button
+                          aria-label={`Déplacer ${resonator?.name ?? build.resonatorId} vers la gauche`}
+                          disabled={index === 0}
+                          onClick={() => moveBuild(index, -1)}
+                          type="button"
+                        >
+                          ←
+                        </button>
+                        <button
+                          aria-label={`Déplacer ${resonator?.name ?? build.resonatorId} vers la droite`}
+                          disabled={index >= selected.length - 1}
+                          onClick={() => moveBuild(index, 1)}
+                          type="button"
+                        >
+                          →
+                        </button>
+                      </span>
+                    )}
+                  </div>
                   <span className={styles.slotName}>
                     {build ? resonator?.name ?? build.resonatorId : "Emplacement libre"}
                   </span>
@@ -266,6 +381,48 @@ export function TeamRotationLab() {
                       ? `S${build.sequence} · niveau ${build.characterLevel}`
                       : "Choisissez un build ci-dessous"}
                   </span>
+                  {build && actor && (
+                    <div className={styles.slotRotation}>
+                      <span className={styles.slotRotationLabel}>
+                        Rotation Personal DPS
+                      </span>
+                      {modes.length > 1 ? (
+                        <select
+                          aria-label={`Mode de rotation de ${actor.resonator.name}`}
+                          className={styles.modeSelect}
+                          onChange={(event) => {
+                            setRotationModesByBuildId((current) => ({
+                              ...current,
+                              [build.id]: event.target.value,
+                            }));
+                            setResult(undefined);
+                          }}
+                          value={selectedMode}
+                        >
+                          {modes.map((mode) => (
+                            <option key={mode} value={mode}>
+                              {modeLabel(mode)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          className={styles.rotationReady}
+                          data-ready={automatic?.diagnostics.length === 0}
+                          title={automatic?.scenarioName}
+                        >
+                          {automatic?.diagnostics.length === 0
+                            ? "Prête"
+                            : "Non résolue"}
+                        </span>
+                      )}
+                      {automatic?.teamBlockDurationSeconds !== undefined && (
+                        <span className={styles.slotDuration}>
+                          {formatNumber(automatic.teamBlockDurationSeconds, 2)} s
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -291,7 +448,9 @@ export function TeamRotationLab() {
                     {resonator?.name ?? build.resonatorId}
                   </span>
                   <span className={styles.buildState}>
-                    {isSelected ? `P${selectedIndex + 1} · sélectionné` : "Ajouter à l’équipe"}
+                    {isSelected
+                      ? `P${selectedIndex + 1} · sélectionné`
+                      : "Ajouter à l’équipe"}
                   </span>
                 </button>
               );
@@ -305,9 +464,11 @@ export function TeamRotationLab() {
 
           <div className={styles.runRow}>
             <span className={styles.runHint}>
-              {!steps.length && buildIds.length > 0
-                ? "Pour cette première version, la rotation se configure dans Avancé."
-                : `${steps.length} étape${steps.length > 1 ? "s" : ""} dans la rotation.`}
+              {buildIds.length === 0
+                ? "Ajoutez au moins un build pour générer la rotation."
+                : automaticDiagnostics.length > 0
+                  ? "Une rotation Personal DPS sélectionnée n’est pas encore raccordable sans approximation."
+                  : `${automaticCycle.steps.length} étapes générées automatiquement${automaticOrder ? ` · ${automaticOrder}` : ""}.`}
             </span>
             <button
               className={styles.primaryButton}
@@ -323,9 +484,9 @@ export function TeamRotationLab() {
         {result ? (
           <ResultSummary
             actorLabels={actorLabels}
-            preDiagnostics={[...staleBuildDiagnostics, ...prepared.diagnostics]}
-            startingActorId={starting}
-            steps={steps}
+            preDiagnostics={effectivePreDiagnostics}
+            startingActorId={effectiveStarting}
+            steps={effectiveSteps}
             validation={result}
           />
         ) : (
@@ -336,46 +497,65 @@ export function TeamRotationLab() {
           <summary className={styles.advancedSummary}>
             Avancé
             <span className={styles.advancedHint}>
-              Rotation manuelle, ressources et détails du calcul
+              Ressources, rotation manuelle et détails du calcul
             </span>
           </summary>
           <div className={styles.advancedBody}>
             <section className={styles.advancedSection}>
-              <h2 className={styles.advancedTitle}>Paramètres de rotation</h2>
+              <h2 className={styles.advancedTitle}>Source de la rotation</h2>
               <p className={styles.advancedCopy}>
-                Ces contrôles restent disponibles pendant que la rotation automatique
-                issue du DPS personnel est raccordée au moteur Team.
+                Le mode normal suit les rotations Personal DPS. Le mode manuel est
+                conservé pour le debug et les scénarios expérimentaux.
               </p>
-
-              <div className={styles.fieldRow}>
-                <label className={styles.fieldLabel} htmlFor="team-starting-actor">
-                  Personnage de départ
-                </label>
-                <select
-                  className={styles.select}
-                  id="team-starting-actor"
-                  onChange={(event) => {
-                    setStarting(event.target.value);
-                    setSteps([]);
+              <div className={styles.sourceToggle}>
+                <button
+                  data-active={rotationSource === "personal"}
+                  onClick={() => {
+                    setRotationSource("personal");
                     setResult(undefined);
                   }}
-                  value={starting}
+                  type="button"
                 >
-                  <option value="">Sélectionner</option>
-                  {prepared.actors.map((actor) => (
-                    <option key={actor.actorId} value={actor.actorId}>
-                      {actor.resonator.name}
-                    </option>
-                  ))}
-                </select>
+                  Personal DPS automatique
+                </button>
+                <button
+                  data-active={rotationSource === "manual"}
+                  onClick={() => {
+                    setRotationSource("manual");
+                    setResult(undefined);
+                  }}
+                  type="button"
+                >
+                  Rotation manuelle
+                </button>
               </div>
 
+              {rotationSource === "personal" && automaticRotations.length > 0 && (
+                <div className={styles.autoRotationGrid}>
+                  {automaticRotations.map((rotation) => (
+                    <div className={styles.autoRotationCard} key={rotation.actorId}>
+                      <strong>{actorLabels[rotation.actorId] ?? rotation.actorId}</strong>
+                      <span>{rotation.scenarioName ?? "Rotation indisponible"}</span>
+                      <small>
+                        {rotation.rotation.steps.length} étapes · {rotation.teamBlockDurationSeconds !== undefined
+                          ? `${formatNumber(rotation.teamBlockDurationSeconds, 2)} s`
+                          : "durée non résolue"}
+                      </small>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className={styles.advancedSection}>
+              <h2 className={styles.advancedTitle}>Ressources initiales</h2>
+              <p className={styles.advancedCopy}>
+                Elles alimentent le moteur Team sans modifier les builds sauvegardés.
+              </p>
               <div className={styles.resourcesGrid}>
                 {prepared.actors.map((actor) => (
                   <div className={styles.resourceCard} key={actor.actorId}>
-                    <h3 className={styles.resourceTitle}>
-                      {actor.resonator.name} · ressources initiales
-                    </h3>
+                    <h3 className={styles.resourceTitle}>{actor.resonator.name}</h3>
                     {(actor.resonator.combat?.resources ?? []).map((resource) => (
                       <label className={styles.resourceLine} key={resource.id}>
                         <span>{resource.name}</span>
@@ -407,151 +587,186 @@ export function TeamRotationLab() {
               </div>
             </section>
 
-            <section className={styles.advancedSection}>
-              <h2 className={styles.advancedTitle}>Rotation manuelle</h2>
-              <p className={styles.advancedCopy}>
-                La durée manuelle ne remplace pas les timings de hit, cancel ou frame.
-              </p>
+            {rotationSource === "manual" && (
+              <>
+                <section className={styles.advancedSection}>
+                  <h2 className={styles.advancedTitle}>Paramètres manuels</h2>
+                  <div className={styles.fieldRow}>
+                    <label className={styles.fieldLabel} htmlFor="team-starting-actor">
+                      Personnage de départ
+                    </label>
+                    <select
+                      className={styles.select}
+                      id="team-starting-actor"
+                      onChange={(event) => {
+                        setStarting(event.target.value);
+                        setSteps([]);
+                        setResult(undefined);
+                      }}
+                      value={starting}
+                    >
+                      <option value="">Sélectionner</option>
+                      {prepared.actors.map((actor) => (
+                        <option key={actor.actorId} value={actor.actorId}>
+                          {actor.resonator.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </section>
 
-              <div className={styles.fieldRow}>
-                <select className={styles.select} id="team-action">
-                  {actionOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.name} · {option.timing === "verified" ? "timing vérifié" : "timing manquant"}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  className={styles.secondaryButton}
-                  onClick={() => {
-                    const element = document.getElementById(
-                      "team-action",
-                    ) as HTMLSelectElement | null;
-                    if (element?.value) addAction(element.value);
-                  }}
-                  type="button"
-                >
-                  + Action
-                </button>
-                <select className={styles.select} id="team-switch">
-                  {prepared.actors
-                    .filter((actor) => actor.actorId !== authoredActive)
-                    .map((actor) => (
-                      <option key={actor.actorId} value={actor.actorId}>
-                        {actor.resonator.name}
-                      </option>
-                    ))}
-                </select>
-                <button
-                  className={styles.secondaryButton}
-                  onClick={() => {
-                    const element = document.getElementById(
-                      "team-switch",
-                    ) as HTMLSelectElement | null;
-                    if (element?.value) {
-                      setSteps((items) => [
-                        ...items,
-                        { kind: "switch", toActorId: element.value },
-                      ]);
-                      setResult(undefined);
-                    }
-                  }}
-                  type="button"
-                >
-                  + Switch
-                </button>
-                <button
-                  className={styles.secondaryButton}
-                  onClick={() => {
-                    setSteps((items) => [...items, { kind: "wait", seconds: 1 }]);
-                    setResult(undefined);
-                  }}
-                  type="button"
-                >
-                  + Attente
-                </button>
-              </div>
+                <section className={styles.advancedSection}>
+                  <h2 className={styles.advancedTitle}>Rotation manuelle</h2>
+                  <p className={styles.advancedCopy}>
+                    La durée manuelle ne remplace pas les timings de hit, cancel ou frame.
+                  </p>
 
-              <ol className={styles.rotationList}>
-                {steps.map((step, index) => (
-                  <li className={styles.rotationItem} key={`${index}-${step.kind}`}>
-                    <span className={styles.rotationIndex}>{index + 1}</span>
-                    <span className={styles.rotationKind}>{step.kind}</span>
-                    <span className={styles.rotationMeta}>
-                      {step.kind === "action"
-                        ? `${actorLabels[step.actorId] ?? step.actorId} · ${step.actionId}`
-                        : step.kind === "switch"
-                          ? `→ ${actorLabels[step.toActorId] ?? step.toActorId}`
-                          : `${step.seconds}s`}
-                      {expected[index]
-                        ? ` · actif: ${actorLabels[expected[index]] ?? expected[index]}`
-                        : ""}
-                    </span>
-                    <span className={styles.rotationActions}>
-                      {step.kind === "action" && (
-                        <input
-                          aria-label="Durée manuelle"
-                          className={styles.input}
-                          min="0"
-                          onChange={(event) => {
-                            setSteps((items) =>
-                              items.map((item, itemIndex) =>
-                                itemIndex === index && item.kind === "action"
-                                  ? {
-                                      ...item,
-                                      durationOverrideSeconds:
-                                        event.target.value === ""
-                                          ? undefined
-                                          : Number(event.target.value),
-                                    }
-                                  : item,
-                              ),
-                            );
-                            setResult(undefined);
-                          }}
-                          placeholder="sec"
-                          step="0.1"
-                          type="number"
-                          value={step.durationOverrideSeconds ?? ""}
-                        />
-                      )}
-                      <button
-                        aria-label="Monter"
-                        className={styles.iconButton}
-                        onClick={() => move(index, -1)}
-                        type="button"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        aria-label="Descendre"
-                        className={styles.iconButton}
-                        onClick={() => move(index, 1)}
-                        type="button"
-                      >
-                        ↓
-                      </button>
-                      <button
-                        className={styles.iconButton}
-                        onClick={() => {
-                          setSteps((items) =>
-                            items.filter((_, itemIndex) => itemIndex !== index),
-                          );
+                  <div className={styles.fieldRow}>
+                    <select className={styles.select} id="team-action">
+                      {actionOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.name} · {option.timing === "verified"
+                            ? "timing vérifié"
+                            : "timing manquant"}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className={styles.secondaryButton}
+                      onClick={() => {
+                        const element = document.getElementById(
+                          "team-action",
+                        ) as HTMLSelectElement | null;
+                        if (element?.value) addAction(element.value);
+                      }}
+                      type="button"
+                    >
+                      + Action
+                    </button>
+                    <select className={styles.select} id="team-switch">
+                      {prepared.actors
+                        .filter((actor) => actor.actorId !== authoredActive)
+                        .map((actor) => (
+                          <option key={actor.actorId} value={actor.actorId}>
+                            {actor.resonator.name}
+                          </option>
+                        ))}
+                    </select>
+                    <button
+                      className={styles.secondaryButton}
+                      onClick={() => {
+                        const element = document.getElementById(
+                          "team-switch",
+                        ) as HTMLSelectElement | null;
+                        if (element?.value) {
+                          setSteps((items) => [
+                            ...items,
+                            { kind: "switch", toActorId: element.value },
+                          ]);
                           setResult(undefined);
-                        }}
-                        type="button"
-                      >
-                        Supprimer
-                      </button>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </section>
+                        }
+                      }}
+                      type="button"
+                    >
+                      + Switch
+                    </button>
+                    <button
+                      className={styles.secondaryButton}
+                      onClick={() => {
+                        setSteps((items) => [
+                          ...items,
+                          { kind: "wait", seconds: 1 },
+                        ]);
+                        setResult(undefined);
+                      }}
+                      type="button"
+                    >
+                      + Attente
+                    </button>
+                  </div>
+
+                  <ol className={styles.rotationList}>
+                    {steps.map((step, index) => (
+                      <li className={styles.rotationItem} key={`${index}-${step.kind}`}>
+                        <span className={styles.rotationIndex}>{index + 1}</span>
+                        <span className={styles.rotationKind}>{step.kind}</span>
+                        <span className={styles.rotationMeta}>
+                          {step.kind === "action"
+                            ? `${actorLabels[step.actorId] ?? step.actorId} · ${step.actionId}`
+                            : step.kind === "switch"
+                              ? `→ ${actorLabels[step.toActorId] ?? step.toActorId}`
+                              : `${step.seconds}s`}
+                          {expected[index]
+                            ? ` · actif: ${actorLabels[expected[index]] ?? expected[index]}`
+                            : ""}
+                        </span>
+                        <span className={styles.rotationActions}>
+                          {step.kind === "action" && (
+                            <input
+                              aria-label="Durée manuelle"
+                              className={styles.input}
+                              min="0"
+                              onChange={(event) => {
+                                setSteps((items) =>
+                                  items.map((item, itemIndex) =>
+                                    itemIndex === index && item.kind === "action"
+                                      ? {
+                                          ...item,
+                                          durationOverrideSeconds:
+                                            event.target.value === ""
+                                              ? undefined
+                                              : Number(event.target.value),
+                                        }
+                                      : item,
+                                  ),
+                                );
+                                setResult(undefined);
+                              }}
+                              placeholder="sec"
+                              step="0.1"
+                              type="number"
+                              value={step.durationOverrideSeconds ?? ""}
+                            />
+                          )}
+                          <button
+                            aria-label="Monter"
+                            className={styles.iconButton}
+                            onClick={() => move(index, -1)}
+                            type="button"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            aria-label="Descendre"
+                            className={styles.iconButton}
+                            onClick={() => move(index, 1)}
+                            type="button"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            className={styles.iconButton}
+                            onClick={() => {
+                              setSteps((items) =>
+                                items.filter((_, itemIndex) => itemIndex !== index),
+                              );
+                              setResult(undefined);
+                            }}
+                            type="button"
+                          >
+                            Supprimer
+                          </button>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              </>
+            )}
 
             {result && (
               <AdvancedResult
-                preDiagnostics={[...staleBuildDiagnostics, ...prepared.diagnostics]}
+                preDiagnostics={effectivePreDiagnostics}
                 validation={result}
               />
             )}
@@ -672,7 +887,9 @@ function ResultSummary({
               <div className={styles.barTrack} aria-hidden="true">
                 <div
                   className={styles.barFill}
-                  style={{ width: `${Math.max(0, Math.min(100, value.contributionPercent))}%` }}
+                  style={{
+                    width: `${Math.max(0, Math.min(100, value.contributionPercent))}%`,
+                  }}
                 />
               </div>
               <span className={styles.distributionValue}>
@@ -681,7 +898,9 @@ function ResultSummary({
             </div>
           ))}
           {distribution.length === 0 && (
-            <p className={styles.resultReason}>Aucun dégât résolu pour cette rotation.</p>
+            <p className={styles.resultReason}>
+              Aucun dégât résolu pour cette rotation.
+            </p>
           )}
         </div>
       </div>
@@ -698,7 +917,7 @@ function AdvancedResult({
 }) {
   const { cycle1: result } = validation;
   return (
-    <section className={`${styles.advancedSection}`}>
+    <section className={styles.advancedSection}>
       <h2 className={styles.advancedTitle}>Détails du calcul</h2>
       <p className={styles.advancedCopy}>
         Cycle, ressources, diagnostics et événements restent accessibles ici sans
