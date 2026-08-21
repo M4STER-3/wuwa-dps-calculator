@@ -9,10 +9,8 @@ import {
 } from "@/data/catalog";
 
 import { createBuildFromPreset } from "./character-box";
-import {
-  adaptPersonalRotationToTeamBlock,
-  selectPersonalRotationScenario,
-} from "./team-personal-rotation-adapter";
+import { selectPersonalRotationScenario } from "./personal-rotation-selection";
+import { adaptPersonalRotationToTeamBlock } from "./team-personal-rotation-adapter";
 import {
   buildSequentialTeamCycle,
   buildTeamActorInputs,
@@ -53,10 +51,12 @@ describe("Personal DPS -> Team rotation adapter", () => {
     expect(adapted.rotation.steps.length).toBeGreaterThan(0);
     expect(adapted.rotation.steps.some((step) => step.kind === "wait")).toBe(true);
 
-    const runtimeActions = new Map([
-      ...(actor.resonator.combat?.actions ?? []),
-      ...(actor.mainEcho?.action ? [actor.mainEcho.action] : []),
-    ].map((action) => [action.id, action]));
+    const runtimeActions = new Map(
+      [
+        ...(actor.resonator.combat?.actions ?? []),
+        ...(actor.mainEcho?.action ? [actor.mainEcho.action] : []),
+      ].map((action) => [action.id, action]),
+    );
 
     for (const step of adapted.rotation.steps) {
       if (step.kind !== "action") continue;
