@@ -4,6 +4,7 @@ import { findPreciseDpsResonator, findPreciseDpsWeapon } from "./precise-dps-loa
 
 const resonator = findPreciseDpsResonator("denia")!;
 const weapon = findPreciseDpsWeapon("denia")!;
+const weaponEffects = weapon.effects ?? [];
 const presets = preciseCharacterBoxPresets.filter(
   (entry) => entry.resonatorId === "denia",
 );
@@ -59,13 +60,13 @@ describe("Denia completion audit", () => {
   });
 
   it("keeps the signature permanent ATK marker upstream and its temporary windows runtime-only", () => {
-    const permanent = weapon.effects.find(
+    const permanent = weaponEffects.find(
       (effect) => effect.structuredEffect?.id === "precise-forged-dwarf-star-permanent",
     )?.structuredEffect;
-    const liberationWindow = weapon.effects.find(
+    const liberationWindow = weaponEffects.find(
       (effect) => effect.structuredEffect?.id === "precise-forged-dwarf-star-liberation-window",
     )?.structuredEffect;
-    const teamAtkWindow = weapon.effects.find(
+    const teamAtkWindow = weaponEffects.find(
       (effect) => effect.structuredEffect?.id === "precise-forged-dwarf-star-team-atk-window",
     )?.structuredEffect;
 
