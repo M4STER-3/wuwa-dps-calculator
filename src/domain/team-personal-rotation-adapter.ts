@@ -2,7 +2,9 @@ import type { PersonalRotationScenario } from "@/data/personal-rotation-presets"
 
 import type { CombatAction, Resonator, UserBuild } from "./models";
 import { selectPersonalRotationScenario } from "./personal-rotation-selection";
+import { compilePersonalScenarioEvents } from "./personal-scenario-events";
 import { withPreciseMainEchoCast } from "./precise-main-echo-scenarios";
+import type { CombatEvent } from "./state-engine";
 import type { TeamActorInput } from "./team-engine";
 import type {
   SequentialTeamActorRotation,
@@ -23,6 +25,8 @@ export interface AdaptedTeamPersonalRotation {
   scenarioName?: string;
   resonanceMode?: string;
   rotation: SequentialTeamActorRotation;
+  /** Actor-local timestamps; the Team cycle compiler shifts them globally. */
+  scenarioEvents: readonly CombatEvent[];
   sourceDurationSeconds?: number;
   teamBlockDurationSeconds?: number;
   diagnostics: readonly TeamPersonalRotationDiagnostic[];
@@ -117,6 +121,7 @@ export function adaptPersonalRotationToTeamBlock(
       resonatorId: actor.resonator.id,
       resonanceMode,
       rotation: { actorId: actor.actorId, steps: [] },
+      scenarioEvents: [],
       diagnostics,
     };
   }
@@ -136,12 +141,21 @@ export function adaptPersonalRotationToTeamBlock(
   const timelineById = new Map(timelineActions.map((action) => [action.id, action]));
 
   let timeline: ReturnType<typeof buildTheoreticalRotationTimeline>;
+  let scenarioEvents: readonly CombatEvent[];
   try {
     timeline = buildTheoreticalRotationTimeline(
       scenario.rotation,
       timelineActions,
       scenarioRotationTarget(scenario, actor.resonator, actor.build.sequence),
     );
+    scenarioEvents = compilePersonalScenarioEvents({
+      scenario,
+      timeline,
+      sequence: actor.build.sequence,
+      actorId: actor.actorId,
+      targetId: "target",
+      external: true,
+    });
   } catch (error) {
     diagnostics.push({
       code: "personal-rotation-timeline-error",
@@ -154,6 +168,7 @@ export function adaptPersonalRotationToTeamBlock(
       scenarioName: scenario.name,
       resonanceMode: scenario.resonanceMode ?? resonanceMode,
       rotation: { actorId: actor.actorId, steps: [] },
+      scenarioEvents: [],
       diagnostics,
     };
   }
@@ -197,6 +212,7 @@ export function adaptPersonalRotationToTeamBlock(
       scenarioName: scenario.name,
       resonanceMode: scenario.resonanceMode ?? resonanceMode,
       rotation: { actorId: actor.actorId, steps: [] },
+      scenarioEvents: [],
       sourceDurationSeconds: timeline.finalDurationSeconds,
       diagnostics,
     };
@@ -218,6 +234,7 @@ export function adaptPersonalRotationToTeamBlock(
     scenarioName: scenario.name,
     resonanceMode: scenario.resonanceMode ?? resonanceMode,
     rotation: { actorId: actor.actorId, steps },
+    scenarioEvents,
     sourceDurationSeconds: timeline.finalDurationSeconds,
     teamBlockDurationSeconds,
     diagnostics,
