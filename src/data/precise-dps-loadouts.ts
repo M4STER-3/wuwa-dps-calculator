@@ -1,5 +1,9 @@
 import type { Resonator, Weapon } from "@/domain/models";
 import { applyPreciseDeniaMechanics } from "./precise-dps-denia";
+import {
+  applyPreciseDeniaEventMechanics,
+  applyPreciseDeniaWeaponEventMechanics,
+} from "./precise-dps-denia-events";
 import { preciseDpsFutureResonators, preciseDpsFutureWeapons } from "./precise-dps-future";
 import {
   applyPreciseGalbrenaActionPatches,
@@ -90,7 +94,11 @@ export const preciseDpsLoadoutResonators: readonly Resonator[] = preciseDpsFutur
                       applyGalbrenaLoadoutMechanics(
                         applyPreciseQiuyuanMechanics(
                           applyPreciseJinhsiMechanics(
-                            applyPreciseDeniaMechanics(applyPreciseResourceMechanics(resonator)),
+                            applyPreciseDeniaEventMechanics(
+                              applyPreciseDeniaMechanics(
+                                applyPreciseResourceMechanics(resonator),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -110,7 +118,8 @@ export const preciseDpsLoadoutWeapons: readonly PreciseDpsLoadoutWeapon[] = prec
   if (!baseWeapon) throw new Error(`Missing precise weapon for ${resonator.id}.`);
   if (baseWeapon.type !== resonator.weaponType) throw new Error(`Precise weapon type mismatch for ${resonator.id}.`);
   const genericWeapon = applyPreciseWeaponMechanics(resonator.id, baseWeapon);
-  const jinhsiWeapon = applyPreciseJinhsiWeaponMechanics(resonator.id, genericWeapon);
+  const deniaWeapon = applyPreciseDeniaWeaponEventMechanics(resonator, genericWeapon);
+  const jinhsiWeapon = applyPreciseJinhsiWeaponMechanics(resonator.id, deniaWeapon);
   const qiuyuanWeapon = applyPreciseQiuyuanWeaponMechanics(resonator.id, jinhsiWeapon);
   const phrolovaWeapon = applyPrecisePhrolovaWeaponMechanics(resonator.id, qiuyuanWeapon);
   const galbrenaWeapon = applyPreciseGalbrenaWeaponMechanics(resonator.id, phrolovaWeapon);
