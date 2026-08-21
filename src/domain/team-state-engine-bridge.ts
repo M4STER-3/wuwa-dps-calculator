@@ -4,10 +4,10 @@ import type {
   EffectDefinition,
   EffectTargetScope,
   TriggerDefinition,
-  TriggerOperation,
 } from "./effect-models";
-import type { FinalStats } from "./models";
+import type { FinalStats, UserBuild } from "./models";
 import {
+  advanceState,
   processEvent,
   type ActiveRuntimeEffect,
   type ActorState,
@@ -18,26 +18,36 @@ import {
 } from "./state-engine";
 import type { TeamState } from "./team-engine";
 
-export interface TeamTriggerOperationInput {
+export interface TeamStructuredTriggerInput {
   state: TeamState;
   event: CombatEvent;
   ownerActorId: string;
   sourceDefinition: EffectDefinition;
   ownerDefinitions: readonly EffectDefinition[];
   trigger: TriggerDefinition;
-  operation: TriggerOperation;
+  sequence: UserBuild["sequence"];
   panelStats: FinalStats;
   resonanceMode?: string;
   element?: CombatContext["element"];
   incomingActorId?: string;
 }
 
-export interface TeamTriggerOperationResult {
+export interface TeamStructuredTriggerResult {
   state: TeamState;
   emittedEvents: readonly CombatEvent[];
   transitions: readonly StateTransition[];
   diagnostics: readonly StateDiagnostic[];
 }
+
+export interface TeamRuntimeAdvanceResult {
+  state: TeamState;
+  transitions: readonly StateTransition[];
+  diagnostics: readonly StateDiagnostic[];
+}
+
+type TeamStateWithCounters = TeamState & {
+  triggerCounters?: Record<string, number>;
+};
 
 type TeamRuntimeEffect = ActiveEffectInstance &
   Partial<
@@ -51,7 +61,7 @@ function recipients(
   scope: EffectTargetScope,
   ownerId: string,
   state: TeamState,
-  context: { incomingActorId?: string; targetId: string },
+  context: { incomingActorId?: string; targetId?: string },
 ): readonly string[] {
   const actorIds = Object.keys(state.actorsById);
   switch (scope) {
@@ -96,7 +106,9 @@ function toCombatState(state: TeamState): CombatState {
       return {
         ...effect,
         activatedAt:
-          runtime.activatedAt ?? effect.startTimeSeconds ?? state.currentTimeSeconds,
+          runtime.activatedAt ??
+          effect.startTimeSeconds ??
+          state.currentTimeSeconds,
         expiresAt: runtime.expiresAt ?? effect.endTimeSeconds,
         stackExpirations: runtime.stackExpirations,
         extensionCount: runtime.extensionCount,
@@ -110,7 +122,7 @@ function toCombatState(state: TeamState): CombatState {
     targets: state.targetsById,
     activeEffects,
     cooldowns: state.cooldowns,
-    triggerCounters: {},
+    triggerCounters: (state as TeamStateWithCounters).triggerCounters ?? {},
     registries: {},
   };
 }
@@ -118,7 +130,7 @@ function toCombatState(state: TeamState): CombatState {
 function projectCombatState(
   team: TeamState,
   combat: CombatState,
-  context: { incomingActorId?: string; targetId: string },
+  context: { incomingActorId?: string; targetId?: string } = {},
 ): TeamState {
   const actorsById = Object.fromEntries(
     Object.entries(team.actorsById).map(([actorId, actor]) => {
@@ -147,14 +159,15 @@ function projectCombatState(
     }),
   );
 
-  const projected: TeamState = {
+  const projected = {
     ...team,
     currentTimeSeconds: combat.time,
     actorsById,
     targetsById: combat.targets,
     cooldowns: { ...combat.cooldowns },
-    activeEffects: [],
-  };
+    activeEffects: [] as ActiveEffectInstance[],
+    triggerCounters: { ...combat.triggerCounters },
+  } as TeamStateWithCounters;
 
   projected.activeEffects = combat.activeEffects.map((effect) => ({
     ...effect,
@@ -169,11 +182,28 @@ function projectCombatState(
   return projected;
 }
 
-function singleOperationDefinitions(
+function materializeTrigger(
+  trigger: TriggerDefinition,
+  sequence: UserBuild["sequence"],
+): TriggerDefinition {
+  const exactCooldown = trigger.cooldownSecondsBySequence?.[sequence];
+  return {
+    ...trigger,
+    operationOwner: undefined,
+    cooldown:
+      exactCooldown === undefined
+        ? trigger.cooldown
+        : trigger.cooldown
+          ? { ...trigger.cooldown, seconds: exactCooldown }
+          : { seconds: exactCooldown, scope: "target" },
+  };
+}
+
+function singleTriggerDefinitions(
   definitions: readonly EffectDefinition[],
   sourceDefinition: EffectDefinition,
   trigger: TriggerDefinition,
-  operation: TriggerOperation,
+  sequence: UserBuild["sequence"],
 ): readonly EffectDefinition[] {
   const stripped = definitions.map((definition) => ({
     ...definition,
@@ -181,13 +211,7 @@ function singleOperationDefinitions(
   }));
   const syntheticSource: EffectDefinition = {
     ...sourceDefinition,
-    triggers: [
-      {
-        id: `team-operation:${trigger.id}:${operation.kind}`,
-        event: trigger.event,
-        operations: [operation],
-      },
-    ],
+    triggers: [materializeTrigger(trigger, sequence)],
   };
   const sourceIndex = stripped.findIndex(
     (definition) => definition.id === sourceDefinition.id,
@@ -199,37 +223,55 @@ function singleOperationDefinitions(
 }
 
 /**
- * Executes one data-owned TriggerOperation through the canonical State Engine,
- * then projects its mutable runtime state back onto the Team actor instances.
- *
- * Team binding already resolves definition ownership to an actor instance, so
- * the synthetic trigger intentionally uses that bound owner instead of the
- * static catalog source id.
+ * Executes one complete data-owned TriggerDefinition through the canonical
+ * State Engine. Team binding supplies the actor-instance owner, so operations
+ * never fall back to a static resonator/weapon/sonata source id.
  */
-export function applyTeamTriggerOperation(
-  input: TeamTriggerOperationInput,
-): TeamTriggerOperationResult {
+export function applyTeamStructuredTrigger(
+  input: TeamStructuredTriggerInput,
+): TeamStructuredTriggerResult {
   const event: CombatEvent = {
     ...input.event,
     ownerId: input.ownerActorId,
   };
-  const definitions = singleOperationDefinitions(
+  const definitions = singleTriggerDefinitions(
     input.ownerDefinitions,
     input.sourceDefinition,
     input.trigger,
-    input.operation,
+    input.sequence,
   );
-  const result = processEvent(toCombatState(input.state), event, definitions, {
-    panelStats: input.panelStats,
-    resonanceMode: input.resonanceMode,
-    element: input.element,
-  });
+  const result = processEvent(
+    toCombatState(input.state),
+    event,
+    definitions,
+    {
+      panelStats: input.panelStats,
+      resonanceMode: input.resonanceMode,
+      element: input.element,
+    },
+    {
+      statusStorageKey: (statusId, ownerId) => `${statusId}::${ownerId}`,
+    },
+  );
   return {
     state: projectCombatState(input.state, result.state, {
       incomingActorId: input.incomingActorId,
       targetId: event.targetId,
     }),
     emittedEvents: result.emittedEvents,
+    transitions: result.transitions,
+    diagnostics: result.diagnostics,
+  };
+}
+
+/** Uses the same expiry semantics as Personal DPS, including independent stacks. */
+export function advanceTeamRuntime(
+  state: TeamState,
+  timestamp: number,
+): TeamRuntimeAdvanceResult {
+  const result = advanceState(toCombatState(state), timestamp);
+  return {
+    state: projectCombatState(state, result.state),
     transitions: result.transitions,
     diagnostics: result.diagnostics,
   };
