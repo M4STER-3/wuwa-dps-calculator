@@ -58,7 +58,7 @@ const build = (sequence: Sequence): UserBuild => ({
   updatedAt: "2026-08-21T00:00:00.000Z",
 });
 
-const run = (sequence: Sequence) =>
+const run = (sequence: Sequence, initialAftersound?: number) =>
   runPhrolovaContributionCycle({
     scenario,
     resonator,
@@ -77,6 +77,7 @@ const run = (sequence: Sequence) =>
       hp: resonator.baseStats?.[0]?.hp,
       defense: resonator.baseStats?.[0]?.defense,
     },
+    initialAftersound,
     teamEchoTriggers: [
       { timeSeconds: 2, echoName: "Echo Alpha", triggeringActorId: "ally-a" },
       { timeSeconds: 5, echoName: "Echo Beta", triggeringActorId: "ally-b" },
@@ -152,8 +153,16 @@ describe("Phrolova completion audit", () => {
     );
   });
 
-  it("keeps S6 executable without unresolved personal mechanics", () => {
-    const result = run(6);
+  it("keeps the S6 carry contract explicit and executes the full cycle when 24 Aftersound is carried", () => {
+    const withoutCarry = run(6);
+    expect(withoutCarry.partial).toBe(true);
+    expect(
+      withoutCarry.diagnostics.some(
+        (diagnostic) => diagnostic.code === "aftersound-carry-required",
+      ),
+    ).toBe(true);
+
+    const result = run(6, 24);
     expect(result.partial, JSON.stringify(result.diagnostics)).toBe(false);
     expect(result.totalDamage.expected).toBeGreaterThan(run(0).totalDamage.expected);
     expect(result.offField.perAction[PHROLOVA.apparition]?.expected ?? 0).toBeGreaterThan(0);
