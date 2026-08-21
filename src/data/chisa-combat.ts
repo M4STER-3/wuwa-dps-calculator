@@ -123,12 +123,20 @@ export const kumokiri: Weapon = {
  */
 export const chisaEffects: readonly CombatEffect[] = runtimeEffects.map(patchEffect);
 
+const resolvedFinalUnknowns = new Set([
+  "Heavy Attack Lv1 disputed.",
+  "Basic-family Lv2-9 unavailable.",
+]);
+
 const patchedRuntimeChisa = {
   ...runtimeChisa,
   combat: runtimeChisa.combat
     ? {
         ...runtimeChisa.combat,
         effects: chisaEffects,
+        unknowns: runtimeChisa.combat.unknowns.filter(
+          (entry) => !resolvedFinalUnknowns.has(entry),
+        ),
       }
     : undefined,
 };
