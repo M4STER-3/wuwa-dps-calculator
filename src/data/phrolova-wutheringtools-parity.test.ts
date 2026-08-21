@@ -86,7 +86,9 @@ describe("Phrolova WutheringTools formula parity", () => {
       aftersoundAt10 * 0.15,
       aftersoundAt10 * 0.75,
     ];
-    expect(distributed).toEqual([82.55, 123.825, 619.125]);
+    expect(distributed[0]).toBeCloseTo(82.55, 8);
+    expect(distributed[1]).toBeCloseTo(123.825, 8);
+    expect(distributed[2]).toBeCloseTo(619.125, 8);
     const motionValue = totalMv(resolved.action.multipliers) + aftersoundAt10;
     expect(motionValue).toBeCloseTo(1485.66, 8);
 
