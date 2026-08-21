@@ -1,0 +1,217 @@
+.slotTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.slotActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.slotActions button {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 1px solid var(--v4-line-soft);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--v4-text-muted);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  box-shadow: var(--v4-shadow-xs);
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.slotActions button:hover:not(:disabled) {
+  border-color: var(--v4-line-strong);
+  background: var(--v4-surface-muted);
+  color: var(--v4-text);
+}
+
+.slotActions button:disabled {
+  cursor: default;
+  opacity: 0.28;
+}
+
+.slotRotation {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  border-top: 1px solid var(--v4-line-soft);
+  padding-top: 10px;
+}
+
+.slotRotationLabel {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--v4-text-muted);
+  font-size: 0.61rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modeSelect {
+  min-width: 0;
+  max-width: 145px;
+  min-height: 30px;
+  margin-left: auto;
+  border: 1px solid var(--v4-line);
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  padding: 0 25px 0 8px;
+  color: var(--v4-text-soft);
+  font: inherit;
+  font-size: 0.61rem;
+  font-weight: 700;
+}
+
+.modeSelect:focus {
+  border-color: #9db7f4;
+  box-shadow: 0 0 0 3px rgba(53, 102, 232, 0.09);
+}
+
+.rotationReady {
+  margin-left: auto;
+  border: 1px solid #dfe7f1;
+  border-radius: 999px;
+  background: #f7f9fc;
+  padding: 4px 7px;
+  color: var(--v4-text-muted);
+  font-size: 0.58rem;
+  font-weight: 780;
+}
+
+.rotationReady[data-ready="true"] {
+  border-color: #d1eadf;
+  background: var(--v4-success-soft);
+  color: var(--v4-success);
+}
+
+.slotDuration {
+  flex: 0 0 auto;
+  color: var(--v4-text-faint);
+  font-size: 0.58rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.sourceToggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 12px;
+  border: 1px solid var(--v4-line-soft);
+  border-radius: 11px;
+  background: var(--v4-surface-muted);
+  padding: 4px;
+}
+
+.sourceToggle button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 0 11px;
+  color: var(--v4-text-muted);
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 760;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+.sourceToggle button:hover {
+  color: var(--v4-text);
+}
+
+.sourceToggle button[data-active="true"] {
+  background: #fff;
+  color: var(--v4-accent);
+  box-shadow: var(--v4-shadow-xs);
+}
+
+.autoRotationGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.autoRotationCard {
+  min-width: 0;
+  border: 1px solid var(--v4-line-soft);
+  border-radius: 11px;
+  background: #fff;
+  padding: 11px 12px;
+  box-shadow: var(--v4-shadow-xs);
+}
+
+.autoRotationCard strong,
+.autoRotationCard span,
+.autoRotationCard small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.autoRotationCard strong {
+  color: var(--v4-text);
+  font-size: 0.69rem;
+  font-weight: 780;
+}
+
+.autoRotationCard span {
+  margin-top: 4px;
+  color: var(--v4-text-soft);
+  font-size: 0.62rem;
+}
+
+.autoRotationCard small {
+  margin-top: 5px;
+  color: var(--v4-text-muted);
+  font-size: 0.58rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 880px) {
+  .autoRotationGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .slotRotation {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .slotRotationLabel {
+    width: 100%;
+  }
+
+  .modeSelect,
+  .rotationReady {
+    margin-left: 0;
+  }
+
+  .sourceToggle {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .sourceToggle button {
+    width: 100%;
+  }
+}
