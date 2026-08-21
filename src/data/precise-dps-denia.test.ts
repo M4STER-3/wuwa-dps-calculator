@@ -93,6 +93,37 @@ describe("Denia precise DPS runtime", () => {
     expect(simulation.stateTransitions.some((entry) => entry.kind === "resource-consume-all" && entry.detail === "dark-core")).toBe(true);
   });
 
+  it("emits Denia's own mode applications so Forged Dwarf Star activates in both modes", () => {
+    for (const mode of ["fusion-burst", "tune-strain"] as const) {
+      const { resonator, simulation } = run(0, mode);
+      const finalStagecraft = actionBy(resonator, "Final Act", "Stagecraft Form");
+      const audit = simulation.audits.find((entry) => entry.actionId === finalStagecraft.id)!;
+      expect(audit.activeEffectIds).toContain("precise-forged-dwarf-star-liberation-window");
+      expect(
+        simulation.stateTransitions.some(
+          (entry) =>
+            entry.kind === "effect-activated" &&
+            entry.detail === "precise-forged-dwarf-star-team-atk-window",
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("executes S1 entry Entropy and S2 mode-specific personal application windows", () => {
+    const fusion = run(2, "fusion-burst");
+    const fusionStagecraft4 = actionBy(fusion.resonator, "Stagecraft Form", "Stage 4");
+    const fusionAudit = fusion.simulation.audits.find((entry) => entry.actionId === fusionStagecraft4.id)!;
+    expect(fusionAudit.activeEffectIds).toContain("precise-denia-entropy-stagecraft");
+    expect(fusionAudit.activeEffectIds).toContain("precise-denia-s2-fusion-applier-window");
+    expect(fusionAudit.damage.status).toBe("supported");
+    if (fusionAudit.damage.status === "supported" && fusionAudit.damage.formula === "standard-damage-v0.1") {
+      expect(fusionAudit.damage.additionalElementalDamageBonusPercent).toBe(80);
+    }
+
+    const strain = run(2, "tune-strain");
+    expect(strain.simulation.audits.some((audit) => audit.effectiveStats.tuneBreakBoost === 30)).toBe(true);
+  });
+
   it("applies sequence damage growth while retaining explicit partial Team-Cycle diagnostics", () => {
     const s0 = run(0).simulation;
     const s1 = run(1).simulation;
