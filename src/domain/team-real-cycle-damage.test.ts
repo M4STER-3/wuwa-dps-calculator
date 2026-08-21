@@ -31,12 +31,15 @@ const target = {
 };
 
 const now = "2026-08-21T18:00:00.000Z";
+const realPresets = presets.filter(
+  (preset) => preset.source.kind !== "technical-fixture",
+);
 
 describe("real Character Box automatic Team damage", () => {
-  for (const preset of presets) {
+  for (const preset of realPresets) {
     it(`${preset.resonatorId} resolves at least one damaging action`, () => {
       const build = createBuildFromPreset(preset, {
-        id: `team-zero-dps-${preset.resonatorId}`,
+        id: `team-zero-dps-${preset.resonatorId}-${preset.id}`,
         now,
       });
       const prepared = buildTeamActorInputs([build], catalog);
@@ -64,6 +67,7 @@ describe("real Character Box automatic Team damage", () => {
       });
 
       const debug = {
+        presetId: preset.id,
         resonatorId: preset.resonatorId,
         mode: actor.resonanceMode,
         actionSteps: cycle.steps.filter((step) => step.kind === "action").length,
@@ -75,7 +79,10 @@ describe("real Character Box automatic Team damage", () => {
         ),
       };
 
-      expect(result.totalResolvedDamage.expected, JSON.stringify(debug)).toBeGreaterThan(0);
+      expect(
+        result.totalResolvedDamage.expected,
+        JSON.stringify(debug),
+      ).toBeGreaterThan(0);
     });
   }
 });
