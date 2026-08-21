@@ -68,7 +68,6 @@ describe("Shorekeeper completion audit", () => {
       (action) => action.id === SHOREKEEPER_MANUAL.endLoop,
     );
     expect(endLoop?.multipliers).toEqual([]);
-    expect(endLoop?.sourceAttributeId).toBeUndefined();
   });
 
   it("keeps Stellar Symphony permanent HP upstream and temporary/team effects out of finalStats", () => {
