@@ -1,6 +1,3 @@
-import { findPersonalRotationScenario } from "@/data/personal-rotation-presets";
-import { registryPersonalRotationScenarios } from "@/data/personal-dps-roster-registry";
-import { preciseDpsFutureScenarios } from "@/data/precise-dps-future";
 import { mainEchoes, resonators, sonatas, weapons } from "@/data/catalog";
 import { calculateActionDamage, calculateTuneRuptureDamage, type DamageTarget, type PersonalDamageResult, type StandardDamageResult, type TuneEnemyClass } from "./damage-engine";
 import { resolveActiveEffects, type EffectAuditEntry } from "./effect-engine";
@@ -8,6 +5,7 @@ import type { ActiveEffectInstance, EffectDefinition } from "./effect-models";
 import type { CombatAction, FinalStats, MainEcho, Resonator, Sonata, UserBuild, Weapon } from "./models";
 import { loadPersonalEffects, type PersonalCombatResult, type PersonalDiagnostic } from "./personal-combat-simulation";
 import { runTheoreticalPersonalRotation } from "./personal-rotation-runner";
+import { selectPersonalRotationScenario } from "./personal-rotation-selection";
 import { resolvePersonalSonataLoadout } from "./personal-sonata-loadout";
 import { withPreciseMainEchoCast } from "./precise-main-echo-scenarios";
 import type { RuntimeBaseStatBasis } from "./combat-context";
@@ -84,27 +82,12 @@ export function calculateActionLab(input: { loadout: ResolvedPersonalLoadout; ac
   return { action, damage, outcomes: outcomeResult.outcomes, effectAudit: effects.audit, activeEffectIds: [...selected], diagnostics, partial: damage.status === "unsupported" || diagnostics.length > 0 };
 }
 
-function findPreciseRotationScenario(resonatorId: string, resonanceMode?: string) {
-  const candidates = preciseDpsFutureScenarios.filter(
-    (candidate) => candidate.resonatorId === resonatorId,
-  );
-  if (resonanceMode) {
-    const exactMode = candidates.find(
-      (candidate) => candidate.resonanceMode === resonanceMode,
-    );
-    if (exactMode) return exactMode;
-  }
-  return candidates.find((candidate) => !candidate.resonanceMode) ?? candidates[0];
-}
-
 export function simulateRotationLab(loadout: ResolvedPersonalLoadout, stats: FinalStats, target: LabTarget, resonanceMode?: string): PersonalCombatResult | undefined {
   if (!loadout.resonator) return undefined;
-  const baseScenario =
-    findPersonalRotationScenario(loadout.resonator.id, resonanceMode) ??
-    findPreciseRotationScenario(loadout.resonator.id, resonanceMode) ??
-    registryPersonalRotationScenarios.find(
-      (candidate) => candidate.resonatorId === loadout.resonator!.id,
-    );
+  const baseScenario = selectPersonalRotationScenario(
+    loadout.resonator.id,
+    resonanceMode,
+  );
   if (!baseScenario) return undefined;
   const scenario = withPreciseMainEchoCast(
     baseScenario,
