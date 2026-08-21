@@ -1,5 +1,265 @@
-import{describe,expect,it}from"vitest";import type{CombatAction,FinalStats,Resonator,UserBuild}from"./models";import{summarizeTeamDps,validateTeamCycle}from"./team-dps-cycle";import{simulateTeam}from"./team-engine";
-const source={kind:"technical-fixture" as const,source:"cycle"},stats:FinalStats={hp:1,attack:100,defense:1,critRate:0,critDamage:150,energyRegen:100,healingBonus:0,tuneBreakBoost:0,elementalDamageBonus:{aero:0,glacio:0,electro:0,fusion:0,havoc:0,spectro:0},damageTypeBonus:{basicAttack:0,heavyAttack:0,resonanceSkill:0,resonanceLiberation:0,introSkill:0,echoSkill:0}};
-function fixture(id:string,options:{duration?:number|null;cooldown?:number;cost?:number;concerto?:number}={}){const action:CombatAction={id:"hit",name:"Hit",talent:"basicAttack",damageType:"basicAttack",level:1,multipliers:[{percent:100,hits:1}],cooldownSeconds:options.cooldown,resourceOperations:options.cost?[{resourceId:"meter",operation:"consume",amount:options.cost,stage:"before-action"}]:undefined,castDurationSeconds:{value:options.duration===undefined?1:options.duration,confidence:"technical-fixture"},recoverySeconds:{value:0,confidence:"technical-fixture"},hitTimingsSeconds:{value:[0],confidence:"technical-fixture"},source};const resonator:Resonator={id,name:id,element:"aero",weaponType:"pistols",rarity:4,skillNames:{basicAttack:"",resonanceSkill:"",forteCircuit:"",resonanceLiberation:"",introSkill:""},resonanceChain:[],combat:{level10Only:false,forms:[],modes:[],resources:[{id:"meter",name:"Meter",cap:1,semantic:"character-resource",notes:[]},{id:"song",name:"Song",cap:100,semantic:"concerto-energy",notes:[]}],actions:[action],effects:[],rotations:[],unknowns:[],source},source};const build:UserBuild={id:`b-${id}`,resonatorId:id,sourcePresetId:"p",characterLevel:90,sequence:0,skillLevels:{basicAttack:1,resonanceSkill:1,forteCircuit:1,resonanceLiberation:1,introSkill:1},weapon:{weaponId:"w",level:1,rank:1},finalStats:stats,createdAt:"",updatedAt:""};return{actorId:id,resonator,build,initialResources:{meter:options.cost?1:0,song:options.concerto??0}};}
-const target={level:90,elementalResistance:{aero:0},physicalResistance:0};
-describe("Team DPS and two-cycle validation",()=>{it("computes authoritative DPS and actor attribution only with exact duration",()=>{const r=simulateTeam({actors:[fixture("a"),fixture("b")],activeActorId:"a",target,steps:[{kind:"action",actorId:"a",actionId:"hit"},{kind:"switch",toActorId:"b"},{kind:"action",actorId:"b",actionId:"hit"}]});const d=summarizeTeamDps(r);expect(d.available).toBe(true);expect(d.teamDps).toBeCloseTo(d.totalExpectedDamage/2);expect(Object.keys(d.byActor)).toEqual(["a","b"]);expect(Object.values(d.byActor).reduce((n,v)=>n+v.contributionPercent,0)).toBeCloseTo(100);});it("withholds DPS for unresolved timing",()=>expect(summarizeTeamDps(simulateTeam({actors:[fixture("a",{duration:null})],activeActorId:"a",target,steps:[{kind:"action",actorId:"a",actionId:"hit"}]}))).toMatchObject({available:false,reason:"unresolved timing"}));it("continues resources and reports insufficient second cycle",()=>{const v=validateTeamCycle({actors:[fixture("a",{cost:1})],activeActorId:"a",target,steps:[{kind:"action",actorId:"a",actionId:"hit"}]});expect(v.repeatability).toBe("not-repeatable");expect(v.cycle1.actorsById.a.resources.meter.current).toBe(0);expect(v.cycle2.diagnostics.some(d=>d.code==="action-resource-rejected")).toBe(true);});it("continues cooldowns instead of resetting",()=>{const v=validateTeamCycle({actors:[fixture("a",{cooldown:5})],activeActorId:"a",target,steps:[{kind:"action",actorId:"a",actionId:"hit"}]});expect(v.repeatability).toBe("not-repeatable");expect(v.cycle2.diagnostics.some(d=>d.code==="action-cooldown")).toBe(true);});it("detects changed Concerto switch structure",()=>{const v=validateTeamCycle({actors:[fixture("a",{concerto:100}),fixture("b")],activeActorId:"a",target,steps:[{kind:"switch",toActorId:"b"},{kind:"switch",toActorId:"a"}]});expect(v.repeatability).toBe("not-repeatable");expect(v.diagnostics).toContain("cycle-structure-changed");});it("accepts a stable complete loop",()=>expect(validateTeamCycle({actors:[fixture("a")],activeActorId:"a",target,steps:[{kind:"action",actorId:"a",actionId:"hit"}]}).repeatability).toBe("repeatable"));});
+import { describe, expect, it } from "vitest";
+
+import type { CombatAction, FinalStats, Resonator, UserBuild } from "./models";
+import { summarizeTeamDps, validateTeamCycle } from "./team-dps-cycle";
+import { simulateTeam } from "./team-engine";
+
+const source = { kind: "technical-fixture" as const, source: "cycle" };
+const stats: FinalStats = {
+  hp: 1,
+  attack: 100,
+  defense: 1,
+  critRate: 0,
+  critDamage: 150,
+  energyRegen: 100,
+  healingBonus: 0,
+  tuneBreakBoost: 0,
+  elementalDamageBonus: {
+    aero: 0,
+    glacio: 0,
+    electro: 0,
+    fusion: 0,
+    havoc: 0,
+    spectro: 0,
+  },
+  damageTypeBonus: {
+    basicAttack: 0,
+    heavyAttack: 0,
+    resonanceSkill: 0,
+    resonanceLiberation: 0,
+    introSkill: 0,
+    echoSkill: 0,
+  },
+};
+
+function fixture(
+  id: string,
+  options: {
+    duration?: number | null;
+    cooldown?: number;
+    cost?: number;
+    concerto?: number;
+  } = {},
+) {
+  const action: CombatAction = {
+    id: "hit",
+    name: "Hit",
+    talent: "basicAttack",
+    damageType: "basicAttack",
+    level: 1,
+    multipliers: [{ percent: 100, hits: 1 }],
+    cooldownSeconds: options.cooldown,
+    resourceOperations: options.cost
+      ? [
+          {
+            resourceId: "meter",
+            operation: "consume",
+            amount: options.cost,
+            stage: "before-action",
+          },
+        ]
+      : undefined,
+    castDurationSeconds: {
+      value: options.duration === undefined ? 1 : options.duration,
+      confidence: "technical-fixture",
+    },
+    recoverySeconds: { value: 0, confidence: "technical-fixture" },
+    hitTimingsSeconds: { value: [0], confidence: "technical-fixture" },
+    source,
+  };
+  const resonator: Resonator = {
+    id,
+    name: id,
+    element: "aero",
+    weaponType: "pistols",
+    rarity: 4,
+    skillNames: {
+      basicAttack: "",
+      resonanceSkill: "",
+      forteCircuit: "",
+      resonanceLiberation: "",
+      introSkill: "",
+    },
+    resonanceChain: [],
+    combat: {
+      level10Only: false,
+      forms: [],
+      modes: [],
+      resources: [
+        {
+          id: "meter",
+          name: "Meter",
+          cap: 1,
+          semantic: "character-resource",
+          notes: [],
+        },
+        {
+          id: "song",
+          name: "Song",
+          cap: 100,
+          semantic: "concerto-energy",
+          notes: [],
+        },
+      ],
+      actions: [action],
+      effects: [],
+      rotations: [],
+      unknowns: [],
+      source,
+    },
+    source,
+  };
+  const build: UserBuild = {
+    id: `b-${id}`,
+    resonatorId: id,
+    sourcePresetId: "p",
+    characterLevel: 90,
+    sequence: 0,
+    skillLevels: {
+      basicAttack: 1,
+      resonanceSkill: 1,
+      forteCircuit: 1,
+      resonanceLiberation: 1,
+      introSkill: 1,
+    },
+    weapon: { weaponId: "w", level: 1, rank: 1 },
+    finalStats: stats,
+    createdAt: "",
+    updatedAt: "",
+  };
+  return {
+    actorId: id,
+    resonator,
+    build,
+    initialResources: {
+      meter: options.cost ? 1 : 0,
+      song: options.concerto ?? 0,
+    },
+  };
+}
+
+const target = {
+  level: 90,
+  elementalResistance: { aero: 0 },
+  physicalResistance: 0,
+};
+
+describe("Team DPS and two-cycle validation", () => {
+  it("computes authoritative DPS and actor attribution only with exact duration", () => {
+    const result = simulateTeam({
+      actors: [fixture("a"), fixture("b")],
+      activeActorId: "a",
+      target,
+      steps: [
+        { kind: "action", actorId: "a", actionId: "hit" },
+        { kind: "switch", toActorId: "b" },
+        { kind: "action", actorId: "b", actionId: "hit" },
+      ],
+    });
+    const summary = summarizeTeamDps(result);
+    expect(summary.available).toBe(true);
+    expect(summary.resolvedDps).toBeCloseTo(summary.totalExpectedDamage / 2);
+    expect(summary.teamDps).toBeCloseTo(summary.totalExpectedDamage / 2);
+    expect(Object.keys(summary.byActor)).toEqual(["a", "b"]);
+    expect(
+      Object.values(summary.byActor).reduce(
+        (total, value) => total + value.contributionPercent,
+        0,
+      ),
+    ).toBeCloseTo(100);
+  });
+
+  it("withholds authoritative DPS for unresolved timing but keeps resolved damage visible", () => {
+    const result = simulateTeam({
+      actors: [fixture("a", { duration: null })],
+      activeActorId: "a",
+      target,
+      steps: [{ kind: "action", actorId: "a", actionId: "hit" }],
+    });
+    const summary = summarizeTeamDps(result);
+    expect(summary).toMatchObject({
+      available: false,
+      reason: "unresolved timing",
+    });
+    expect(summary.teamDps).toBeUndefined();
+    expect(summary.resolvedDps).toBeUndefined();
+    expect(summary.totalExpectedDamage).toBeGreaterThan(0);
+    expect(summary.byActor.a.expectedDamage).toBeGreaterThan(0);
+  });
+
+  it("keeps a provisional resolved DPS when duration exists but a later blocking diagnostic makes the simulation partial", () => {
+    const result = simulateTeam({
+      actors: [fixture("a", { cooldown: 5 })],
+      activeActorId: "a",
+      target,
+      steps: [
+        { kind: "action", actorId: "a", actionId: "hit" },
+        { kind: "wait", seconds: 1 },
+        { kind: "action", actorId: "a", actionId: "hit" },
+      ],
+    });
+    const summary = summarizeTeamDps(result);
+    expect(summary.available).toBe(false);
+    expect(summary.teamDps).toBeUndefined();
+    expect(summary.totalExpectedDamage).toBeGreaterThan(0);
+    expect(summary.resolvedDps).toBeCloseTo(
+      summary.totalExpectedDamage / summary.durationSeconds!,
+    );
+  });
+
+  it("continues resources and reports insufficient second cycle", () => {
+    const validation = validateTeamCycle({
+      actors: [fixture("a", { cost: 1 })],
+      activeActorId: "a",
+      target,
+      steps: [{ kind: "action", actorId: "a", actionId: "hit" }],
+    });
+    expect(validation.repeatability).toBe("not-repeatable");
+    expect(validation.cycle1.actorsById.a.resources.meter.current).toBe(0);
+    expect(
+      validation.cycle2.diagnostics.some(
+        (diagnostic) => diagnostic.code === "action-resource-rejected",
+      ),
+    ).toBe(true);
+  });
+
+  it("continues cooldowns instead of resetting", () => {
+    const validation = validateTeamCycle({
+      actors: [fixture("a", { cooldown: 5 })],
+      activeActorId: "a",
+      target,
+      steps: [{ kind: "action", actorId: "a", actionId: "hit" }],
+    });
+    expect(validation.repeatability).toBe("not-repeatable");
+    expect(
+      validation.cycle2.diagnostics.some(
+        (diagnostic) => diagnostic.code === "action-cooldown",
+      ),
+    ).toBe(true);
+  });
+
+  it("detects changed Concerto switch structure", () => {
+    const validation = validateTeamCycle({
+      actors: [fixture("a", { concerto: 100 }), fixture("b")],
+      activeActorId: "a",
+      target,
+      steps: [
+        { kind: "switch", toActorId: "b" },
+        { kind: "switch", toActorId: "a" },
+      ],
+    });
+    expect(validation.repeatability).toBe("not-repeatable");
+    expect(validation.diagnostics).toContain("cycle-structure-changed");
+  });
+
+  it("accepts a stable complete loop", () => {
+    expect(
+      validateTeamCycle({
+        actors: [fixture("a")],
+        activeActorId: "a",
+        target,
+        steps: [{ kind: "action", actorId: "a", actionId: "hit" }],
+      }).repeatability,
+    ).toBe("repeatable");
+  });
+});
