@@ -5,6 +5,7 @@ import { preciseDpsFutureScenarios } from "./precise-dps-future";
 import { findPreciseDpsResonator, findPreciseDpsWeapon } from "./precise-dps-loadouts";
 import { PHROLOVA } from "./precise-dps-phrolova";
 import { runPhrolovaContributionCycle } from "./precise-dps-phrolova-contribution";
+import type { PersonalRotationScenario } from "./personal-rotation-presets";
 
 const stats: FinalStats = {
   hp: 20000,
@@ -35,8 +36,11 @@ const stats: FinalStats = {
 
 const resonator = findPreciseDpsResonator("phrolova")!;
 const weapon = findPreciseDpsWeapon("phrolova")!;
-const scenario = preciseDpsFutureScenarios.find(
+const openerScenario = preciseDpsFutureScenarios.find(
   (entry) => entry.id === "phrolova-opener-boss",
+)!;
+const loopScenario = preciseDpsFutureScenarios.find(
+  (entry) => entry.id === "phrolova-loop-boss",
 )!;
 
 const build = (sequence: Sequence): UserBuild => ({
@@ -58,7 +62,11 @@ const build = (sequence: Sequence): UserBuild => ({
   updatedAt: "2026-08-21T00:00:00.000Z",
 });
 
-const run = (sequence: Sequence, initialAftersound?: number) =>
+const run = (
+  sequence: Sequence,
+  initialAftersound?: number,
+  scenario: PersonalRotationScenario = openerScenario,
+) =>
   runPhrolovaContributionCycle({
     scenario,
     resonator,
@@ -99,7 +107,7 @@ describe("Phrolova completion audit", () => {
     expect(weapon).toMatchObject({
       name: "Lethean Elegy",
       rarity: 5,
-      level90Stats: { baseAttack: 500 },
+      level90Stats: { baseAttack: 587.5 },
     });
     expect(preset).toMatchObject({
       resonatorId: "phrolova",
@@ -153,16 +161,18 @@ describe("Phrolova completion audit", () => {
     );
   });
 
-  it("keeps the S6 carry contract explicit and executes the full cycle when 24 Aftersound is carried", () => {
-    const withoutCarry = run(6);
+  it("keeps the S6 loop carry contract explicit and executes the full cycle when 24 Aftersound is carried", () => {
+    expect(loopScenario).toBeDefined();
+
+    const withoutCarry = run(6, undefined, loopScenario);
     expect(withoutCarry.partial).toBe(true);
     expect(
       withoutCarry.diagnostics.some((diagnostic) =>
-        diagnostic.includes("aftersound-carry-required"),
+        diagnostic.includes("Exact loop Aftersound carry is Team Cycle-owned"),
       ),
     ).toBe(true);
 
-    const result = run(6, 24);
+    const result = run(6, 24, loopScenario);
     expect(result.partial, JSON.stringify(result.diagnostics)).toBe(false);
     expect(result.totalDamage.expected).toBeGreaterThan(run(0).totalDamage.expected);
     expect(result.offField.perAction[PHROLOVA.apparition]?.expected ?? 0).toBeGreaterThan(0);
