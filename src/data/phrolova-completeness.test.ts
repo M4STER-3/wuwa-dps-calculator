@@ -157,8 +157,8 @@ describe("Phrolova completion audit", () => {
     const withoutCarry = run(6);
     expect(withoutCarry.partial).toBe(true);
     expect(
-      withoutCarry.diagnostics.some(
-        (diagnostic) => diagnostic.code === "aftersound-carry-required",
+      withoutCarry.diagnostics.some((diagnostic) =>
+        diagnostic.includes("aftersound-carry-required"),
       ),
     ).toBe(true);
 
