@@ -60,7 +60,7 @@ function actor(actorId: string, effects: readonly EffectDefinition[]): TeamActor
       forms: ["normal", "empowered"],
       defaultForm: "normal",
       modes: [],
-      resources: [{ id: "gauge", name: "Gauge", cap: 10, semantic: "character-resource" }],
+      resources: [{ id: "gauge", name: "Gauge", cap: 10, semantic: "character-resource", notes: [] }],
       actions: [emittedAction],
       effects: [],
       rotations: [],
