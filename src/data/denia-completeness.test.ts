@@ -20,6 +20,7 @@ describe("Denia completion audit", () => {
       id: "precise-denia-signature",
       name: "Forged Dwarf Star",
       rarity: 5,
+      level90Stats: { baseAttack: 500, critRate: 36 },
     });
 
     expect(presets).toHaveLength(2);
@@ -41,6 +42,7 @@ describe("Denia completion audit", () => {
       });
       expect(preset.echoLoadout?.echoes).toHaveLength(5);
       expect(preset.mainEchoId).toBeDefined();
+      expect(preset.notes?.some((note) => note.includes("inclus exactement une fois dans finalStats"))).toBe(true);
     }
   });
 
@@ -56,17 +58,23 @@ describe("Denia completion audit", () => {
     }
   });
 
-  it("keeps permanent minor Fortes and signature passive out of runtime-only duplication", () => {
-    const permanentEffects = resonator.combat?.effects.filter(
-      (effect) => effect.structuredEffect?.activationPolicy === "initially-active",
-    ) ?? [];
+  it("keeps the signature permanent ATK marker upstream and its temporary windows runtime-only", () => {
+    const permanent = weapon.effects.find(
+      (effect) => effect.structuredEffect?.id === "precise-forged-dwarf-star-permanent",
+    )?.structuredEffect;
+    const liberationWindow = weapon.effects.find(
+      (effect) => effect.structuredEffect?.id === "precise-forged-dwarf-star-liberation-window",
+    )?.structuredEffect;
+    const teamAtkWindow = weapon.effects.find(
+      (effect) => effect.structuredEffect?.id === "precise-forged-dwarf-star-team-atk-window",
+    )?.structuredEffect;
 
-    expect(
-      permanentEffects.some((effect) =>
-        effect.structuredEffect?.rules.some(
-          (rule) => rule.accounting === "already-in-final-stats",
-        ),
-      ),
-    ).toBe(true);
+    expect(permanent?.activationPolicy).toBe("initially-active");
+    expect(permanent?.rules).toHaveLength(1);
+    expect(permanent?.rules[0]?.accounting).toBe("already-in-final-stats");
+    expect(liberationWindow?.lifecycle?.duration).toEqual({ kind: "fixed", seconds: 5 });
+    expect(liberationWindow?.rules.every((rule) => rule.accounting === "runtime")).toBe(true);
+    expect(teamAtkWindow?.lifecycle?.duration).toEqual({ kind: "fixed", seconds: 15 });
+    expect(teamAtkWindow?.rules.every((rule) => rule.accounting === "runtime")).toBe(true);
   });
 });
