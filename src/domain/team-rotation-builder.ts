@@ -1,4 +1,5 @@
 import type {
+  CombatAction,
   MainEcho,
   Resonator,
   Sonata,
@@ -6,6 +7,7 @@ import type {
   Weapon,
 } from "./models";
 import type { TeamActorInput, TeamRotationStep } from "./team-engine";
+import { selectPersonalRotationScenario } from "./personal-rotation-selection";
 import { resolvePersonalSonataLoadout } from "./personal-sonata-loadout";
 import { resolveActionTalentLevel } from "./talent-engine";
 
@@ -202,6 +204,21 @@ export function walkRotationActiveActors(
   });
 }
 
+function personalScenarioRuntimeActions(
+  baseActions: readonly CombatAction[],
+  extraActions: readonly CombatAction[],
+  assumeLegacyRequirementsSatisfied: boolean,
+): readonly CombatAction[] {
+  if (!assumeLegacyRequirementsSatisfied) return extraActions;
+  return [...baseActions, ...extraActions].map((action) => ({
+    ...action,
+    requiredForm: undefined,
+    requiredState: undefined,
+    costs: undefined,
+    gains: undefined,
+  }));
+}
+
 export function buildTeamActorInputs(
   builds: readonly UserBuild[],
   catalog: {
@@ -241,10 +258,10 @@ export function buildTeamActorInputs(
     );
     const modes = resonator.combat?.modes ?? [];
     const requestedMode = resonanceModesByBuildId[build.id];
-    const resonanceMode =
-      requestedMode && modes.includes(requestedMode)
-        ? requestedMode
-        : modes[0];
+    const explicitMode =
+      requestedMode && modes.includes(requestedMode) ? requestedMode : undefined;
+    const scenario = selectPersonalRotationScenario(resonator.id, explicitMode);
+    const resonanceMode = scenario?.resonanceMode ?? explicitMode ?? modes[0];
 
     if (!weapon) diagnostics.push(`stale-weapon:${build.weapon.weaponId}`);
     if (!hasEchoDerivedSonatas && build.sonataId && !sonata) {
@@ -262,6 +279,7 @@ export function buildTeamActorInputs(
     }
 
     const actorId = actorIdsByBuildId[build.id] ?? actorIdForBuild(build.id);
+    const explicitInitialResources = initialResourcesByActorId[actorId];
     const initialResources = Object.fromEntries(
       (resonator.combat?.resources ?? []).map((resource) => [
         resource.id,
@@ -269,7 +287,9 @@ export function buildTeamActorInputs(
           resource.cap,
           Math.max(
             0,
-            initialResourcesByActorId[actorId]?.[resource.id] ?? 0,
+            explicitInitialResources?.[resource.id] ??
+              scenario?.initialResources?.[resource.id] ??
+              0,
           ),
         ),
       ]),
@@ -290,6 +310,23 @@ export function buildTeamActorInputs(
           }
         : undefined;
 
+    const scenarioBaseActions = [
+      ...(resonator.combat?.actions ?? []),
+      ...(mainEcho?.action ? [mainEcho.action] : []),
+    ];
+    const scenarioActions = personalScenarioRuntimeActions(
+      scenarioBaseActions,
+      scenario?.extraActions ?? [],
+      scenario?.assumeLegacyRequirementsSatisfied ?? false,
+    );
+    const scenarioEffects = [
+      ...(resolvedSonatas?.effects ?? []),
+      ...(scenario?.extraEffects ?? []),
+    ];
+    const uniqueEffects = [
+      ...new Map(scenarioEffects.map((effect) => [effect.id, effect])).values(),
+    ];
+
     actors.push({
       actorId,
       resonator,
@@ -299,9 +336,8 @@ export function buildTeamActorInputs(
       mainEcho,
       initialResources,
       ...(resonanceMode ? { resonanceMode } : {}),
-      ...(resolvedSonatas?.effects.length
-        ? { effects: resolvedSonatas.effects }
-        : {}),
+      ...(scenarioActions.length ? { actions: scenarioActions } : {}),
+      ...(uniqueEffects.length ? { effects: uniqueEffects } : {}),
       ...(baseStatBasis ? { baseStatBasis } : {}),
     });
   }
