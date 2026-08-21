@@ -48,6 +48,9 @@ export function createBuildFromPreset(
       : {}),
     ...(preset.sonataId !== undefined ? { sonataId: preset.sonataId } : {}),
     ...(preset.mainEchoId !== undefined ? { mainEchoId: preset.mainEchoId } : {}),
+    ...(preset.personalScenarioId !== undefined
+      ? { personalScenarioId: preset.personalScenarioId }
+      : {}),
     createdAt: options.now,
     updatedAt: options.now,
   };
@@ -137,6 +140,11 @@ export function isValidBuild(build: unknown): build is UserBuild {
   }
   if (value.sonataId !== undefined && !isSafeString(value.sonataId)) return false;
   if (value.mainEchoId !== undefined && !isSafeString(value.mainEchoId)) return false;
+  if (
+    value.personalScenarioId !== undefined &&
+    !isSafeString(value.personalScenarioId)
+  )
+    return false;
   const stats = value.finalStats;
   const baseStats = [
     stats.hp,
@@ -222,6 +230,9 @@ function sanitizeValidatedBuild(build: UserBuild): UserBuild {
       : {}),
     ...(build.sonataId !== undefined ? { sonataId: build.sonataId } : {}),
     ...(build.mainEchoId !== undefined ? { mainEchoId: build.mainEchoId } : {}),
+    ...(build.personalScenarioId !== undefined
+      ? { personalScenarioId: build.personalScenarioId }
+      : {}),
     createdAt: build.createdAt,
     updatedAt: build.updatedAt,
   };

@@ -298,6 +298,8 @@ export interface RecommendedBuildPreset {
   echoLoadout?: import("./user-echo-loadout").UserEchoLoadoutV1;
   sonataId?: string;
   mainEchoId?: string;
+  /** Preferred Personal DPS scenario. Team consumes the same identity instead of re-implementing character logic. */
+  personalScenarioId?: string;
   notes: readonly string[];
   source: SourceMetadata;
 }
@@ -315,6 +317,8 @@ export interface UserBuild {
   echoLoadout?: import("./user-echo-loadout").UserEchoLoadoutV1;
   sonataId?: string;
   mainEchoId?: string;
+  /** Preferred Personal DPS scenario inherited by Personal and Team runtime. */
+  personalScenarioId?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -6,6 +6,7 @@ import {
   findPreciseDpsWeapon,
   preciseDpsLoadoutResonators,
 } from "./precise-dps-loadouts";
+import { preciseDpsScenarioInventory } from "./precise-dps-future";
 
 const baselineByResonatorId = generatedPreciseCharacterBoxBaselines as Readonly<
   Record<string, FinalStats | undefined>
@@ -32,11 +33,34 @@ const source = {
     "Fail-closed Character Box build: exact Lv90 character/weapon bases, exact signature secondary, reviewed minor Fortes and R1 permanent signature passive are resolved exactly once into finalStats; five legal +25 Echoes are then applied exactly once through Echo Resolver V1. Sonata and Main Echo runtime windows remain data-owned effects.",
 };
 
+const normalizeScenarioLabel = (value: string): string =>
+  value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, " ").trim();
+
+function preferredPersonalScenarioId(
+  resonatorId: string,
+  variantLabel?: string,
+): string | undefined {
+  const candidates = preciseDpsScenarioInventory.filter(
+    (entry) => entry.resonatorId === resonatorId && entry.executable,
+  );
+  if (variantLabel) {
+    const normalizedVariant = normalizeScenarioLabel(variantLabel);
+    const matching = candidates.filter(
+      (entry) =>
+        normalizeScenarioLabel(entry.label) === normalizedVariant ||
+        (entry.resonanceMode !== undefined &&
+          normalizeScenarioLabel(entry.resonanceMode) === normalizedVariant),
+    );
+    if (matching.length === 1) return matching[0]!.scenarioId;
+  }
+  return candidates.length === 1 ? candidates[0]!.scenarioId : undefined;
+}
+
 /**
  * Visible Character Box presets for the precise-DPS roster.
  * UserBuild.finalStats remains the only permanent-stat source consumed by combat.
- * Denia intentionally exposes two equipment variants because Fusion Burst and Tune
- * Strain use different reviewed Sonata/Main Echo packages.
+ * Equipment variants may carry an exact Personal scenario identity when the
+ * reviewed scenario inventory resolves that variant unambiguously.
  */
 export const preciseCharacterBoxPresets: readonly RecommendedBuildPreset[] =
   preciseDpsLoadoutResonators.flatMap((resonator) => {
@@ -76,6 +100,10 @@ export const preciseCharacterBoxPresets: readonly RecommendedBuildPreset[] =
       ).finalStats;
       const variantSuffix = "variant" in variant ? `-${variant.variant.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "";
       const variantLabel = "variant" in variant ? ` · ${variant.variant}` : "";
+      const preferredScenarioId = preferredPersonalScenarioId(
+        resonator.id,
+        "variant" in variant ? variant.variant : undefined,
+      );
       const mainEchoId = resonator.id === "shorekeeper"
         ? "fallacy-of-no-return"
         : variant.mainEchoCanonicalId;
@@ -99,12 +127,16 @@ export const preciseCharacterBoxPresets: readonly RecommendedBuildPreset[] =
         finalStats,
         echoLoadout: variant.echoLoadout,
         mainEchoId,
+        ...(preferredScenarioId ? { personalScenarioId: preferredScenarioId } : {}),
         notes: [
           "Personnage Lv90, S0, talents Lv10, arme signature Lv90 R1.",
           "Les minor Fortes, la statistique secondaire de l'arme et le passif permanent R1 sont déjà inclus exactement une fois dans finalStats.",
           `Cinq Echoes +25 légaux (${variant.totalCost}/12 de coût) sont résolus depuis GameDatabase et leurs main/substats sont ajoutés exactement une fois au panneau.`,
           `Main Echo équipé : ${variant.mainEchoName}. Les paliers Sonata sont dérivés des vrais sonataSetId des cinq pièces, sans faux set composite.`,
           "Les fenêtres temporaires de personnage, arme, Sonata et Main Echo restent runtime et ne sont jamais réinjectées dans le panneau permanent.",
+          ...(preferredScenarioId
+            ? [`Scénario Personal DPS par défaut : ${preferredScenarioId}. Team DPS hérite de cette même identité.`]
+            : []),
         ],
         source,
       } satisfies RecommendedBuildPreset;

@@ -260,7 +260,11 @@ export function buildTeamActorInputs(
     const requestedMode = resonanceModesByBuildId[build.id];
     const explicitMode =
       requestedMode && modes.includes(requestedMode) ? requestedMode : undefined;
-    const scenario = selectPersonalRotationScenario(resonator.id, explicitMode);
+    const scenario = selectPersonalRotationScenario(
+      resonator.id,
+      explicitMode,
+      build.personalScenarioId,
+    );
     const resonanceMode = scenario?.resonanceMode ?? explicitMode ?? modes[0];
 
     if (!weapon) diagnostics.push(`stale-weapon:${build.weapon.weaponId}`);

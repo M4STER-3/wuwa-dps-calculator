@@ -87,6 +87,7 @@ export function simulateRotationLab(loadout: ResolvedPersonalLoadout, stats: Fin
   const baseScenario = selectPersonalRotationScenario(
     loadout.resonator.id,
     resonanceMode,
+    loadout.build.personalScenarioId,
   );
   if (!baseScenario) return undefined;
   const scenario = withPreciseMainEchoCast(
