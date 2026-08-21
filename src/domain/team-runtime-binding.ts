@@ -1,5 +1,6 @@
 import type { CoordinatedResponseDefinition } from "./coordinated-response-engine";
 import type { EffectDefinition } from "./effect-models";
+import { materializeWeaponForRank } from "./equipment-rank";
 import type { CombatAction, CombatResource, MainEcho, Resonator, Sonata, UserBuild, Weapon } from "./models";
 import { resolveActionTalentLevel } from "./talent-engine";
 
@@ -40,6 +41,7 @@ export interface BoundTeamActorRuntime {
 
 /** Creates actor-owned wrappers without mutating catalog singleton objects. */
 export function bindTeamActorRuntime(input: TeamRuntimeBindingInput): BoundTeamActorRuntime {
+  const weapon = materializeWeaponForRank(input.weapon, input.build.weapon.rank);
   const actions = [
     ...(input.resonator.combat?.actions ?? []),
     ...(input.mainEcho?.action ? [input.mainEcho.action] : []),
@@ -48,7 +50,7 @@ export function bindTeamActorRuntime(input: TeamRuntimeBindingInput): BoundTeamA
   ];
   const definitions = [
     ...(input.resonator.combat?.effects ?? []).flatMap((effect) => effect.structuredEffect ? [effect.structuredEffect] : []),
-    ...(input.weapon?.effects ?? []).flatMap((effect) => effect.structuredEffect ? [effect.structuredEffect] : []),
+    ...(weapon?.effects ?? []).flatMap((effect) => effect.structuredEffect ? [effect.structuredEffect] : []),
     ...(input.sonata?.effects ?? []).flatMap((effect) => effect.structuredEffect ? [effect.structuredEffect] : []),
     ...(input.mainEcho?.effects ?? []).flatMap((effect) => effect.structuredEffect ? [effect.structuredEffect] : []),
     ...(input.effects ?? []),

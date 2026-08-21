@@ -4,6 +4,7 @@ import type { ActionDefinitionV02 } from "./effect-models";
 import { materializeWeaponForRank } from "./equipment-rank";
 import type { CombatAction, FinalStats, MainEcho, Resonator, Sonata, UserBuild, Weapon } from "./models";
 import { simulatePersonalCombat, type PersonalCombatResult } from "./personal-combat-simulation";
+import { initialRuntimeStates } from "./runtime-initial-states";
 import { emptyCombatState, type CombatEvent, type CombatState } from "./state-engine";
 import { buildTheoreticalRotationTimeline } from "./theoretical-rotation";
 import type { TemporalRotationDefinition } from "./temporal-engine";
@@ -140,13 +141,6 @@ function resourceCapForSequence(
   return cap;
 }
 
-function sequenceRuntimeStates(sequence: UserBuild["sequence"]): readonly string[] {
-  return [
-    `sequence-${sequence}`,
-    ...Array.from({ length: sequence }, (_, index) => `sequence-at-least-${index + 1}`),
-  ];
-}
-
 function initialStateForScenario(
   scenario: PersonalRotationScenario,
   resonator: Resonator,
@@ -170,7 +164,7 @@ function initialStateForScenario(
       maxHp: stats.hp,
       onField: true,
       form: resonator.combat?.defaultForm,
-      namedStates: ["ground", ...sequenceRuntimeStates(sequence)],
+      namedStates: initialRuntimeStates(sequence),
       resources,
     },
   }, [targetId]);

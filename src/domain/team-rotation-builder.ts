@@ -214,6 +214,7 @@ export function buildTeamActorInputs(
     Record<string, Readonly<Record<string, number>>>
   > = {},
   actorIdsByBuildId: Readonly<Record<string, string>> = {},
+  resonanceModesByBuildId: Readonly<Record<string, string>> = {},
 ): { actors: TeamActorInput[]; diagnostics: string[] } {
   const diagnostics: string[] = [];
   const actors: TeamActorInput[] = [];
@@ -238,6 +239,12 @@ export function buildTeamActorInputs(
     const mainEcho = catalog.mainEchoes.find(
       (item) => item.id === build.mainEchoId,
     );
+    const modes = resonator.combat?.modes ?? [];
+    const requestedMode = resonanceModesByBuildId[build.id];
+    const resonanceMode =
+      requestedMode && modes.includes(requestedMode)
+        ? requestedMode
+        : modes[0];
 
     if (!weapon) diagnostics.push(`stale-weapon:${build.weapon.weaponId}`);
     if (!hasEchoDerivedSonatas && build.sonataId && !sonata) {
@@ -291,6 +298,7 @@ export function buildTeamActorInputs(
       sonata,
       mainEcho,
       initialResources,
+      ...(resonanceMode ? { resonanceMode } : {}),
       ...(resolvedSonatas?.effects.length
         ? { effects: resolvedSonatas.effects }
         : {}),

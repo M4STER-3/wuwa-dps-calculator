@@ -156,19 +156,15 @@ export function TeamRotationLab() {
     { resonators, weapons, sonatas, mainEchoes },
     initialResources,
     actorIdsByBuildId,
+    rotationModesByBuildId,
   );
   const actorLabels = Object.fromEntries(
     prepared.actors.map((actor) => [actor.actorId, actor.resonator.name]),
   );
 
-  const automaticRotations = prepared.actors.map((actor) => {
-    const modes = actor.resonator.combat?.modes ?? [];
-    const selectedMode = rotationModesByBuildId[actor.build.id];
-    const mode = selectedMode && modes.includes(selectedMode)
-      ? selectedMode
-      : modes[0];
-    return adaptPersonalRotationToTeamBlock(actor, mode);
-  });
+  const automaticRotations = prepared.actors.map((actor) =>
+    adaptPersonalRotationToTeamBlock(actor, actor.resonanceMode),
+  );
   const automaticByBuildId = Object.fromEntries(
     automaticRotations.map((rotation, index) => [
       prepared.actors[index]!.build.id,
