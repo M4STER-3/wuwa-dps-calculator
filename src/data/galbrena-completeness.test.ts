@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import {
+  generatedPreciseCharacterBoxAudit,
+  generatedPreciseCharacterBoxBaselines,
+} from "@/generated/precise-character-box-baselines";
 import { preciseCharacterBoxPresets } from "./precise-character-box-presets";
 import { GALBRENA } from "./precise-dps-galbrena";
 import { findPreciseDpsResonator, findPreciseDpsWeapon } from "./precise-dps-loadouts";
@@ -24,9 +28,16 @@ describe("Galbrena completion audit", () => {
       level90Stats: {
         baseAttack: 587.5,
         displayBaseAttack: 588,
-        critDamage: 48.6,
       },
     });
+
+    // Character Box permanent secondaries are sourced universally from GameDatabase,
+    // not reconstructed from the partial legacy Weapon.level90Stats display shape.
+    expect(generatedPreciseCharacterBoxAudit.galbrena.weaponSecondary).toEqual({
+      stat: "Crit. DMG",
+      amount: 48.6,
+    });
+    expect(generatedPreciseCharacterBoxBaselines.galbrena.critDamage).toBeCloseTo(214.6, 10);
 
     expect(presets).toHaveLength(1);
     expect(presets[0]).toMatchObject({
