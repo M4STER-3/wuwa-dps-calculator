@@ -111,7 +111,7 @@ function fixtureActor(actorId = "arbitrary-slot") {
       forms: ["normal", "empowered"],
       defaultForm: "normal",
       modes: [],
-      resources: [{ id: "gauge", name: "Gauge", cap: 10, semantic: "character-resource" }],
+      resources: [{ id: "gauge", name: "Gauge", cap: 10, semantic: "character-resource", notes: [] }],
       actions: [starter, derived],
       effects: [],
       rotations: [],
