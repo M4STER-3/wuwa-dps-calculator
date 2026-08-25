@@ -1,40 +1,56 @@
 import { registryPersonalRotationScenarios } from "@/data/personal-dps-roster-registry";
 import { preciseDpsFutureScenarios } from "@/data/precise-dps-future";
 import {
-  findPersonalRotationScenario,
+  personalRotationScenarios,
   type PersonalRotationScenario,
 } from "@/data/personal-rotation-presets";
 
-function findPreciseRotationScenario(
+function candidatesForResonator(
   resonatorId: string,
-  resonanceMode?: string,
-): PersonalRotationScenario | undefined {
-  const candidates = preciseDpsFutureScenarios.filter(
-    (candidate) => candidate.resonatorId === resonatorId,
-  );
-  if (resonanceMode) {
-    const exactMode = candidates.find(
-      (candidate) => candidate.resonanceMode === resonanceMode,
-    );
-    if (exactMode) return exactMode;
-  }
-  return candidates.find((candidate) => !candidate.resonanceMode) ?? candidates[0];
+): readonly PersonalRotationScenario[] {
+  return [
+    ...personalRotationScenarios,
+    ...preciseDpsFutureScenarios,
+    ...registryPersonalRotationScenarios,
+  ].filter((candidate) => candidate.resonatorId === resonatorId);
 }
 
 /**
  * Single scenario-selection policy shared by Personal DPS and Team DPS.
- * Runtime engines consume the selected data; neither engine branches on a
- * specific resonator id.
+ * An explicit mode may override a persisted preference; otherwise the build-owned
+ * Personal scenario id wins. Runtime engines consume the selected data and never
+ * branch on a specific resonator id.
  */
 export function selectPersonalRotationScenario(
   resonatorId: string,
   resonanceMode?: string,
+  preferredScenarioId?: string,
 ): PersonalRotationScenario | undefined {
+  const candidates = candidatesForResonator(resonatorId);
+  if (!candidates.length) return undefined;
+
+  if (preferredScenarioId) {
+    const preferred = candidates.find(
+      (candidate) => candidate.id === preferredScenarioId,
+    );
+    if (
+      preferred &&
+      (!resonanceMode || preferred.resonanceMode === resonanceMode)
+    ) {
+      return preferred;
+    }
+  }
+
+  if (resonanceMode) {
+    return (
+      candidates.find((candidate) => candidate.resonanceMode === resonanceMode) ??
+      candidates.find((candidate) => candidate.resonanceMode === undefined) ??
+      candidates[0]
+    );
+  }
+
   return (
-    findPersonalRotationScenario(resonatorId, resonanceMode) ??
-    findPreciseRotationScenario(resonatorId, resonanceMode) ??
-    registryPersonalRotationScenarios.find(
-      (candidate) => candidate.resonatorId === resonatorId,
-    )
+    candidates.find((candidate) => candidate.resonanceMode === undefined) ??
+    candidates[0]
   );
 }

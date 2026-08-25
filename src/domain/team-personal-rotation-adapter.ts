@@ -110,6 +110,7 @@ export function adaptPersonalRotationToTeamBlock(
   const baseScenario = selectPersonalRotationScenario(
     actor.resonator.id,
     resonanceMode,
+    actor.build.personalScenarioId,
   );
   if (!baseScenario) {
     diagnostics.push({
